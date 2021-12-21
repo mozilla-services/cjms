@@ -12,7 +12,7 @@ Coming soon:
 
 ### Run and test
 
-Optionally set environment variables with tha HOST and PORT
+Set environment variables needed by [./src/env.rs](./src/env.rs)
 
 `cargo run`
 
@@ -26,4 +26,12 @@ Will run the tests. Integration tests go under tests folder, unit tests go into 
 
 Service is deployed using docker containers. 
 
-Install docker and look at github actions for the docker build script.
+Install docker.
+
+To build, for example
+
+`docker build -t cjms:latest .`
+
+To run, set environment variables (can be done with a file) and forward ports e.g.
+
+`docker run -e HOST=0.0.0.0 -e PORT=8484 -p 8484:8484 cjms:latest`
