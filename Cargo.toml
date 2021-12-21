@@ -1,0 +1,10 @@
+[package]
+name = "cjms"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "3"
+
+[dev-dependencies]
+actix-rt = "2"
