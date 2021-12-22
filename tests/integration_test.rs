@@ -17,8 +17,8 @@ mod tests {
     async fn test_index_get() {
         let mut app = setup_app!();
         let req = test::TestRequest::get().uri("/").to_request();
-        let resp = test::read_response(&mut app, req).await;
-        assert_eq!(resp, Bytes::from_static(b"Hello world!"));
+        let body = test::read_response(&mut app, req).await;
+        assert_eq!(body, Bytes::from_static(b"Hello world!"));
     }
 
     #[actix_rt::test]
