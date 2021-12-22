@@ -18,9 +18,10 @@ Set environment variables needed by [./src/env.rs](./src/env.rs)
 
 Will start server running at http://127.0.0.1:8080
 
-`cargo test`
+`cargo test --test-threads=1`
 
 Will run the tests. Integration tests go under tests folder, unit tests go into associated files under src.
+The `--test-threads=` is needed for the environment variables tests.
 
 ### Deployment
 
