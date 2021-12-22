@@ -16,7 +16,7 @@ Set environment variables needed by [./src/env.rs](./src/env.rs)
 
 `cargo run`
 
-Will start server running at http://127.0.0.1:8080
+Will start server running.
 
 `cargo test --test-threads=1`
 
