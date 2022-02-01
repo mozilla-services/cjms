@@ -33,14 +33,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-# To Dos:
-# 1. Get a build pushed to docker hub:
-# - Create a tag/release on gh
-# - build locally, push to docker hub
-
-# 2. Configure helm template. Setup configmap.
-
-# 3. Test jenkins to deploy the docker container
-#
-#Noteables: HOST value 0.0.0.0, Iprepd (jenkinsfile.dev - comment out iprepd-nginx for first deploy of cjms jenkinsfile.dev lines 21 to24)
