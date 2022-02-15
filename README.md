@@ -12,7 +12,7 @@ Coming soon:
 
 ### Run and test
 
-Set environment variables needed by [./src/env.rs](./src/env.rs)
+Set environment variables by copying the [`.env-dist`](./.env-dist) file to `.env` and modifying as necessary.
 
 `cargo run`
 
@@ -25,7 +25,7 @@ The `--test-threads=` is needed for the environment variables tests.
 
 ### Deployment
 
-Service is deployed using docker containers. 
+Service is deployed using docker containers.
 
 Install docker.
 
@@ -69,7 +69,7 @@ All development will happen against main
 main should reflect the state of production code.
 
 At the start of a new development cycle a release branch is made and development continues
-against that branch. A draft PR is opened that proposes a merge of the whole release branch 
+against that branch. A draft PR is opened that proposes a merge of the whole release branch
 into main. The supports the following workflow elements:
 - The test suite reviews the complete set of changes in the release branch
 - The release PR should only be merged after QA sign-off and the QA report should be linked in
