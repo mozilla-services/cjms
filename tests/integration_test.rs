@@ -2,8 +2,9 @@
 mod tests {
     use actix_web::{test, App, web::Bytes};
     use cjms::appconfig::config_app;
-    use cjms::handlers::AICResponse;
+    use cjms::handlers::{AICResponse};
     use serde_json::json;
+    use chrono::{Duration, DateTime, Utc};
 
     macro_rules! setup_app {
         () => {
@@ -66,15 +67,26 @@ mod tests {
         let cj_event_value = "123ABC";
         let flow_id = "4jasdrkl";
         let data = json!({
-            "flowID": flow_id,
-            "CJID": cj_event_value,
+            "flow_id": flow_id,
+            "cj_id": cj_event_value,
         });
         let req = test::TestRequest::post().set_json(&data).uri("/aic").to_request();
         let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), 201);
         let aic:AICResponse = test::read_body_json(resp).await;
+        println!("aic {:?}", aic);
+
         // Any AIC returned
-        assert!(aic.aic_id.len() > 0);
+        assert!(aic.aic_id.len() > 0);  // TODO UUID - 32 hex + 4 dashes
+        // Date is 30 days from today
+        let today = Utc::now();
+        let time_delta = today.signed_duration_since(DateTime::parse_from_rfc2822(&aic.expires).unwrap());
+        assert_eq!(time_delta, Duration::days(30));
+    }
+
+    #[actix_rt::test]
+    async fn test_something_happens_when_wrong_data_is_sent() {
+        assert_eq!(true, false);
     }
 
     #[actix_rt::test]
