@@ -8,5 +8,6 @@ pub fn config_app(cfg: &mut ServiceConfig) {
             .service(resource("").route(get().to(handlers::index)))
             .service(resource("__heartbeat__").route(get().to(handlers::heartbeat)))
             .service(resource("__lbheartbeat__").route(get().to(handlers::heartbeat)))
+            .service(resource("__test_db_insert__").route(get().to(handlers::test_db_insert)))
     );
 }

@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 use std::env;
 
-const REQUIRED_ENV_VARS: [&str; 2] = ["HOST", "PORT"];
+const REQUIRED_ENV_VARS: [&str; 3] = ["HOST", "PORT", "DATABASE_URL"];
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct Env {
     pub host: String,
     pub port: String,
+    pub database_url: String,
 }
 
 pub fn get_env() -> Env {
@@ -15,16 +16,17 @@ pub fn get_env() -> Env {
         match env::var_os(key) {
             Some(val) => {
                 env.insert(
-                    key,  
+                    key,
                     val.into_string().unwrap()
                 );
             },
-            None =>  panic!("Aborting. `{}` is not defined in environment.", key),
+            None => panic!("Aborting. `{}` is not defined in environment.", key),
         }
     }
-    let frozen = Env { 
-        host: env["HOST"].to_string(), 
-        port: env["PORT"].to_string() 
+    let frozen = Env {
+        host: env["HOST"].to_string(),
+        port: env["PORT"].to_string(),
+        database_url: env["DATABASE_URL"].to_string(),
     };
     frozen
 }

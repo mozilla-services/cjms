@@ -80,3 +80,13 @@ into main. The supports the following workflow elements:
 PRs should be squash merged into the release branch.
 
 Release branch should be merged with a merge commit into main.
+
+
+# TODO
+
+- Add README docs on how to install `diesel_cli`
+
+`sudo apt install openssl libpq-dev -y`
+`cargo install diesel_cli --no-default-features --features postgres`
+
+Then run `diesel setup`
