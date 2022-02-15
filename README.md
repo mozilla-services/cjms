@@ -35,7 +35,7 @@ To build, for example
 
 To run, set environment variables (can be done with a file) and forward ports e.g.
 
-`docker run -e HOST=0.0.0.0 -e PORT=8484 -p 8484:8484 cjms:latest`
+`docker run --env-file .env -p 8484:8484 cjms:latest`
 
 #### Version numbers
 
