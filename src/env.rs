@@ -15,18 +15,18 @@ pub fn get_env() -> Env {
         match env::var_os(key) {
             Some(val) => {
                 env.insert(
-                    key,  
+                    key,
                     val.into_string().unwrap()
                 );
             },
             None =>  panic!("Aborting. `{}` is not defined in environment.", key),
         }
     }
-    let frozen = Env { 
-        host: env["HOST"].to_string(), 
-        port: env["PORT"].to_string() 
-    };
-    frozen
+
+    Env {
+        host: env["HOST"].to_string(),
+        port: env["PORT"].to_string()
+    }
 }
 
 #[cfg(test)]
