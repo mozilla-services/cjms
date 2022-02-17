@@ -1,10 +1,12 @@
 #[cfg(test)]
 mod tests {
     use actix_web::{test, App, web::Bytes};
+    use chrono::{DateTime, Utc};
     use cjms::appconfig::config_app;
     use cjms::handlers::{AICResponse};
     use serde_json::json;
-    use chrono::{Duration, DateTime, Utc};
+    use uuid::{Uuid, Version};
+
 
     macro_rules! setup_app {
         () => {
@@ -63,6 +65,8 @@ mod tests {
            - save creation time, expiration time, AIC id, flow ID, CJ event value
            - return expiration time, and AIC id
         */
+
+        /* SETUP */
         let mut app = setup_app!();
         let cj_event_value = "123ABC";
         let flow_id = "4jasdrkl";
@@ -70,18 +74,23 @@ mod tests {
             "flow_id": flow_id,
             "cj_id": cj_event_value,
         });
+        /* CALL */
         let req = test::TestRequest::post().set_json(&data).uri("/aic").to_request();
         let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), 201);
-        let aic:AICResponse = test::read_body_json(resp).await;
-        println!("aic {:?}", aic);
+        let resp:AICResponse = test::read_body_json(resp).await;
 
-        // Any AIC returned
-        assert!(aic.aic_id.len() > 0);  // TODO UUID - 32 hex + 4 dashes
-        // Date is 30 days from today
-        let today = Utc::now();
-        let time_delta = today.signed_duration_since(DateTime::parse_from_rfc2822(&aic.expires).unwrap());
-        assert_eq!(time_delta, Duration::days(30));
+        /* CHECK RESPONSE */
+        // Should be UUID v4 aka Version::Random
+        let returned_uuid = Uuid::parse_str(&resp.aic_id).unwrap();
+        assert_eq!(Some(Version::Random), returned_uuid.get_version());
+        // Expires date is 30 days from today
+        // (because we created the expires a few nano seconds a go, this is a minute under 30 days)
+        let expires = DateTime::parse_from_rfc2822(&resp.expires).unwrap();
+        assert_eq!(expires.signed_duration_since(Utc::now()).num_minutes(), 30 * 24 * 60 - 1);
+
+        /* CHECK DATABASE */
+        assert!(false);
     }
 
     #[actix_rt::test]

@@ -1,5 +1,8 @@
 use actix_web::{Error, HttpResponse, HttpRequest, Responder, web};
+use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
 
 
 pub async fn index() -> Result<HttpResponse, Error> {
@@ -10,6 +13,7 @@ pub async fn heartbeat() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("OK"))
 }
 
+// TODO - Do I need all these traits?
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AICResponse {
     pub aic_id: String,
@@ -23,9 +27,12 @@ pub struct AICRequest {
 }
 
 pub async fn aic_create(_data: web::Json<AICRequest>) -> impl Responder {
+    let aic_id = Uuid::new_v4();
+    let created = Utc::now();
+    let expires = created.checked_add_signed(Duration::days(30)).unwrap();
     let aic_response = AICResponse {
-        aic_id: "123ABC".to_string(),
-        expires: "Fri, 28 Nov 2014 12:00:09 +0000".to_string()
+        aic_id: aic_id.to_string(),
+        expires: expires.to_rfc2822()
     };
     HttpResponse::Created().json(aic_response)
 }
