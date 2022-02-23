@@ -1,6 +1,5 @@
-use actix_web::{Error, HttpResponse, HttpRequest, Responder, web};
+use actix_web::{web, Error, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-
 
 pub async fn index() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("Hello world!"))
@@ -25,7 +24,7 @@ pub struct AICRequest {
 pub async fn aic_create(_data: web::Json<AICRequest>) -> impl Responder {
     let aic_response = AICResponse {
         aic_id: "123ABC".to_string(),
-        expires: "Fri, 28 Nov 2014 12:00:09 +0000".to_string()
+        expires: "Fri, 28 Nov 2014 12:00:09 +0000".to_string(),
     };
     HttpResponse::Created().json(aic_response)
 }
@@ -34,7 +33,7 @@ pub async fn aic_update(req: HttpRequest, _data: web::Json<AICRequest>) -> impl 
     let aic_id: String = req.match_info().load().unwrap();
     let aic_response = AICResponse {
         expires: "Fri, 28 Nov 2014 12:00:09 +0000".to_string(),
-        aic_id
+        aic_id,
     };
     HttpResponse::Created().json(aic_response)
 }

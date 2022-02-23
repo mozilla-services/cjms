@@ -1,4 +1,4 @@
-use actix_web::web::{ServiceConfig, get, post, put, resource, scope};
+use actix_web::web::{get, post, put, resource, scope, ServiceConfig};
 
 use crate::handlers;
 
@@ -9,6 +9,6 @@ pub fn config_app(cfg: &mut ServiceConfig) {
             .service(resource("__heartbeat__").route(get().to(handlers::heartbeat)))
             .service(resource("__lbheartbeat__").route(get().to(handlers::heartbeat)))
             .service(resource("aic").route(post().to(handlers::aic_create)))
-            .service(resource("aic/{aic_id}").route(put().to(handlers::aic_update)))
+            .service(resource("aic/{aic_id}").route(put().to(handlers::aic_update))),
     );
 }

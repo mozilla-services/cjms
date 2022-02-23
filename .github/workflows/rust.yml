@@ -2,9 +2,13 @@ name: Test
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - 'releases/**'
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - 'releases/**'
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,7 +18,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build
-    - name: Run tests
-      run: cargo test --verbose -- --test-threads=1
+      with:
+        fetch-depth: 0
+    - name: reattach HEAD to Head Ref
+      run: git checkout "$(echo ${{ github.head_ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
+      if: github.head_ref != ''
+    - name: reattach HEAD to Ref
+      run: git checkout "$(echo ${{ github.ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
+      if: github.head_ref == ''
+    - name: Lint check
+      run: cargo clippy --all-targets --all-features -- -D warnings
+    - name: Format check
+      run: cargo fmt -- --check
+    - name: Setup coverage
+      run: cargo install cargo-tarpaulin
+    - name: Run tests inc. coverage
+      run: cargo tarpaulin --ignore-tests --coveralls ${{ secrets.COVERALLS_TOKEN }} -- --test-threads=1

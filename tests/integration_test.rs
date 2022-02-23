@@ -1,18 +1,14 @@
 #[cfg(test)]
 mod tests {
-    use actix_web::{test, App, web::Bytes};
+    use actix_web::{test, web::Bytes, App};
+    use chrono::{DateTime, Duration, Utc};
     use cjms::appconfig::config_app;
-    use cjms::handlers::{AICResponse};
+    use cjms::handlers::AICResponse;
     use serde_json::json;
-    use chrono::{Duration, DateTime, Utc};
 
     macro_rules! setup_app {
         () => {
-            test::init_service(
-                App::new()
-                .configure(config_app)
-            )
-            .await
+            test::init_service(App::new().configure(config_app)).await
         };
     }
 
@@ -35,7 +31,9 @@ mod tests {
     #[actix_rt::test]
     async fn test_lbheartbeat_get() {
         let mut app = setup_app!();
-        let req = test::TestRequest::get().uri("/__lbheartbeat__").to_request();
+        let req = test::TestRequest::get()
+            .uri("/__lbheartbeat__")
+            .to_request();
         let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), 200);
     }
@@ -70,17 +68,21 @@ mod tests {
             "flow_id": flow_id,
             "cj_id": cj_event_value,
         });
-        let req = test::TestRequest::post().set_json(&data).uri("/aic").to_request();
+        let req = test::TestRequest::post()
+            .set_json(&data)
+            .uri("/aic")
+            .to_request();
         let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), 201);
-        let aic:AICResponse = test::read_body_json(resp).await;
+        let aic: AICResponse = test::read_body_json(resp).await;
         println!("aic {:?}", aic);
 
         // Any AIC returned
-        assert!(aic.aic_id.len() > 0);  // TODO UUID - 32 hex + 4 dashes
-        // Date is 30 days from today
+        assert!(aic.aic_id.len() > 0); // TODO UUID - 32 hex + 4 dashes
+                                       // Date is 30 days from today
         let today = Utc::now();
-        let time_delta = today.signed_duration_since(DateTime::parse_from_rfc2822(&aic.expires).unwrap());
+        let time_delta =
+            today.signed_duration_since(DateTime::parse_from_rfc2822(&aic.expires).unwrap());
         assert_eq!(time_delta, Duration::days(30));
     }
 
