@@ -14,18 +14,15 @@ pub fn get_env() -> Env {
     for key in REQUIRED_ENV_VARS {
         match env::var_os(key) {
             Some(val) => {
-                env.insert(
-                    key,
-                    val.into_string().unwrap()
-                );
-            },
-            None =>  panic!("Aborting. `{}` is not defined in environment.", key),
+                env.insert(key, val.into_string().unwrap());
+            }
+            None => panic!("Aborting. `{}` is not defined in environment.", key),
         }
     }
 
     Env {
         host: env["HOST"].to_string(),
-        port: env["PORT"].to_string()
+        port: env["PORT"].to_string(),
     }
 }
 

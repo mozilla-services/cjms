@@ -1,17 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use actix_web::{test, App, web::Bytes};
+    use actix_web::{test, web::Bytes, App};
     use cjms::appconfig::config_app;
 
     macro_rules! setup_app {
-    () => {
-        test::init_service(
-            App::new()
-            .configure(config_app)
-        )
-        .await
-    };
-}
+        () => {
+            test::init_service(App::new().configure(config_app)).await
+        };
+    }
 
     #[actix_rt::test]
     async fn test_index_get() {
@@ -32,7 +28,9 @@ mod tests {
     #[actix_rt::test]
     async fn test_lbheartbeat_get() {
         let mut app = setup_app!();
-        let req = test::TestRequest::get().uri("/__lbheartbeat__").to_request();
+        let req = test::TestRequest::get()
+            .uri("/__lbheartbeat__")
+            .to_request();
         let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), 200);
     }
