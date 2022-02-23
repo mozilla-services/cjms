@@ -1,6 +1,6 @@
 # cjms
 
-[![Coverage Status](https://coveralls.io/repos/github/mozilla-services/cjms/badge.svg?branch=coverage)](https://coveralls.io/github/mozilla-services/cjms?branch=coverage)
+[![Coverage Status](https://coveralls.io/repos/github/mozilla-services/cjms/badge.svg)](https://coveralls.io/github/mozilla-services/cjms)
 
 Micro-service supporting VPN activities
 
