@@ -15,10 +15,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Run tests inc. coverage
-      run: cargo tarpaulin --ignore-tests -- --test-threads=1
-    - name: Coveralls
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.COVERALLS_TOKEN }}
+      run: cargo tarpaulin --ignore-tests --coveralls ${{ secrets.COVERALLS_TOKEN }} -- --test-threads=1
     - name: Lint
       run: cargo clippy --all-targets --all-features -- -D warnings
