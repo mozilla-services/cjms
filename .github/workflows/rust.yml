@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
+    - name: Prepare repository
+      run: git checkout "${GITHUB_REF:11}"
     - name: Setup
       run: cargo install cargo-tarpaulin
     - name: Run tests inc. coverage
