@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
     - name: Setup
       run: cargo install cargo-tarpaulin
-    - name: Build
-      run: cargo build
     - name: Run tests inc. coverage
       run: cargo tarpaulin --ignore-tests --coveralls ${{ secrets.COVERALLS_TOKEN }} -- --test-threads=1
     - name: Lint
