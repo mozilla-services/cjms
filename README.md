@@ -26,7 +26,28 @@ Will start server running.
 Will run the tests. Integration tests go under tests folder, unit tests go into associated files under src.
 The `--test-threads=` is needed for the environment variables tests.
 
-### Deployment
+## Tips
+
+### Git hooks
+
+To save time in CI, add a pre-commit or pre-push git hook locally that runs, at least, clippy and fmt.
+
+For example, in `.git/hooks/` copy `pre-push.sample` to `pre-push`. Update the file, so that the end of the file reads:
+
+```
+if ! cargo fmt -- --check; then
+    exit 1
+fi
+if ! cargo clippy --all-targets --all-features -- -D warnings; then
+    exit 1
+fi
+
+exit 0
+```
+
+
+
+## Deployment
 
 Service is deployed using docker containers.
 
