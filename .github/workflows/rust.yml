@@ -1,4 +1,4 @@
-name: Test
+name: Rust
 
 on:
   push:
@@ -26,11 +26,27 @@ jobs:
     - name: reattach HEAD to Ref
       run: git checkout "$(echo ${{ github.ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
       if: github.head_ref == ''
-    - name: Lint check
-      run: cargo clippy --all-targets --all-features -- -D warnings
-    - name: Format check
-      run: cargo fmt -- --check
     - name: Setup coverage
       run: cargo install cargo-tarpaulin
     - name: Run tests inc. coverage
       run: cargo tarpaulin --ignore-tests --coveralls ${{ secrets.COVERALLS_TOKEN }} -- --test-threads=1
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Lint check
+      run: cargo clippy --all-targets --all-features -- -D warnings
+  format:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Format check
+      run: cargo fmt -- --check
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup audit
+      run: cargo install cargo-audit
+    - name: Run audit
+      run: cargo audit
