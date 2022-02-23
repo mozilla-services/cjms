@@ -1,19 +1,15 @@
-# cjms
-
 [![Coverage Status](https://coveralls.io/repos/github/mozilla-services/cjms/badge.svg?branch=coverage)](https://coveralls.io/github/mozilla-services/cjms?branch=coverage)
 
 Micro-service supporting VPN activities
 
-## Developer docs
-
-### Pre-requisites
+# Pre-requisites
 
 * Rust - https://www.rust-lang.org/tools/install
 
 Coming soon:
 * Postgres
 
-### Run and test
+# Run and test
 
 Set environment variables needed by [./src/env.rs](./src/env.rs)
 
@@ -26,9 +22,9 @@ Will start server running.
 Will run the tests. Integration tests go under tests folder, unit tests go into associated files under src.
 The `--test-threads=` is needed for the environment variables tests.
 
-## Tips
+# Tips
 
-### Git hooks
+## Git hooks
 
 To save time in CI, add a pre-commit or pre-push git hook locally that runs, at least, clippy and fmt.
 
@@ -44,10 +40,7 @@ fi
 
 exit 0
 ```
-
-
-
-## Deployment
+# Deployment
 
 Service is deployed using docker containers.
 
@@ -61,13 +54,13 @@ To run, set environment variables (can be done with a file) and forward ports e.
 
 `docker run -e HOST=0.0.0.0 -e PORT=8484 -p 8484:8484 cjms:latest`
 
-#### Version numbers
+## Version numbers
 
-##### Pre 1.0
+### Pre 1.0
 
 Version numbers will increment 0.1, 0.2 etc as pre-releases as we work towards launch.
 
-##### 1.0+
+### 1.0+
 
 Version numbering will follow the guardian schema:
 - version numbers will increase v1.1, v1.2 etc
@@ -75,20 +68,20 @@ Version numbering will follow the guardian schema:
 - release candidates will have a "b" suffix e.g. ahead of v1.1 release we will push
   v1.1.b1, v1.1.b2 to staging for QA to review
 
-##### 2.0+
+### 2.0+
 
 A major version bump from 1.x to 2.x would happen in the case of a breaking change to APIs
 we provide.
 
 For CJMS, this is unlikely to happen.
 
-#### Release, branching, and merging
+## Release, branching, and merging
 
-##### Pre 1.0
+### Pre 1.0
 
 All development will happen against main
 
-##### 1.0+
+### 1.0+
 
 main should reflect the state of production code.
 
