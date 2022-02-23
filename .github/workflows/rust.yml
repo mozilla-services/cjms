@@ -17,7 +17,7 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
     - name: Prepare repository
-      run: git checkout "${GITHUB_REF:11}"
+      run: git switch -c "pull_request"
     - name: Setup
       run: cargo install cargo-tarpaulin
     - name: Run tests inc. coverage
