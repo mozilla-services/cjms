@@ -79,10 +79,10 @@ mod tests {
 
         // Any AIC returned
         assert!(!aic.aic_id.is_empty()); // TODO UUID - 32 hex + 4 dashes
-                                       // Date is 30 days from today
         let today = Utc::now();
         let time_delta =
             today.signed_duration_since(DateTime::parse_from_rfc2822(&aic.expires).unwrap());
+        // Date is 30 days from today
         assert_eq!(time_delta, Duration::days(30));
     }
 
