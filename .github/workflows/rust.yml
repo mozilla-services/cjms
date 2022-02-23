@@ -2,9 +2,13 @@ name: Test
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - 'releases/**'
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - 'releases/**'
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,10 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-      with:
-         ref: ${{ github.event.pull_request.head.sha }}
-    - name: Prepare repository
-      run: git switch -c "pull_request"
+    - name: reattach HEAD to Head Ref
+      run: git checkout "$(echo ${{ github.head_ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
+      if: github.head_ref != ''
+    - name: reattach HEAD to Ref
+      run: git checkout "$(echo ${{ github.ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
+      if: github.head_ref == ''
     - name: Lint check
       run: cargo clippy --all-targets --all-features -- -D warnings
     - name: Format check
