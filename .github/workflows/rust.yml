@@ -14,9 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build
-    - name: Run tests
-      run: cargo test --verbose -- --test-threads=1
+    - name: Run tests inc. coverage
+      run: cargo tarpaulin --ignore-tests -- --test-threads=1
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.COVERALLS_TOKEN }}
     - name: Lint
       run: cargo clippy --all-targets --all-features -- -D warnings
