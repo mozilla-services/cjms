@@ -1,6 +1,6 @@
 # cjms
 
-[![Coverage Status](https://coveralls.io/repos/github/mozilla-services/cjms/badge.svg?branch=coverage)](https://coveralls.io/github/mozilla-services/cjms?branch=coverage)
+[![Coverage Status](https://coveralls.io/repos/github/mozilla-services/cjms/badge.svg)](https://coveralls.io/github/mozilla-services/cjms)
 
 Micro-service supporting VPN activities
 
@@ -13,18 +13,23 @@ Micro-service supporting VPN activities
 Coming soon:
 * Postgres
 
-### Run and test
+### Run server
 
-Set environment variables needed by [./src/env.rs](./src/env.rs)
+
+If your server is configured with environment variables, run
 
 `cargo run`
 
-Will start server running.
+More likely on a dev setup, copy `settings.yaml.example` to `settings.yaml` and update with your local settings values.
+Then run the server passing in the settings file.
 
-`cargo test -- --test-threads=1`
+`cargo run settings.yaml`
+
+### Run tests
+
+`cargo test`
 
 Will run the tests. Integration tests go under tests folder, unit tests go into associated files under src.
-The `--test-threads=` is needed for the environment variables tests.
 
 ### Deployment
 
