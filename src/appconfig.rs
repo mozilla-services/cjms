@@ -1,12 +1,15 @@
-use actix_web::web::{get, resource, scope, ServiceConfig};
-
 use crate::handlers;
+use actix_web::{dev::Server, web::get, App, HttpServer};
+use std::net::TcpListener;
 
-pub fn config_app(cfg: &mut ServiceConfig) {
-    cfg.service(
-        scope("/")
-            .service(resource("").route(get().to(handlers::index)))
-            .service(resource("__heartbeat__").route(get().to(handlers::heartbeat)))
-            .service(resource("__lbheartbeat__").route(get().to(handlers::heartbeat))),
-    );
+pub fn run_server(listener: TcpListener) -> Result<Server, std::io::Error> {
+    let server = HttpServer::new(|| {
+        App::new()
+            .route("/", get().to(handlers::index))
+            .route("/__heartbeat__", get().to(handlers::heartbeat))
+            .route("/__lbheartbeat__", get().to(handlers::heartbeat))
+    })
+    .listen(listener)?
+    .run();
+    Ok(server)
 }
