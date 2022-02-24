@@ -20,16 +20,16 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: reattach HEAD to Head Ref
+    - name: Git checkout (reattach HEAD to Head Ref)
       run: git checkout "$(echo ${{ github.head_ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
       if: github.head_ref != ''
-    - name: reattach HEAD to Ref
+    - name: Git checkout (reattach HEAD to Ref)
       run: git checkout "$(echo ${{ github.ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
       if: github.head_ref == ''
     - name: Setup coverage
       run: cargo install cargo-tarpaulin
     - name: Run tests inc. coverage
-      run: cargo tarpaulin --ignore-tests --skip-clean --avoid-cfg-tarpaulin --coveralls ${{ secrets.COVERALLS_TOKEN }}
+      run: cargo tarpaulin --ignore-tests --coveralls ${{ secrets.COVERALLS_TOKEN }}
   lint:
     runs-on: ubuntu-latest
     steps:
