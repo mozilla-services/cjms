@@ -1,6 +1,6 @@
 use actix_web::{web, Error, HttpRequest, HttpResponse, Responder};
-use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
+use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
 pub async fn index() -> Result<HttpResponse, Error> {
@@ -15,7 +15,8 @@ pub async fn heartbeat() -> Result<HttpResponse, Error> {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AICResponse {
     pub aic_id: String,
-    pub expires: String,
+    #[serde(with = "time::serde::rfc2822")]
+    pub expires: OffsetDateTime,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -26,11 +27,11 @@ pub struct AICRequest {
 
 pub async fn aic_create(_data: web::Json<AICRequest>) -> impl Responder {
     let aic_id = Uuid::new_v4();
-    let created = Utc::now();
-    let expires = created.checked_add_signed(Duration::days(30)).unwrap();
+    let created = OffsetDateTime::now_utc();
+    let expires = created.checked_add(Duration::days(30)).unwrap();
     let aic_response = AICResponse {
         aic_id: aic_id.to_string(),
-        expires: expires.to_rfc2822(),
+        expires,
     };
     HttpResponse::Created().json(aic_response)
 }
@@ -38,7 +39,7 @@ pub async fn aic_create(_data: web::Json<AICRequest>) -> impl Responder {
 pub async fn aic_update(req: HttpRequest, _data: web::Json<AICRequest>) -> impl Responder {
     let aic_id: String = req.match_info().load().unwrap();
     let aic_response = AICResponse {
-        expires: "Fri, 28 Nov 2014 12:00:09 +0000".to_string(),
+        expires: OffsetDateTime::now_utc(),
         aic_id,
     };
     HttpResponse::Created().json(aic_response)

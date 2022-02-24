@@ -1,11 +1,11 @@
-//use chrono::{DateTime, Utc};
 use cjms::appconfig::run_server;
-//use cjms::handlers::{AICResponse};
+use cjms::handlers::AICResponse;
 use cjms::settings::{get_settings, Settings};
+use serde_json::json;
 use std::env;
 use std::net::TcpListener;
-//use serde_json::json;
-//use uuid::{Uuid, Version};
+use time::OffsetDateTime;
+use uuid::{Uuid, Version};
 
 pub struct TestApp {
     pub settings: Settings,
@@ -51,21 +51,24 @@ async fn test_heartbeats_get() {
 }
 
 /*
-    * START /aic endpoint (Affiliate Identifier Cookie)
-    *
+ * START /aic endpoint (Affiliate Identifier Cookie)
+ *
+ */
 
-#[actix_rt::test]
+#[tokio::test]
 async fn test_aic_get_is_not_allowed() {
-    let mut app = setup_app!();
-    let req = test::TestRequest::get().uri("/aic").to_request();
-    let resp = test::call_service(&mut app, req).await;
-    assert_eq!(resp.status(), 405);
-    let req = test::TestRequest::get().uri("/aic/123").to_request();
-    let resp = test::call_service(&mut app, req).await;
-    assert_eq!(resp.status(), 405);
+    let app = spawn_app().await;
+    let test_cases = vec!["/aic", "/aic/123"];
+    for path in test_cases {
+        let path = build_url(&app, path);
+        let r = reqwest::get(&path)
+            .await
+            .expect("Failed to execute request");
+        assert_eq!(r.status(), 405, "Failed on path: {}", path);
+    }
 }
 
-#[actix_rt::test]
+#[tokio::test]
 async fn test_aic_endpoint_when_no_aic_sent() {
     /* Bedrock sends flowId and CJEvent value and not an AIC value
         - create a new AIC id
@@ -74,18 +77,25 @@ async fn test_aic_endpoint_when_no_aic_sent() {
     */
 
     /* SETUP */
-    let mut app = setup_app!();
+    let app = spawn_app().await;
     let cj_event_value = "123ABC";
     let flow_id = "4jasdrkl";
     let data = json!({
         "flow_id": flow_id,
         "cj_id": cj_event_value,
     });
+
     /* CALL */
-    let req = test::TestRequest::post().set_json(&data).uri("/aic").to_request();
-    let resp = test::call_service(&mut app, req).await;
-    assert_eq!(resp.status(), 201);
-    let resp:AICResponse = test::read_body_json(resp).await;
+    let path = build_url(&app, "/aic");
+    let client = reqwest::Client::new();
+    let r = client
+        .post(&path)
+        .json(&data)
+        .send()
+        .await
+        .expect("Failed to POST");
+    assert_eq!(r.status(), 201);
+    let resp: AICResponse = r.json().await.expect("Failed to get JSON response.");
 
     /* CHECK RESPONSE */
     // Should be UUID v4 aka Version::Random
@@ -93,13 +103,16 @@ async fn test_aic_endpoint_when_no_aic_sent() {
     assert_eq!(Some(Version::Random), returned_uuid.get_version());
     // Expires date is 30 days from today
     // (because we created the expires a few nano seconds a go, this is a minute under 30 days)
-    let expires = DateTime::parse_from_rfc2822(&resp.expires).unwrap();
-    assert_eq!(expires.signed_duration_since(Utc::now()).num_minutes(), 30 * 24 * 60 - 1);
+    assert_eq!(
+        (resp.expires - OffsetDateTime::now_utc()).whole_days(),
+        30 * 24 * 60 - 1
+    );
 
     /* CHECK DATABASE */
     assert!(false);
 }
 
+/*
 #[actix_rt::test]
 async fn test_something_happens_when_wrong_data_is_sent() {
     assert_eq!(true, false);
