@@ -34,7 +34,7 @@ mod tests {
     use super::*;
     use serial_test::serial;
     use std::env;
-    use std::io::{Write};
+    use std::io::Write;
     use tempfile::NamedTempFile;
 
     #[test]
@@ -93,6 +93,5 @@ mod tests {
             port: "2222".to_string(),
         };
         assert_eq!(expected, actual);
-
     }
 }

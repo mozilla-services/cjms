@@ -2,7 +2,6 @@ use actix_web::{middleware, App, HttpServer};
 use cjms::appconfig::config_app;
 use cjms::settings::get_settings;
 
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
