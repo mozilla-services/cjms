@@ -12,7 +12,7 @@ Micro-service supporting VPN activities
 Coming soon:
 * Postgres
 
-### Run server
+# Run server
 
 
 If your server is configured with environment variables, run
@@ -24,7 +24,7 @@ Then run the server passing in the settings file.
 
 `cargo run settings.yaml`
 
-### Run tests
+# Run tests
 
 `cargo test`
 
