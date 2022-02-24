@@ -5,22 +5,38 @@
 
 Micro-service supporting VPN activities
 
-# Pre-requisites
+# Development pre-requisites
+#### Rust
 
-* Rust - https://www.rust-lang.org/tools/install
+https://www.rust-lang.org/tools/install
 
-Coming soon:
-* Postgres
+We use clippy and fmt which can be added with `rustup component add clippy rustfmt`.
+
+Many optional utilities are useful when developing cjms and can be installed with `cargo install`. e.g. `cargo install cargo-edit` adds the ability to add dependencies to the project by running `cargo add <name of package>`. Consider the following additions:
+* cargo-edit
+* cargo-audit
+* cargo-tarpaulin
+
+I have found the VSCode extension `rust-analyzer` to give me the richest experience while developing.
+#### Postgres
+
+https://www.postgresql.org/docs/14/index.html
+
+- Have postgres running on your machine.
+- Know your database url `postgres://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}`
+- Install [sqlx-cli](https://github.com/launchbadge/sqlx/tree/master/sqlx-cli) `cargo install sqlx-cli`
+- If needed create your database `sqlx database create --database-url="<database url>"`
+
+When adding migrations, create reversible migrations using `sqlx migrate add -r <name>`.
 
 # Run server
 
-
-If your server is configured with environment variables, run
+If your development environment is configured with environment variables, run
 
 `cargo run`
 
-More likely on a dev setup, copy `settings.yaml.example` to `settings.yaml` and update with your local settings values.
-Then run the server passing in the settings file.
+Alternatively, copy `settings.yaml.example` to `settings.yaml` (or any filename you choose) and update with your local settings values.
+Then run the server, passing in the settings file.
 
 `cargo run settings.yaml`
 
