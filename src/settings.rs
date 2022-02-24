@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     #[serial]
-    #[should_panic]
+    #[should_panic(expected = "Aborting. Config didn't match serialization.")]
     fn test_get_settings_missing_envvars() {
         // If you have set environment variables, this test may fail
         let _ = get_settings(None);
@@ -47,7 +47,7 @@ mod tests {
 
     #[test]
     #[serial]
-    #[should_panic]
+    #[should_panic(expected = "Config couldn't be built.")]
     fn test_get_settings_missing_file() {
         // If you have set environment variables, this test may fail
         let _ = get_settings(Some(&String::from("this_file_doesnt_exist.txt")));
