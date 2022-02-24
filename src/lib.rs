@@ -1,3 +1,3 @@
 pub mod appconfig;
 pub mod handlers;
-pub mod env;
+pub mod settings;

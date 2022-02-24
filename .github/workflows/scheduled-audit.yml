@@ -1,0 +1,13 @@
+name: Security audit
+on:
+  schedule:
+    - cron: '0 0 * * *'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup audit
+      run: cargo install cargo-audit
+    - name: Run audit
+      run: cargo audit
