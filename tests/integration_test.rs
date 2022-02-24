@@ -1,25 +1,20 @@
-use actix_web::{App, HttpServer};
-use cjms::appconfig::config_app;
+use cjms::appconfig::run_server;
 use cjms::settings::{get_settings, Settings};
-use std::env;
 use std::net::TcpListener;
+use std::env;
 
 pub struct TestApp {
     pub settings: Settings,
 }
 
 async fn spawn_app() -> TestApp {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
-    // We retrieve the port assigned to us by the OS
+    let host = "127.0.0.1";
+    let listener = TcpListener::bind(format!("{}:0", host)).expect("Failed to bind random port");
     let port = listener.local_addr().unwrap().port();
-    // RM let address = format!("http://127.0.0.1:{}", port);
-    env::set_var("HOST", "127.0.0.1");
+    env::set_var("HOST", format!("{}", host));
     env::set_var("PORT", format!("{}", port));
     let settings = get_settings(None);
-    let server = HttpServer::new(|| App::new().configure(config_app))
-        .listen(listener)
-        .expect("Server could not be configured")
-        .run();
+    let server = run_server(settings.server_address()).expect("Failed to start server");
     let _ = tokio::spawn(server);
     TestApp { settings }
 }
@@ -38,7 +33,8 @@ async fn test_index_get() {
         .await
         .expect("Failed to execute request");
     assert!(response.status().is_success());
-    //assert_eq!(response.bytes(), Bytes::from_static(b"Hellow world!"));
+    let body = response.text().await.expect("Response body missing.");
+    assert_eq!(body, "Hello world!");
 }
 /*
 #[tokio::test]
