@@ -1,5 +1,9 @@
 use crate::handlers;
-use actix_web::{dev::Server, web::{get, post, put}, App, HttpServer};
+use actix_web::{
+    dev::Server,
+    web::{get, post, put},
+    App, HttpServer,
+};
 use std::net::TcpListener;
 
 pub fn run_server(listener: TcpListener) -> Result<Server, std::io::Error> {
