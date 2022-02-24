@@ -15,17 +15,11 @@ impl Settings {
 pub fn get_settings(config_file: Option<String>) -> Settings {
     let mut builder = Config::builder();
     // Either we use a config file, or we use environment variables
-/*     builder = match config_file {
+    builder = match config_file {
         Some(filename) => builder.add_source(File::new(&filename, FileFormat::Yaml)),
         None => builder.add_source(Environment::default()),
-    }; */
-    builder = builder.add_source(Environment::default());
-    let config = match builder.build() {
-        Ok(config) => config,
-        Err(e) => {
-            panic!("Aborting. Config couldn't be built. {:?}", e)
-        }
     };
+    let config = builder.build().expect("Config couldn't be built.");
     match config.try_deserialize::<Settings>() {
         Ok(settings) => {
             println!("settings are: {:?}", settings);
@@ -40,6 +34,8 @@ mod tests {
     use super::*;
     use serial_test::serial;
     use std::env;
+    use std::io::{Write};
+    use tempfile::NamedTempFile;
 
     #[test]
     #[serial]
@@ -74,5 +70,21 @@ mod tests {
         assert_eq!("111.2.3.5:2222", actual);
         env::remove_var("HOST");
         env::remove_var("PORT");
+    }
+
+    #[test]
+    fn test_passing_a_file() {
+        let mut file = NamedTempFile::new().unwrap();
+        writeln!(file, "host: 127.0.0.1").unwrap();
+        writeln!(file, "port: 2222").unwrap();
+        let path = file.into_temp_path();
+        let path_str = format!("{}", path.display());
+        let actual = get_settings(Some(path_str));
+        let expected = Settings {
+            host: "127.0.0.1".to_string(),
+            port: "2222".to_string(),
+        };
+        assert_eq!(expected, actual);
+
     }
 }
