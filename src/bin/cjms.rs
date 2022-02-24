@@ -5,8 +5,7 @@ use std::net::TcpListener;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
-    let settings_file = args.get(1);
-    let settings = get_settings(settings_file);
+    let settings = get_settings(args.get(1));
     let addr = settings.server_address();
     println!("Server running at http://{}", addr);
     run_server(TcpListener::bind(addr)?)?.await?;
