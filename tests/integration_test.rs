@@ -104,7 +104,7 @@ async fn test_aic_endpoint_when_no_aic_sent() {
     // Expires date is 30 days from today
     // (because we created the expires a few nano seconds a go, this is a minute under 30 days)
     assert_eq!(
-        (resp.expires - OffsetDateTime::now_utc()).whole_days(),
+        (resp.expires - OffsetDateTime::now_utc()).whole_minutes(),
         30 * 24 * 60 - 1
     );
 

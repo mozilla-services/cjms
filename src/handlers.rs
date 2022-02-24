@@ -11,15 +11,14 @@ pub async fn heartbeat() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("OK"))
 }
 
-// TODO - Do I need all these traits?
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct AICResponse {
     pub aic_id: String,
     #[serde(with = "time::serde::rfc2822")]
     pub expires: OffsetDateTime,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct AICRequest {
     pub flow_id: String,
     pub cj_id: String,
