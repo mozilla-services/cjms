@@ -1,5 +1,6 @@
 use cjms::appconfig::run_server;
 use cjms::settings::get_settings;
+use std::net::TcpListener;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -8,6 +9,6 @@ async fn main() -> std::io::Result<()> {
     let settings = get_settings(settings_file);
     let addr = settings.server_address();
     println!("Server running at http://{}", addr);
-    run_server(addr)?.await?;
+    run_server(TcpListener::bind(addr)?)?.await?;
     Ok(())
 }

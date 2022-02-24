@@ -1,9 +1,11 @@
-use actix_web::dev::Server;
-use actix_web::{middleware, App, HttpServer};
-
-use actix_web::web::{get, resource, scope, ServiceConfig};
-
 use crate::handlers;
+use actix_web::{
+    dev::Server,
+    middleware,
+    web::{get, resource, scope, ServiceConfig},
+    App, HttpServer,
+};
+use std::net::TcpListener;
 
 fn config_app(cfg: &mut ServiceConfig) {
     cfg.service(
@@ -14,15 +16,13 @@ fn config_app(cfg: &mut ServiceConfig) {
     );
 }
 
-
-pub fn run_server(addr: String) -> Result<Server, std::io::Error> {
-    let server = HttpServer::new(move || {
+pub fn run_server(listener: TcpListener) -> Result<Server, std::io::Error> {
+    let server = HttpServer::new(|| {
         App::new()
             .configure(config_app)
             .wrap(middleware::Logger::default())
     })
-    .bind(addr)
-    .expect("Server could not be configured.")
+    .listen(listener)?
     .run();
     Ok(server)
 }

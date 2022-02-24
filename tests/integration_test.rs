@@ -1,7 +1,7 @@
 use cjms::appconfig::run_server;
 use cjms::settings::{get_settings, Settings};
-use std::net::TcpListener;
 use std::env;
+use std::net::TcpListener;
 
 pub struct TestApp {
     pub settings: Settings,
@@ -11,10 +11,10 @@ async fn spawn_app() -> TestApp {
     let host = "127.0.0.1";
     let listener = TcpListener::bind(format!("{}:0", host)).expect("Failed to bind random port");
     let port = listener.local_addr().unwrap().port();
-    env::set_var("HOST", format!("{}", host));
+    env::set_var("HOST", host.to_string());
     env::set_var("PORT", format!("{}", port));
     let settings = get_settings(None);
-    let server = run_server(settings.server_address()).expect("Failed to start server");
+    let server = run_server(listener).expect("Failed to start server");
     let _ = tokio::spawn(server);
     TestApp { settings }
 }
@@ -26,10 +26,7 @@ fn build_url(app: TestApp, path: &str) -> String {
 #[tokio::test]
 async fn test_index_get() {
     let app = spawn_app().await;
-    let client = reqwest::Client::new();
-    let response = client
-        .get(build_url(app, "/"))
-        .send()
+    let response = reqwest::get(build_url(app, "/"))
         .await
         .expect("Failed to execute request");
     assert!(response.status().is_success());
