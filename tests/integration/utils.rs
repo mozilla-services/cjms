@@ -25,9 +25,11 @@ async fn create_test_database(database_url: &str) -> String {
 }
 
 pub async fn spawn_app() -> TestApp {
-    let settings = get_settings();
+    let mut settings = get_settings();
     let listener =
         TcpListener::bind(format!("{}:0", settings.host)).expect("Failed to bind random port");
+    let port = listener.local_addr().unwrap().port();
+    settings.port = format!("{}", port);
     let test_database_url = create_test_database(&settings.database_url).await;
     let db_pool = connect_to_database_and_migrate(test_database_url).await;
     let server = run_server(listener, db_pool).expect("Failed to start server");

@@ -44,7 +44,16 @@ If configuring with environment variables, all variables, listed in settings.yam
 
 `cargo test`
 
-Will run the tests. Integration tests go under tests folder, unit tests go into associated files under src.
+Integration tests go under tests folder, unit tests go into associated files under src.
+
+Running the integration tests will cause lots of test databases with the prefix `<your_db_name>_test_<random id>` to be created in
+your local database. If you want to remove them, you can use a bash script along the lines of:
+
+```
+for db in `psql -U cjms -c '\l' | grep cjms_test_ | cut -d '|' -f 1`; do psql -U cjms -c "drop database \"$db\" "; done
+```
+
+In this case my db_name is `cjms` and my user is `cjms` and my password is in the environment variables `export PGPASSWORD=<>`.
 
 # Tips
 
