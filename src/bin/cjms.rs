@@ -6,7 +6,7 @@ use std::net::TcpListener;
 async fn main() -> std::io::Result<()> {
     let settings = get_settings();
     let addr = settings.server_address();
-    let db_pool = connect_to_database_and_migrate(settings.database_url).await;
+    let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
     println!("Server running at http://{}", addr);
     run_server(TcpListener::bind(addr)?, db_pool)?.await?;
     Ok(())

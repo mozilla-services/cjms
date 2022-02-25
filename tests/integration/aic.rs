@@ -3,14 +3,14 @@ use serde_json::json;
 use time::OffsetDateTime;
 use uuid::{Uuid, Version};
 
-use crate::utils::{build_url, spawn_app};
+use crate::utils::spawn_app;
 
 #[tokio::test]
 async fn test_aic_get_is_not_allowed() {
     let app = spawn_app().await;
     let test_cases = vec!["/aic", "/aic/123"];
     for path in test_cases {
-        let path = build_url(&app, path);
+        let path = app.build_url(path);
         let r = reqwest::get(&path)
             .await
             .expect("Failed to execute request");
@@ -19,7 +19,7 @@ async fn test_aic_get_is_not_allowed() {
 }
 
 #[tokio::test]
-async fn test_aic_endpoint_when_no_aic_sent() {
+async fn aic_endpoint_when_no_aic_sent() {
     /* Bedrock sends flowId and CJEvent value and not an AIC value
         - create a new AIC id
         - save creation time, expiration time, AIC id, flow ID, CJ event value
@@ -36,7 +36,7 @@ async fn test_aic_endpoint_when_no_aic_sent() {
     });
 
     /* CALL */
-    let path = build_url(&app, "/aic");
+    let path = app.build_url("/aic");
     let client = reqwest::Client::new();
     let r = client
         .post(&path)
@@ -59,17 +59,22 @@ async fn test_aic_endpoint_when_no_aic_sent() {
     );
 
     /* CHECK DATABASE */
-    assert!(false);
+    let saved = sqlx::query!("SELECT * FROM aic",)
+        .fetch_one(&app.connection_pool())
+        .await
+        .expect("Failed to fetch saved aic.");
+    assert_eq!(saved.id.to_string(), resp.aic_id);
+    assert_eq!(saved.cj_event_value, "le guin");
 }
 
 /*
 #[actix_rt::test]
-async fn test_something_happens_when_wrong_data_is_sent() {
+async fn something_happens_when_wrong_data_is_sent() {
     assert_eq!(true, false);
 }
 
 #[actix_rt::test]
-async fn test_aic_endpoint_when_no_aic_exists() {
+async fn aic_endpoint_when_no_aic_exists() {
     /* Bedrock sends flowId, CJEvent value, and AIC value but AIC doesn't exist in our DB
         - create a new AIC id
         - save creation time, expiration time, AIC id, flow ID, CJ event value
@@ -83,7 +88,7 @@ async fn test_aic_endpoint_when_no_aic_exists() {
 }
 
 #[actix_rt::test]
-async fn test_aic_endpoint_when_aic_exists() {
+async fn aic_endpoint_when_aic_exists() {
     /* Bedrock sends AIC id, flowId, new CJEvent value
         - keep existing AIC id
         - save new creation time, new expiration time, new flow ID, new CJ event value
@@ -97,7 +102,7 @@ async fn test_aic_endpoint_when_aic_exists() {
 }
 
 #[actix_rt::test]
-async fn test_aic_endpoint_when_aic_and_cjevent_exists() {
+async fn aic_endpoint_when_aic_and_cjevent_exists() {
     /* Bedrock sends AIC id, flowId, existing CJEvent value
         - keep existing AIC id, creation time, expiration time, cjevent value
         - save new flow ID

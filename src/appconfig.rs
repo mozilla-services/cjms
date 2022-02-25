@@ -7,8 +7,8 @@ use actix_web::{
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
 
-pub async fn connect_to_database_and_migrate(database_url: String) -> PgPool {
-    let connection_pool = PgPool::connect(&database_url)
+pub async fn connect_to_database_and_migrate(database_url: &str) -> PgPool {
+    let connection_pool = PgPool::connect(database_url)
         .await
         .expect("Failed to connect to Postgres.");
     migrate!("./migrations")
