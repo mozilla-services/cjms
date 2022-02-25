@@ -31,14 +31,14 @@ When adding migrations, create reversible migrations using `sqlx migrate add -r 
 
 # Run server
 
-If your development environment is configured with environment variables, run
+You can configure cjms and tests either with environment variables or a settings file.
+
+To use a settings file, copy `settings.yaml.example` to `settings.yaml` and update with your local settings values.
+Then run the server:
 
 `cargo run`
 
-Alternatively, copy `settings.yaml.example` to `settings.yaml` (or any filename you choose) and update with your local settings values.
-Then run the server, passing in the settings file.
-
-`cargo run settings.yaml`
+If configuring with environment variables, all variables, listed in settings.yaml.example must be available.
 
 # Run tests
 

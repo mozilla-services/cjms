@@ -1,7 +1,6 @@
 use cjms::appconfig::{connect_to_database_and_migrate, run_server};
 use cjms::settings::{get_settings, Settings};
 use sqlx::{Connection, Executor, PgConnection};
-use std::env;
 use std::net::TcpListener;
 use uuid::Uuid;
 
@@ -26,12 +25,9 @@ async fn create_test_database(database_url: &str) -> String {
 }
 
 pub async fn spawn_app() -> TestApp {
-    let host = "127.0.0.1";
-    let listener = TcpListener::bind(format!("{}:0", host)).expect("Failed to bind random port");
-    let port = listener.local_addr().unwrap().port();
-    env::set_var("HOST", host.to_string());
-    env::set_var("PORT", format!("{}", port));
-    let settings = get_settings(None);
+    let settings = get_settings();
+    let listener =
+        TcpListener::bind(format!("{}:0", settings.host)).expect("Failed to bind random port");
     let test_database_url = create_test_database(&settings.database_url).await;
     let db_pool = connect_to_database_and_migrate(test_database_url).await;
     let server = run_server(listener, db_pool).expect("Failed to start server");
