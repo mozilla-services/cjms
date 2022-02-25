@@ -52,7 +52,7 @@ mod tests {
     // sanitize input to post endpoint before put in db
     // expiration time based on environment variable
     #[test]
-    fn tests_go_here() {
+    fn go_here() {
         //assert!(1 == 0);
     }
 }

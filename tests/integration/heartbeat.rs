@@ -1,7 +1,7 @@
 use crate::utils::{build_url, spawn_app};
 
 #[tokio::test]
-async fn test_index_get() {
+async fn index_get() {
     let app = spawn_app().await;
     let path = build_url(&app, "/");
     let r = reqwest::get(path).await.expect("Failed to execute request");
@@ -11,7 +11,7 @@ async fn test_index_get() {
 }
 
 #[tokio::test]
-async fn test_heartbeats_get() {
+async fn heartbeats_get() {
     let app = spawn_app().await;
     let test_cases = vec!["/__heartbeat__", "/__lbheartbeat__"];
     for path in test_cases {

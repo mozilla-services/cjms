@@ -64,17 +64,19 @@ mod tests {
     #[test]
     #[serial]
     #[should_panic(expected = "Config didn't match serialization.")]
-    fn test_missing_settings() {
+    fn missing_settings_values_panics() {
+        env::set_var("HOST", "111.2.3.6");
         let mut mock = MockHasFile::new();
         mock.expect_file()
             .return_const("gobbledygook.yaml".to_string());
         let _ = _get_settings(mock);
+        env::remove_var("HOST");
     }
 
     #[test]
     #[serial]
     #[should_panic(expected = "Given settings file is not a file")]
-    fn test_passed_settings_file_is_a_directory() {
+    fn passing_settings_file_that_is_a_directory_panics() {
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const("src".to_string());
         let _ = _get_settings(mock);
@@ -83,7 +85,7 @@ mod tests {
     #[test]
     #[serial]
     #[should_panic(expected = "Config couldn't be built.")]
-    fn test_settings_file_is_not_yaml() {
+    fn settings_file_is_not_yaml() {
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const("README.md".to_string());
         let _ = _get_settings(mock);
@@ -91,7 +93,7 @@ mod tests {
 
     #[test]
     #[serial]
-    fn test_get_settings_with_envvars() {
+    fn get_settings_with_envvars() {
         env::set_var("HOST", "111.2.3.6");
         env::set_var("PORT", "2222");
         env::set_var(
@@ -113,7 +115,7 @@ mod tests {
     }
 
     #[test]
-    fn test_passing_a_file_and_server_address() {
+    fn passing_a_file_and_server_address() {
         let mut file = NamedTempFile::new().unwrap();
         writeln!(file, "host: 127.1.2.3").unwrap();
         writeln!(file, "port: 2222").unwrap();
