@@ -17,16 +17,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      HOST: 127.0.0.1
-      PORT: 8000
-      DATABASE_URL: postgres://postgres:password@localhost:5432/cjms_ci
     services:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: postgres
+          POSTGRES_USER: db_user
+          POSTGRES_PASSWORD: db_password
         ports:
           - 5432:5432
     steps:
@@ -41,6 +37,8 @@ jobs:
       if: github.head_ref == ''
     #- name: Setup coverage
     #  run: cargo install cargo-tarpaulin
+    - name: Copy settings file
+      run: cp settings.yaml.example settings.yaml
     - name: Run tests inc. coverage
       #run: cargo tarpaulin --ignore-tests --skip-clean --avoid-cfg-tarpaulin --coveralls ${{ secrets.COVERALLS_TOKEN }}
       run: cargo test
