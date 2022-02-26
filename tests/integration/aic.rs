@@ -1,4 +1,4 @@
-use cjms::handlers::AICResponse;
+use cjms::controllers::aic::AICResponse;
 use serde_json::json;
 use time::OffsetDateTime;
 use uuid::Version;

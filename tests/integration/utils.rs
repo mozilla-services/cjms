@@ -49,3 +49,8 @@ pub async fn spawn_app() -> TestApp {
     settings.port = format!("{}", port);
     TestApp { settings }
 }
+
+#[allow(dead_code)]
+fn get_settings_from_envvars() {
+    todo!("We can use something like this to grab secrets from CI if we need to.");
+}

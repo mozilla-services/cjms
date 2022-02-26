@@ -1,4 +1,3 @@
-use crate::handlers;
 use actix_web::{
     dev::Server,
     web::{get, post, put, resource, Data},
@@ -6,6 +5,8 @@ use actix_web::{
 };
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
+
+use crate::controllers;
 
 pub async fn connect_to_database_and_migrate(database_url: &str) -> PgPool {
     let connection_pool = PgPool::connect(database_url)
@@ -22,11 +23,13 @@ pub fn run_server(listener: TcpListener, db_pool: PgPool) -> Result<Server, std:
     let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
         App::new()
-            .service(resource("/").route(get().to(handlers::index)))
-            .service(resource("/__heartbeat__").route(get().to(handlers::heartbeat)))
-            .service(resource("/__lbheartbeat__").route(get().to(handlers::heartbeat)))
-            .service(resource("/aic").route(post().to(handlers::aic_create)))
-            .service(resource("/aic/{aic_id}").route(put().to(handlers::aic_update)))
+            .service(resource("/").route(get().to(controllers::heartbeat::index)))
+            .service(resource("/__heartbeat__").route(get().to(controllers::heartbeat::heartbeat)))
+            .service(
+                resource("/__lbheartbeat__").route(get().to(controllers::heartbeat::heartbeat)),
+            )
+            .service(resource("/aic").route(post().to(controllers::aic::create)))
+            .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
             .app_data(db_pool.clone())
     })
     .listen(listener)?
