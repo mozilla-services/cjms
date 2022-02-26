@@ -35,17 +35,24 @@ jobs:
     - name: Git checkout (reattach HEAD to Ref)
       run: git checkout "$(echo ${{ github.ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
       if: github.head_ref == ''
-    - name: Setup coverage
-      run: cargo install cargo-tarpaulin
-      if: "!contains(${{git log -1 HEAD --pretty=format:%s}}, 'ci-no-coverage')"
     - name: Copy settings file
       run: cp settings.yaml.example settings.yaml
+    - name: Skip coverage?
+      run: |
+        if [[ $(git log -1 HEAD --pretty=format:%s) == *"ci-no-coverage"* ]]; then
+           echo "::set-env name=skip_coverage::true"
+        else
+           echo "::set-env name=skip_coverage::false"
+        fi
+    - name: Setup coverage
+      run: cargo install cargo-tarpaulin
+      if: env.skip_coverage == 'false'
     - name: Run tests inc. coverage
       run: cargo tarpaulin --ignore-tests --skip-clean --avoid-cfg-tarpaulin --coveralls ${{ secrets.COVERALLS_TOKEN }}
-      if: "!contains(${{git log -1 HEAD --pretty=format:%s}}, 'ci-no-coverage')"
-    - name: Run tests
+      if: env.skip_coverage == 'false'
+    - name: Run tests no. coverage
       run: cargo test
-      if: "contains(${{git log -1 HEAD --pretty=format:%s}}, 'ci-no-coverage')"
+      if: env.skip_coverage == 'true'
   lint:
     runs-on: ubuntu-latest
     steps:
