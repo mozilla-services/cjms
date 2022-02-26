@@ -35,6 +35,8 @@ jobs:
     - name: Git checkout (reattach HEAD to Ref)
       run: git checkout "$(echo ${{ github.ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
       if: github.head_ref == ''
+    - name: what is commit message
+      run: echo github.event.head_commit.message
     - name: Setup coverage
       run: cargo install cargo-tarpaulin
       if: "!contains(github.event.head_commit.message, 'ci-no-coverage')"
