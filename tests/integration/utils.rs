@@ -32,6 +32,7 @@ async fn create_test_database(database_url: &str) -> String {
         .execute(format!(r#"CREATE DATABASE "{}";"#, &database_name).as_str())
         .await
         .expect("Failed to create test database.");
+    println!("Database is: {}", randomized_test_database_url);
     randomized_test_database_url
 }
 

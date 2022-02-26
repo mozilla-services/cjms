@@ -1,0 +1,47 @@
+{
+  "db": "PostgreSQL",
+  "e60fb32718cab312363891ee5429d615754f65e860f46aca9c0d3146d0dd92ab": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "INSERT INTO aic (id, cj_event_value, flow_id) VALUES ($1, $2, $3)"
+  },
+  "05e396c8b1153d9cdc3d45c35abd5906161d482aa131cf8666f3c0202e8dde52": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "cj_event_value",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "flow_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT * FROM aic"
+  }
+}

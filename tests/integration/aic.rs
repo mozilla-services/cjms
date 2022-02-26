@@ -1,7 +1,7 @@
 use cjms::handlers::AICResponse;
 use serde_json::json;
 use time::OffsetDateTime;
-use uuid::{Uuid, Version};
+use uuid::Version;
 
 use crate::utils::spawn_app;
 
@@ -49,7 +49,7 @@ async fn aic_endpoint_when_no_aic_sent() {
 
     /* CHECK RESPONSE */
     // Should be UUID v4 aka Version::Random
-    let returned_uuid = Uuid::parse_str(&resp.aic_id).unwrap();
+    let returned_uuid = resp.aic_id;
     assert_eq!(Some(Version::Random), returned_uuid.get_version());
     // Expires date is 30 days from today
     // (because we created the expires a few nano seconds a go, this is a minute under 30 days)
@@ -63,8 +63,8 @@ async fn aic_endpoint_when_no_aic_sent() {
         .fetch_one(&app.connection_pool())
         .await
         .expect("Failed to fetch saved aic.");
-    assert_eq!(saved.id.to_string(), resp.aic_id);
-    assert_eq!(saved.cj_event_value, "le guin");
+    assert_eq!(saved.id.to_string(), resp.aic_id.to_string());
+    //assert_eq!(saved.cj_event_value, "cj_event_value");
 }
 
 /*
