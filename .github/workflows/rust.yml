@@ -37,15 +37,15 @@ jobs:
       if: github.head_ref == ''
     - name: Setup coverage
       run: cargo install cargo-tarpaulin
-      if: "!contains($(git log -1 HEAD --pretty=format:%s), 'ci-no-coverage')"
+      if: "!contains((git log -1 HEAD --pretty=format:%s), 'ci-no-coverage')"
     - name: Copy settings file
       run: cp settings.yaml.example settings.yaml
     - name: Run tests inc. coverage
       run: cargo tarpaulin --ignore-tests --skip-clean --avoid-cfg-tarpaulin --coveralls ${{ secrets.COVERALLS_TOKEN }}
-      if: "!contains($(git log -1 HEAD --pretty=format:%s), 'ci-no-coverage')"
+      if: "!contains((git log -1 HEAD --pretty=format:%s), 'ci-no-coverage')"
     - name: Run tests
       run: cargo test
-      if: "contains($(git log -1 HEAD --pretty=format:%s), 'ci-no-coverage')"
+      if: "contains((git log -1 HEAD --pretty=format:%s), 'ci-no-coverage')"
   lint:
     runs-on: ubuntu-latest
     steps:

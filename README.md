@@ -73,6 +73,11 @@ fi
 
 exit 0
 ```
+
+## Faster CI test runs
+
+If you need the CI test run to go fast for some reason, add ci-no-coverage to the commit message, and it'll shave a few minutes off the build.
+
 # Deployment
 
 Service is deployed using docker containers.
