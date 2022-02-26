@@ -13,7 +13,7 @@ impl TestApp {
         format!("http://{}{}", self.settings.server_address(), path)
     }
 
-    pub fn connection_pool(&self) -> PgPool {
+    pub fn db_connection(&self) -> PgPool {
         PgPoolOptions::new()
             .connect_timeout(std::time::Duration::from_secs(2))
             .connect_lazy(&self.settings.database_url)
@@ -41,10 +41,11 @@ pub async fn spawn_app() -> TestApp {
     let listener =
         TcpListener::bind(format!("{}:0", settings.host)).expect("Failed to bind random port");
     let port = listener.local_addr().unwrap().port();
-    settings.port = format!("{}", port);
     let test_database_url = create_test_database(&settings.database_url).await;
     let db_pool = connect_to_database_and_migrate(&test_database_url).await;
     let server = run_server(listener, db_pool).expect("Failed to start server");
     let _ = tokio::spawn(server);
+    settings.database_url = test_database_url;
+    settings.port = format!("{}", port);
     TestApp { settings }
 }

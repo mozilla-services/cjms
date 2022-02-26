@@ -60,11 +60,11 @@ async fn aic_endpoint_when_no_aic_sent() {
 
     /* CHECK DATABASE */
     let saved = sqlx::query!("SELECT * FROM aic",)
-        .fetch_one(&app.connection_pool())
+        .fetch_one(&app.db_connection())
         .await
         .expect("Failed to fetch saved aic.");
     assert_eq!(saved.id.to_string(), resp.aic_id.to_string());
-    //assert_eq!(saved.cj_event_value, "cj_event_value");
+    assert_eq!(saved.cj_event_value, "cj_event_value");
 }
 
 /*
