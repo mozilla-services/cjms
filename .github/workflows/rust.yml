@@ -40,9 +40,9 @@ jobs:
     - name: Skip coverage?
       run: |
         if [[ $(git log -1 HEAD --pretty=format:%s) == *"ci-no-coverage"* ]]; then
-           echo "::set-env name=skip_coverage::true"
+           echo "skip_coverage=true" >> $GITHUB_ENV
         else
-           echo "::set-env name=skip_coverage::false"
+           echo "skip_coverage=false" >> $GITHUB_ENV
         fi
     - name: Setup coverage
       run: cargo install cargo-tarpaulin
