@@ -45,7 +45,7 @@ jobs:
         else
           echo "cache_loaded=false" >> $GITHUB_ENV
         fi
-    - name Git checkout (reattach HEAD to Head Ref)
+    - name: Git checkout (reattach HEAD to Head Ref)
       run: git checkout "$(echo ${{ github.head_ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
       if: github.head_ref != ''
     - name: Git checkout (reattach HEAD to Ref)
