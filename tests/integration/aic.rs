@@ -241,6 +241,7 @@ async fn aic_update_when_no_aic_exists() {
 
     /* CALL */
     let path = format!("/aic/{}", Uuid::new_v4());
+    let path = app.build_url(&path);
     let client = reqwest::Client::new();
     let r = client
         .put(&path)
