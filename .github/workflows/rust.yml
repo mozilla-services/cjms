@@ -38,7 +38,14 @@ jobs:
           ~/.cargo/git/db/
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - name: Git checkout (reattach HEAD to Head Ref)
+    - name: Mark whether cache loaded
+      run: |
+        if [[ -d "target" ]]; then
+          echo "cache_loaded=true" >> $GITHUB_ENV
+        else
+          echo "cache_loaded=false" >> $GITHUB_ENV
+        fi
+    - name Git checkout (reattach HEAD to Head Ref)
       run: git checkout "$(echo ${{ github.head_ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
       if: github.head_ref != ''
     - name: Git checkout (reattach HEAD to Ref)
@@ -55,7 +62,7 @@ jobs:
         fi
     - name: Setup coverage
       run: cargo install cargo-tarpaulin --force
-      if: env.skip_coverage == 'false'
+      if: env.skip_coverage == 'false' && env.cache_loaded == 'false'
     - name: Run tests inc. coverage
       run: cargo tarpaulin --ignore-tests --skip-clean --avoid-cfg-tarpaulin --coveralls ${{ secrets.COVERALLS_TOKEN }}
       if: env.skip_coverage == 'false'
