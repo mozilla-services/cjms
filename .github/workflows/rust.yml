@@ -73,6 +73,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Lint check
       run: cargo clippy --all-targets --all-features -- -D warnings
   format:
@@ -85,7 +94,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    - name: Mark whether cache loaded
+      run: |
+        if [[ -d "target" ]]; then
+          echo "cache_loaded=true" >> $GITHUB_ENV
+        else
+          echo "cache_loaded=false" >> $GITHUB_ENV
+        fi
     - name: Setup audit
       run: cargo install cargo-audit
+      if: env.cache_loaded == 'false'
     - name: Run audit
       run: cargo audit
