@@ -29,7 +29,6 @@ fn _get_settings(settings: impl HasFile) -> Settings {
     let mut builder = Config::builder();
     // Either we use a settings.yaml file, or environment variables
     let settings_file = settings.file();
-    println!("settings_file is: {}", settings_file);
     builder = match fs::metadata(settings_file) {
         Ok(metadata) => match metadata.is_file() {
             true => builder.add_source(File::new(settings_file, FileFormat::Yaml)),

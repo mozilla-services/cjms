@@ -19,7 +19,7 @@ async fn test_aic_get_is_not_allowed() {
 }
 
 #[tokio::test]
-async fn aic_endpoint_when_no_aic_sent() {
+async fn aic_create_success() {
     /* Bedrock sends flowId and CJEvent value and not an AIC value
         - create a new AIC id
         - save creation time, expiration time, AIC id, flow ID, CJ event value
@@ -45,32 +45,74 @@ async fn aic_endpoint_when_no_aic_sent() {
         .await
         .expect("Failed to POST");
     assert_eq!(r.status(), 201);
-    let resp: AICResponse = r.json().await.expect("Failed to get JSON response.");
+    let response: AICResponse = r.json().await.expect("Failed to get JSON response.");
 
-    /* CHECK RESPONSE */
+    /* TEST */
+
     // Should be UUID v4 aka Version::Random
-    let returned_uuid = resp.aic_id;
+    let returned_uuid = response.aic_id;
     assert_eq!(Some(Version::Random), returned_uuid.get_version());
-    // Expires date is 30 days from today
-    // (because we created the expires a few nano seconds a go, this is a minute under 30 days)
+
+    /*
+    Expires date is 30 days from today
+    (because we created the expires a few nano seconds a go, this is a minute under 30 days)
+    */
     assert_eq!(
-        (resp.expires - OffsetDateTime::now_utc()).whole_minutes(),
+        (response.expires - OffsetDateTime::now_utc()).whole_minutes(),
         30 * 24 * 60 - 1
     );
-    /* CHECK DATABASE */
+
     let model = AICModel {
         db_pool: &app.db_connection(),
     };
-    let saved = model.fetch_one().await;
-    assert_eq!(saved.id, resp.aic_id);
-    assert_eq!(saved.cj_event_value, "cj_event_value");
+    let saved = model.fetch_one().await.expect("Failed to get DB response.");
+    assert_eq!(saved.id, response.aic_id);
+    assert_eq!(
+        (saved.created - OffsetDateTime::now_utc()).whole_minutes(),
+        0
+    );
+    /*
+    When serde serializes, it uses the unix timestamp so response.expires is missing
+    the nanoseconds that are stored in the database.
+    */
+    assert_eq!(
+        saved.expires.unix_timestamp(),
+        response.expires.unix_timestamp()
+    );
+    assert_eq!(saved.cj_event_value, cj_event_value);
+    assert_eq!(saved.flow_id, flow_id);
+}
+
+#[tokio::test]
+async fn aic_create_with_bad_data() {
+    /* SETUP */
+    let app = spawn_app().await;
+    let test_cases = [
+        json!({
+            "flow_id": "123",
+            "cj_id": 42,
+        }),
+        json!({
+            "flow_id": 42,
+            "cj_id": "123",
+        }),
+    ];
+    for data in test_cases {
+        let path = app.build_url("/aic");
+        let client = reqwest::Client::new();
+        let r = client
+            .post(&path)
+            .json(&data)
+            .send()
+            .await
+            .expect("Failed to POST");
+        assert_eq!(r.status(), 400);
+        let response = r.text().await.expect("Failed to get response text.");
+        assert!(response.contains("Json deserialize error"));
+    }
 }
 
 /*
-#[actix_rt::test]
-async fn something_happens_when_wrong_data_is_sent() {
-    assert_eq!(true, false);
-}
 
 #[actix_rt::test]
 async fn aic_endpoint_when_no_aic_exists() {
