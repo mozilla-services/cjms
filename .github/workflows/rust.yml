@@ -54,7 +54,7 @@ jobs:
            echo "skip_coverage=false" >> $GITHUB_ENV
         fi
     - name: Setup coverage
-      run: cargo install cargo-tarpaulin
+      run: cargo install cargo-tarpaulin --force
       if: env.skip_coverage == 'false'
     - name: Run tests inc. coverage
       run: cargo tarpaulin --ignore-tests --skip-clean --avoid-cfg-tarpaulin --coveralls ${{ secrets.COVERALLS_TOKEN }}
