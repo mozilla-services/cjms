@@ -1,7 +1,7 @@
 use cjms::{controllers::aic::AICResponse, models::aic::AICModel};
 use serde_json::json;
 use time::OffsetDateTime;
-use uuid::Version;
+use uuid::{Uuid, Version};
 
 use crate::utils::{random_ascii_string, spawn_app};
 
@@ -222,22 +222,55 @@ async fn aic_update_when_aic_and_cjevent_exists() {
     assert_eq!(saved.flow_id, flow_id_new);
 }
 
-/*
-
-#[actix_rt::test]
-async fn aic_endpoint_when_no_aic_exists() {
+#[tokio::test]
+async fn aic_update_when_no_aic_exists() {
     /* Caller sends flowId, CJEvent value, and AIC value but AIC doesn't exist in our DB
         - create a new AIC id
         - save creation time, expiration time, AIC id, flow ID, CJ event value
         - return expiration time, and AIC id
     */
-    let mut app = setup_app!();
-    let req = test::TestRequest::put().uri("/aic/123").to_request();
-    let resp = test::call_service(&mut app, req).await;
-    assert_eq!(resp.status(), 201);
-    assert_eq!(true, false);
+    /* SETUP */
+
+    let app = spawn_app().await;
+    let cj_event_value = random_ascii_string();
+    let flow_id = random_ascii_string();
+    let data = json!({
+        "flow_id": flow_id,
+        "cj_id": cj_event_value,
+    });
+
+    /* CALL */
+    let path = format!("/aic/{}", Uuid::new_v4());
+    let client = reqwest::Client::new();
+    let r = client
+        .put(&path)
+        .json(&data)
+        .send()
+        .await
+        .expect("Failed to PUT");
+    assert_eq!(r.status(), 201);
+    let response: AICResponse = r.json().await.expect("Failed to get JSON response.");
+
+    /* TEST */
+    let returned_uuid = response.aic_id;
+    assert_eq!(Some(Version::Random), returned_uuid.get_version());
+    assert_eq!(
+        (response.expires - OffsetDateTime::now_utc()).whole_minutes(),
+        30 * 24 * 60 - 1
+    );
+    let model = AICModel {
+        db_pool: &app.db_connection(),
+    };
+    let saved = model.fetch_one().await.expect("Failed to get DB response.");
+    assert_eq!(saved.id, response.aic_id);
+    assert_eq!(
+        (saved.created - OffsetDateTime::now_utc()).whole_minutes(),
+        0
+    );
+    assert_eq!(
+        saved.expires.unix_timestamp(),
+        response.expires.unix_timestamp()
+    );
+    assert_eq!(saved.cj_event_value, cj_event_value);
+    assert_eq!(saved.flow_id, flow_id);
 }
-
-
-
-*/

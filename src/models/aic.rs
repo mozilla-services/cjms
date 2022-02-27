@@ -2,6 +2,7 @@ use sqlx::{query_as, Error, PgPool};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
+#[derive(Debug)]
 pub struct AIC {
     pub id: Uuid,
     pub cj_event_value: String,
@@ -40,8 +41,16 @@ impl AICModel<'_> {
         cj_event_value: &str,
         flow_id: &str,
     ) -> Result<AIC, Error> {
-        let created = OffsetDateTime::now_utc();
-        let expires = created + Duration::days(30);
+        let existing = self
+            .fetch_one_by_id(id)
+            .await
+            .expect("Requested AIC does not exist.");
+        let mut created = existing.created;
+        let mut expires = existing.expires;
+        if existing.cj_event_value != cj_event_value {
+            created = OffsetDateTime::now_utc();
+            expires = created + Duration::days(30);
+        }
         query_as!(
             AIC,
             r#"UPDATE aic
@@ -64,6 +73,12 @@ impl AICModel<'_> {
 
     pub async fn fetch_one(&self) -> Result<AIC, Error> {
         query_as!(AIC, "SELECT * FROM aic")
+            .fetch_one(self.db_pool)
+            .await
+    }
+
+    pub async fn fetch_one_by_id(&self, id: Uuid) -> Result<AIC, Error> {
+        query_as!(AIC, "SELECT * FROM aic WHERE id = $1", id)
             .fetch_one(self.db_pool)
             .await
     }
