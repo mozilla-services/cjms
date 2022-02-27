@@ -74,11 +74,6 @@ fi
 exit 0
 ```
 
-## Faster CI test runs
-
-If you need the CI test run to go fast for some reason, add `ci-no-coverage` to the commit message,
-and it'll about 5 minutes off the build.
-
 ## Working with sqlx
 
 ### Writing new queries

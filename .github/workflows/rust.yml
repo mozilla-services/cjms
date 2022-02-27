@@ -53,22 +53,11 @@ jobs:
       if: github.head_ref == ''
     - name: Copy settings file
       run: cp settings.yaml.example settings.yaml
-    - name: Skip coverage?
-      run: |
-        if [[ $(git log -1 HEAD --pretty=format:%s) == *"ci-no-coverage"* ]]; then
-           echo "skip_coverage=true" >> $GITHUB_ENV
-        else
-           echo "skip_coverage=false" >> $GITHUB_ENV
-        fi
     - name: Setup coverage
       run: cargo install cargo-tarpaulin --force
-      if: env.skip_coverage == 'false' && env.cache_loaded == 'false'
+      if: env.cache_loaded == 'false'
     - name: Run tests inc. coverage
       run: cargo tarpaulin --ignore-tests --skip-clean --avoid-cfg-tarpaulin --coveralls ${{ secrets.COVERALLS_TOKEN }}
-      if: env.skip_coverage == 'false'
-    - name: Run tests no. coverage
-      run: cargo test
-      if: env.skip_coverage == 'true'
   lint:
     runs-on: ubuntu-latest
     steps:
