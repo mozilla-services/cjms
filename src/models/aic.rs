@@ -1,14 +1,14 @@
-use sqlx::{query_as, FromRow, PgPool};
+use sqlx::{query_as, PgPool};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
-#[derive(Debug, FromRow)]
-pub struct AIC<'a> {
+#[derive(Debug)]
+pub struct AIC {
     pub id: Uuid,
-    pub cj_event_value: &'a str,
-    pub flow_id: &'a str,
-    pub created: OffsetDateTime,
-    pub expires: OffsetDateTime,
+    pub cj_event_value: String,
+    pub flow_id: String,
+    //pub created: OffsetDateTimeType,
+    //pub expires: OffsetDateTimeType,
 }
 
 pub struct AICModel<'a> {
@@ -16,28 +16,30 @@ pub struct AICModel<'a> {
 }
 
 impl AICModel<'_> {
-    pub async fn create(&self) -> AIC<'_> {
+    pub async fn create(&self) -> AIC {
         let id = Uuid::new_v4();
-        let created = OffsetDateTime::now_utc();
-        let expires = created.checked_add(Duration::days(30)).unwrap();
-        let aic = AIC {
-            id,
-            cj_event_value: "cj_event_value",
-            flow_id: "flow_id",
-            created,
-            expires,
-        };
-        query_as!(
+        //let created = OffsetDateTime::now_utc();
+        //let expires = created.checked_add(Duration::days(30)).unwrap();
+        let created = query_as!(
             AIC,
-            "INSERT INTO aic (id, cj_event_value, flow_id) VALUES ($1, $2, $3)",
-            sqlx::types::Uuid::parse_str(&aic.id.to_string()).unwrap(),
-            aic.cj_event_value,
-            aic.flow_id
+            "INSERT INTO aic (id, cj_event_value, flow_id)
+			VALUES ($1, $2, $3)
+			RETURNING *",
+            id,
+            "cj_event_value",
+            "flow_id"
         )
-        .execute(self.db_pool)
+        .fetch_one(self.db_pool)
         .await
-        .expect("errorrring ");
-        aic
+        .expect("errorrring "); // TODO - Need to properly handle errors
+        created
+    }
+
+    pub async fn fetch_one(&self) -> AIC {
+        query_as!(AIC, "SELECT * FROM aic")
+            .fetch_one(self.db_pool)
+            .await
+            .expect("errorrrriing ") // TODO - Need to handle properly
     }
 }
 

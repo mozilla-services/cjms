@@ -26,7 +26,7 @@ pub async fn create(_data: web::Json<AICRequest>, pool: web::Data<PgPool>) -> Ht
     let created = aic.create().await;
     let response = AICResponse {
         aic_id: created.id,
-        expires: created.expires,
+        expires: OffsetDateTime::now_utc(),
     };
     HttpResponse::Created().json(response)
 }
