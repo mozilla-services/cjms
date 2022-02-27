@@ -37,7 +37,7 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
     - name: Mark whether cache loaded
       run: |
         if [[ -d "target" ]]; then
@@ -70,7 +70,7 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-lint
+        key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
     - name: Lint check
       run: cargo clippy --all-targets --all-features -- -D warnings
   format:
@@ -91,7 +91,7 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-audit
+        key: ${{ runner.os }}-cargo-audit-${{ hashFiles('**/Cargo.lock') }}
     - name: Mark whether cache loaded
       run: |
         if [[ -d "target" ]]; then
