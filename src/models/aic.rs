@@ -36,10 +36,11 @@ impl AICModel<'_> {
 
     pub async fn update(
         &self,
-        id: Uuid,
+        _id: Uuid,
         cj_event_value: &str,
         flow_id: &str,
     ) -> Result<AIC, Error> {
+        let id = Uuid::new_v4();
         let created = OffsetDateTime::now_utc();
         let expires = created + Duration::days(30);
         query_as!(
