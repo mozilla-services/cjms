@@ -16,6 +16,7 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 uuid = { version = "0.8", features = ["v4", "serde"] }
 
 [dev-dependencies]
+fake = "2.4.3"
 mockall = "0.11.0"
 reqwest = { version = "0.11.9", features = ["json"] }
 serial_test = "0.6.0"

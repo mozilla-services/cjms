@@ -1,5 +1,6 @@
 use cjms::appconfig::{connect_to_database_and_migrate, run_server};
 use cjms::settings::{get_settings, Settings};
+use fake::{Fake, StringFaker};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
@@ -50,7 +51,9 @@ pub async fn spawn_app() -> TestApp {
     TestApp { settings }
 }
 
-#[allow(dead_code)]
-fn get_settings_from_envvars() {
-    todo!("We can use something like this to grab secrets from CI if we need to.");
+pub fn random_ascii_string() -> String {
+    const ASCII: &str =
+        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@";
+    let f = StringFaker::with(Vec::from(ASCII), 8..90);
+    f.fake()
 }
