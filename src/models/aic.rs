@@ -34,6 +34,34 @@ impl AICModel<'_> {
         .await
     }
 
+    pub async fn update(
+        &self,
+        id: Uuid,
+        cj_event_value: &str,
+        flow_id: &str,
+    ) -> Result<AIC, Error> {
+        let created = OffsetDateTime::now_utc();
+        let expires = created + Duration::days(30);
+        query_as!(
+            AIC,
+            r#"UPDATE aic
+            SET
+                cj_event_value = $1,
+                flow_id = $2,
+                created = $3,
+                expires = $4
+            WHERE id = $5
+			RETURNING *"#,
+            cj_event_value,
+            flow_id,
+            created,
+            expires,
+            id,
+        )
+        .fetch_one(self.db_pool)
+        .await
+    }
+
     pub async fn fetch_one(&self) -> Result<AIC, Error> {
         query_as!(AIC, "SELECT * FROM aic")
             .fetch_one(self.db_pool)

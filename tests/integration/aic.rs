@@ -20,7 +20,7 @@ async fn test_aic_get_is_not_allowed() {
 
 #[tokio::test]
 async fn aic_create_success() {
-    /* Bedrock sends flowId and CJEvent value and not an AIC value
+    /* Caller sends flowId and CJEvent value and not an AIC value
         - create a new AIC id
         - save creation time, expiration time, AIC id, flow ID, CJ event value
         - return expiration time, and AIC id
@@ -85,7 +85,6 @@ async fn aic_create_success() {
 
 #[tokio::test]
 async fn aic_create_with_bad_data() {
-    /* SETUP */
     let app = spawn_app().await;
     let test_cases = [
         json!({
@@ -112,11 +111,64 @@ async fn aic_create_with_bad_data() {
     }
 }
 
+#[tokio::test]
+async fn aic_update_with_existing_aic_and_new_flow_and_cjid() {
+    /* Caller sends AIC id, flowId, new CJEvent value
+        - keep existing AIC id
+        - save new creation time, new expiration time, new flow ID, new CJ event value
+        - return new expiration time, existing AIC id
+    */
+
+    /* SETUP */
+    let app = spawn_app().await;
+    let cj_event_value_orig = "123ABCDEF";
+    let flow_id_orig = "asd;lfjasd;lfja;sd";
+    let model = AICModel {
+        db_pool: &app.db_connection(),
+    };
+    let aic_orig = model
+        .create(cj_event_value_orig, flow_id_orig)
+        .await
+        .expect("Failed to create test object.");
+    let path = format!("/aic/{}", aic_orig.id);
+
+    let cj_event_value_new = format!("{}{}", cj_event_value_orig, "extra");
+    let flow_id_new = format!("{}{}", flow_id_orig, "extra");
+    let update_data = json!({
+        "cj_id": cj_event_value_new,
+        "flow_id": flow_id_new,
+    });
+
+    /* CALL */
+    let path = app.build_url(&path);
+    let client = reqwest::Client::new();
+    let r = client
+        .put(&path)
+        .json(&update_data)
+        .send()
+        .await
+        .expect("Failed to PUT");
+    assert_eq!(r.status(), 201);
+    let response: AICResponse = r.json().await.expect("Failed to get JSON response.");
+
+    /* TEST */
+    assert_eq!(aic_orig.id, response.aic_id);
+    assert!(response.expires > aic_orig.expires);
+    let saved = model.fetch_one().await.expect("Failed to get DB response.");
+    assert_eq!(saved.id, response.aic_id);
+    assert_eq!(
+        saved.expires.unix_timestamp(),
+        response.expires.unix_timestamp()
+    );
+    assert_eq!(saved.cj_event_value, cj_event_value_new);
+    assert_eq!(saved.flow_id, flow_id_new);
+}
+
 /*
 
 #[actix_rt::test]
 async fn aic_endpoint_when_no_aic_exists() {
-    /* Bedrock sends flowId, CJEvent value, and AIC value but AIC doesn't exist in our DB
+    /* Caller sends flowId, CJEvent value, and AIC value but AIC doesn't exist in our DB
         - create a new AIC id
         - save creation time, expiration time, AIC id, flow ID, CJ event value
         - return expiration time, and AIC id
@@ -128,23 +180,10 @@ async fn aic_endpoint_when_no_aic_exists() {
     assert_eq!(true, false);
 }
 
-#[actix_rt::test]
-async fn aic_endpoint_when_aic_exists() {
-    /* Bedrock sends AIC id, flowId, new CJEvent value
-        - keep existing AIC id
-        - save new creation time, new expiration time, new flow ID, new CJ event value
-        - return new expiration time, existing AIC id
-    */
-    let mut app = setup_app!();
-    let req = test::TestRequest::put().uri("/aic/123").to_request();
-    let resp = test::call_service(&mut app, req).await;
-    assert_eq!(resp.status(), 200);
-    assert_eq!(true, false);
-}
 
 #[actix_rt::test]
 async fn aic_endpoint_when_aic_and_cjevent_exists() {
-    /* Bedrock sends AIC id, flowId, existing CJEvent value
+    /* Caller sends AIC id, flowId, existing CJEvent value
         - keep existing AIC id, creation time, expiration time, cjevent value
         - save new flow ID
         - return existing expiration time, existing AIC id

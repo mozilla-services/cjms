@@ -1,4 +1,4 @@
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use time::OffsetDateTime;
@@ -35,6 +35,25 @@ pub async fn create(data: web::Json<AICRequest>, pool: web::Data<PgPool>) -> Htt
     }
 }
 
-pub async fn update(_req: HttpRequest, _data: web::Json<AICRequest>) -> HttpResponse {
-    todo!();
+pub async fn update(
+    path: web::Path<Uuid>,
+    data: web::Json<AICRequest>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let aic = AICModel {
+        db_pool: pool.as_ref(),
+    };
+    match aic
+        .update(path.into_inner(), &data.cj_id, &data.flow_id)
+        .await
+    {
+        Ok(updated) => {
+            let response = AICResponse {
+                aic_id: updated.id,
+                expires: updated.expires,
+            };
+            HttpResponse::Created().json(response)
+        }
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
 }
