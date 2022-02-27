@@ -130,6 +130,7 @@ async fn aic_update_with_existing_aic_and_new_flow_and_cjid() {
         .create(cj_event_value_orig, flow_id_orig)
         .await
         .expect("Failed to create test object.");
+    std::thread::sleep(std::time::Duration::from_secs(1));
     let path = format!("/aic/{}", aic_orig.id);
 
     let cj_event_value_new = format!("{}{}", cj_event_value_orig, "extra");
