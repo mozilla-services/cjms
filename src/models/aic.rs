@@ -18,7 +18,6 @@ impl AICModel<'_> {
     pub async fn create(&self) -> AIC {
         let id = Uuid::new_v4();
         let created = OffsetDateTime::now_utc();
-        //let mut expires: time::OffsetDateTime = created.into();
         let expires = created + Duration::days(30);
         let created = query_as!(
             AIC,

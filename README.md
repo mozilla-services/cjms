@@ -79,6 +79,42 @@ exit 0
 If you need the CI test run to go fast for some reason, add `ci-no-coverage` to the commit message,
 and it'll about 5 minutes off the build.
 
+## Working with sqlx
+
+### Writing new queries
+
+It took me a long time to figure out the mechanics of working with sqlx. Here's the key points:
+* We want to use the macro functions like `query_as!` so that we get compile time checks as we're developing.
+* They require DATABASE_URL to be in the environment. Either exposed in the environment or in a .env file.
+* This works by sqlx connecting to a live database to check the queries at compile time. So the database that's listed
+in your DATABASE_URL must be available and migrated to the latest migrations as needed. This is not the same as the dynamically
+generated test databases.
+* However, in CI where the final compile will happen this won't be the case, so we use sqlx's offline mode. This works by running
+a command that generates the necessary data into `sqlx-data.json`. This can then be used at compile time instead of the database
+being available.
+* The command `cargo sqlx prepare -- --bin cjms` will auto generate `sqlx-data.json` for you (make sure DATABASE_URL is available).
+* But, it only runs against one target so sql queries in the integration tests do not work. So, I've established a pattern where
+  all sql queries as functions in the relevant model and the integration tests call functions on the model. While this is somewhat
+  polluting production code with test code it was the best tradeoff I could find.
+
+The general steps that I took:
+* Add a .env file with my database url
+* Run `sqlx migrate run` and sometimes `sqlx migrate revert` (and then run) to get my database correctly migrated
+* Once everythings working as expected, run `cargo sqlx prepare -- --bin cjms` to update `sqlx-data.json`. If you don't CI
+  will fail at compile time so this should be fairly easy to spot.
+
+Links to sqlx cli information including offline mode https://github.com/launchbadge/sqlx/blob/v0.5.11/sqlx-cli/README.md.
+
+### Version compatibility
+
+One thing that took me a while to figure out was I was using sqlx features like "time" or "uuid" but I was
+getting error messages like `expected struct sqlx::types::time::OffsetDateTime, found struct time::OffsetDateTime`.
+This was confusing because I was using the modules as documented and the whole point is that these types become
+magically compatible.
+
+In both cases the reason was because the versions of `time` and `uuid` that I had installed were ahead of what sqlx
+currently supports. This meant that the, I think, trait implementations for them to interoperate weren't present.
+
 # Deployment
 
 Service is deployed using docker containers.
