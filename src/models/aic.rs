@@ -2,13 +2,12 @@ use sqlx::{query_as, PgPool};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
-#[derive(Debug)]
 pub struct AIC {
     pub id: Uuid,
     pub cj_event_value: String,
     pub flow_id: String,
-    //pub created: OffsetDateTimeType,
-    //pub expires: OffsetDateTimeType,
+    pub created: OffsetDateTime,
+    pub expires: OffsetDateTime,
 }
 
 pub struct AICModel<'a> {
@@ -18,16 +17,19 @@ pub struct AICModel<'a> {
 impl AICModel<'_> {
     pub async fn create(&self) -> AIC {
         let id = Uuid::new_v4();
-        //let created = OffsetDateTime::now_utc();
-        //let expires = created.checked_add(Duration::days(30)).unwrap();
+        let created = OffsetDateTime::now_utc();
+        //let mut expires: time::OffsetDateTime = created.into();
+        let expires = created + Duration::days(30);
         let created = query_as!(
             AIC,
-            "INSERT INTO aic (id, cj_event_value, flow_id)
-			VALUES ($1, $2, $3)
-			RETURNING *",
+            r#"INSERT INTO aic (id, cj_event_value, flow_id, created, expires)
+			VALUES ($1, $2, $3, $4, $5)
+			RETURNING *"#,
             id,
             "cj_event_value",
-            "flow_id"
+            "flow_id",
+            created,
+            expires
         )
         .fetch_one(self.db_pool)
         .await

@@ -9,7 +9,7 @@ use crate::models::aic::AICModel;
 #[derive(Serialize, Deserialize)]
 pub struct AICResponse {
     pub aic_id: Uuid,
-    #[serde(with = "time::serde::rfc2822")]
+    #[serde(with = "time::serde::timestamp")]
     pub expires: OffsetDateTime,
 }
 
@@ -26,7 +26,7 @@ pub async fn create(_data: web::Json<AICRequest>, pool: web::Data<PgPool>) -> Ht
     let created = aic.create().await;
     let response = AICResponse {
         aic_id: created.id,
-        expires: OffsetDateTime::now_utc(),
+        expires: created.expires,
     };
     HttpResponse::Created().json(response)
 }

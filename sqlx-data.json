@@ -17,9 +17,21 @@
           "name": "flow_id",
           "ordinal": 2,
           "type_info": "Text"
+        },
+        {
+          "name": "created",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "expires",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
         }
       ],
       "nullable": [
+        false,
+        false,
         false,
         false,
         false
@@ -30,7 +42,7 @@
     },
     "query": "SELECT * FROM aic"
   },
-  "f9b333a0ca4c50e13d7e849d2657db3cd9980c7d83262a407359ba4fab1042c0": {
+  "c705eede93655cf085d9d78d82287fb39cbffc54ed579db822a5d45c6a473e20": {
     "describe": {
       "columns": [
         {
@@ -47,9 +59,21 @@
           "name": "flow_id",
           "ordinal": 2,
           "type_info": "Text"
+        },
+        {
+          "name": "created",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "expires",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
         }
       ],
       "nullable": [
+        false,
+        false,
         false,
         false,
         false
@@ -58,10 +82,12 @@
         "Left": [
           "Uuid",
           "Text",
-          "Text"
+          "Text",
+          "Timestamptz",
+          "Timestamptz"
         ]
       }
     },
-    "query": "INSERT INTO aic (id, cj_event_value, flow_id)\n\t\t\tVALUES ($1, $2, $3)\n\t\t\tRETURNING *"
+    "query": "INSERT INTO aic (id, cj_event_value, flow_id, created, expires)\n\t\t\tVALUES ($1, $2, $3, $4, $5)\n\t\t\tRETURNING *"
   }
 }

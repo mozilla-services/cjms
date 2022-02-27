@@ -360,7 +360,7 @@ dependencies = [
  "serial_test",
  "sqlx",
  "tempfile",
- "time 0.3.7",
+ "time 0.2.27",
  "tokio",
  "uuid",
 ]
@@ -2016,6 +2016,7 @@ checksum = "4752a97f8eebd6854ff91f1c1824cd6160626ac4bd44287f7f4ea2035a02a242"
 dependencies = [
  "const_fn",
  "libc",
+ "serde",
  "standback",
  "stdweb",
  "time-macros 0.1.1",
@@ -2032,7 +2033,6 @@ dependencies = [
  "itoa",
  "libc",
  "num_threads",
- "serde",
  "time-macros 0.2.3",
 ]
 
