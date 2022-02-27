@@ -33,10 +33,10 @@ async fn test_aic_model_fetch_one_by_uuid_if_not_availabe() {
     let result = model.fetch_one_by_id(bad_id).await;
     match result {
         Err(sqlx::Error::RowNotFound) => {
-            assert!(true)
+            println!("Success");
         }
         _ => {
-            assert!(false, "This should not have happened.")
+            panic!("This should not have happened.");
         }
     };
 }
