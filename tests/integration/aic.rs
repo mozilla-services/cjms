@@ -41,30 +41,36 @@ async fn aic_create_with_bad_data() {
     }
 }
 
-/* Caller sends flowId and CJEvent value and not an AIC value
-    - create a new AIC id
-    - save creation time, expiration time, AIC id, flow ID, CJ event value
-    - return expiration time, and AIC id
-*/
 #[tokio::test]
 async fn aic_create_success() {
-    /* SETUP */
-    let (app, cj_event_value, flow_id, data) = setup_aic_test().await;
+    /* Caller sends flowId and CJEvent value and not an AIC value
+        - create a new AIC id
+        - save creation time, expiration time, AIC id, flow ID, CJ event value
+        - return expiration time, and AIC id
+    */
+    let setup = setup_aic_test().await;
     let model = AICModel {
-        db_pool: &app.db_connection(),
+        db_pool: &setup.app.db_connection(),
     };
-    /* CALL */
-    let r = send_post_request(&app, "/aic", data).await;
+    let r = send_post_request(&setup.app, "/aic", setup.data).await;
     assert_eq!(r.status(), 201);
     let response: AICResponse = r.json().await.expect("Failed to get JSON response.");
-    /* TEST */
-    assert_created_response(&response);
+    // Should be UUID v4 aka Version::Random
+    assert_eq!(Some(Version::Random), response.aic_id.get_version());
+    /*
+    Expires date is 30 days from today
+    (because we created the expires a few nano seconds ago, this is a minute under 30 days)
+    */
+    assert_eq!(
+        (response.expires - OffsetDateTime::now_utc()).whole_minutes(),
+        30 * 24 * 60 - 1
+    );
     let saved = assert_saved(
         model,
         response.aic_id,
         response.expires.unix_timestamp(),
-        cj_event_value,
-        flow_id,
+        setup.cj_event_value,
+        setup.flow_id,
     )
     .await;
     assert_eq!(
@@ -73,18 +79,19 @@ async fn aic_create_success() {
     );
 }
 
-/* Caller sends AIC id, flowId, new CJEvent value
-    - keep existing AIC id
-    - save new creation time, new expiration time, new flow ID, new CJ event value
-    - return new expiration time, existing AIC id
-*/
 #[tokio::test]
 async fn aic_update_with_existing_aic_and_new_flow_and_cjid() {
-    /* SETUP */
-    let (app, cj_event_value_orig, flow_id_orig, _data) = setup_aic_test().await;
+    /* Caller sends AIC id, flowId, new CJEvent value
+        - keep existing AIC id
+        - save new creation time, new expiration time, new flow ID, new CJ event value
+        - return new expiration time, existing AIC id
+    */
+    let setup = setup_aic_test().await;
     let model = AICModel {
-        db_pool: &app.db_connection(),
+        db_pool: &setup.app.db_connection(),
     };
+    let cj_event_value_orig = setup.cj_event_value;
+    let flow_id_orig = setup.flow_id;
     let aic_orig = model
         .create(&cj_event_value_orig, &flow_id_orig)
         .await
@@ -92,7 +99,6 @@ async fn aic_update_with_existing_aic_and_new_flow_and_cjid() {
     // Make sure time has passed so timestamps are different
     std::thread::sleep(std::time::Duration::from_secs(1));
     let path = format!("/aic/{}", aic_orig.id);
-
     let cj_event_value_new = format!("{}{}", cj_event_value_orig, "extra");
     let flow_id_new = format!("{}{}", flow_id_orig, "extra");
     let update_data = json!({
@@ -100,12 +106,9 @@ async fn aic_update_with_existing_aic_and_new_flow_and_cjid() {
         "flow_id": flow_id_new,
     });
 
-    /* CALL */
-    let r = send_put_request(&app, &path, update_data).await;
+    let r = send_put_request(&setup.app, &path, update_data).await;
     assert_eq!(r.status(), 201);
     let response: AICResponse = r.json().await.expect("Failed to get JSON response.");
-
-    /* TEST */
     assert_eq!(aic_orig.id, response.aic_id);
     // New expires time should be later than the original
     assert!(response.expires > aic_orig.expires);
@@ -119,37 +122,34 @@ async fn aic_update_with_existing_aic_and_new_flow_and_cjid() {
     .await;
 }
 
-/* Caller sends AIC id, flowId, existing CJEvent value
-    - keep existing AIC id, creation time, expiration time, cjevent value
-    - save new flow ID
-    - return existing expiration time, existing AIC id
-*/
 #[tokio::test]
 async fn aic_update_when_aic_and_cjevent_exists() {
-    /* SETUP */
-    let (app, cj_event_value_orig, flow_id_orig, _data) = setup_aic_test().await;
+    /* Caller sends AIC id, flowId, existing CJEvent value
+        - keep existing AIC id, creation time, expiration time, cjevent value
+        - save new flow ID
+        - return existing expiration time, existing AIC id
+    */
+    let setup = setup_aic_test().await;
     let model = AICModel {
-        db_pool: &app.db_connection(),
+        db_pool: &setup.app.db_connection(),
     };
+    let cj_event_value_orig = setup.cj_event_value;
+    let flow_id_orig = setup.flow_id;
     let aic_orig = model
         .create(&cj_event_value_orig, &flow_id_orig)
         .await
         .expect("Failed to create test object.");
     std::thread::sleep(std::time::Duration::from_secs(1));
     let path = format!("/aic/{}", aic_orig.id);
-
     let flow_id_new = format!("{}{}", flow_id_orig, "extra");
     let update_data = json!({
         "cj_id": cj_event_value_orig,
         "flow_id": flow_id_new,
     });
 
-    /* CALL */
-    let r = send_put_request(&app, &path, update_data).await;
+    let r = send_put_request(&setup.app, &path, update_data).await;
     assert_eq!(r.status(), 201);
     let response: AICResponse = r.json().await.expect("Failed to get JSON response.");
-
-    /* TEST */
     assert_eq!(aic_orig.id, response.aic_id);
     assert_eq!(
         response.expires.unix_timestamp(),
@@ -165,22 +165,27 @@ async fn aic_update_when_aic_and_cjevent_exists() {
     .await;
 }
 
-/* Caller sends flowId, CJEvent value, and AIC value but AIC doesn't exist in our DB
-    - return 404
-*/
 #[tokio::test]
 async fn aic_update_when_no_aic_exists() {
-    /* SETUP */
-    let (app, _cj_event_value, _flow_id, data) = setup_aic_test().await;
-    /* CALL */
+    /* Caller sends flowId, CJEvent value, and AIC value but AIC doesn't exist in our DB
+        - return 404
+    */
+    let setup = setup_aic_test().await;
     let path = format!("/aic/{}", Uuid::new_v4());
-    let r = send_put_request(&app, &path, data).await;
+    let r = send_put_request(&setup.app, &path, setup.data).await;
     assert_eq!(r.status(), 404);
 }
 
 ///// HELPERS
 
-async fn setup_aic_test() -> (TestApp, String, String, serde_json::Value) {
+struct TestData {
+    app: TestApp,
+    cj_event_value: String,
+    flow_id: String,
+    data: serde_json::Value,
+}
+
+async fn setup_aic_test() -> TestData {
     let app = spawn_app().await;
     let cj_event_value = random_ascii_string();
     let flow_id = random_ascii_string();
@@ -188,20 +193,12 @@ async fn setup_aic_test() -> (TestApp, String, String, serde_json::Value) {
         "flow_id": flow_id,
         "cj_id": cj_event_value,
     });
-    (app, cj_event_value, flow_id, data)
-}
-
-fn assert_created_response(response: &AICResponse) {
-    // Should be UUID v4 aka Version::Random
-    assert_eq!(Some(Version::Random), response.aic_id.get_version());
-    /*
-    Expires date is 30 days from today
-    (because we created the expires a few nano seconds ago, this is a minute under 30 days)
-    */
-    assert_eq!(
-        (response.expires - OffsetDateTime::now_utc()).whole_minutes(),
-        30 * 24 * 60 - 1
-    );
+    TestData {
+        app,
+        cj_event_value,
+        flow_id,
+        data,
+    }
 }
 
 async fn assert_saved(
