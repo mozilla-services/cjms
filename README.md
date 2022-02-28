@@ -105,6 +105,35 @@ The general steps that I took:
 
 Links to sqlx cli information including offline mode https://github.com/launchbadge/sqlx/blob/v0.5.11/sqlx-cli/README.md.
 
+If you have forgotten to prepare, CI will fail with error messages like:
+
+```
+Failed to compile tests! Error: cjms: failed to find data for query UPDATE aic
+            SET flow_id = $1
+            WHERE id = $2
+			RETURNING *
+Error: "Failed to compile tests! Error: cjms: failed to find data for query UPDATE aic\n            SET flow_id = $1\n            WHERE id = $2\n\t\t\tRETURNING *"
+```
+or
+```
+error: failed to find data for query UPDATE aic
+                   SET flow_id = $1
+                   WHERE id = $2
+                   RETURNING *
+  --> src/models/aic.rs:40:9
+   |
+40 | /         query_as!(
+41 | |             AIC,
+42 | |             r#"UPDATE aic
+43 | |             SET flow_id = $1
+...  |
+47 | |             id,
+48 | |         )
+   | |_________^
+   |
+   = note: this error originates in the macro `$crate::sqlx_macros::expand_query` (in Nightly builds, run with -Z macro-backtrace for more info)
+```
+
 ### Version compatibility
 
 One thing that took me a while to figure out was I was using sqlx features like "time" or "uuid" but I was
