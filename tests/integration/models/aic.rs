@@ -20,7 +20,7 @@ async fn test_aic_model_fetch_one_by_uuid() {
 }
 
 #[tokio::test]
-async fn test_aic_model_fetch_one_by_uuid_if_not_availabe() {
+async fn test_aic_model_fetch_one_by_uuid_if_not_available() {
     let app = spawn_app().await;
     let model = AICModel {
         db_pool: &app.db_connection(),
