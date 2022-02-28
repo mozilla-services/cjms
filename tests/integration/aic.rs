@@ -13,7 +13,7 @@ use crate::utils::{
 #[tokio::test]
 async fn test_aic_get_is_not_allowed() {
     let app = spawn_app().await;
-    let test_cases = vec!["/aic", "/aic/123"];
+    let test_cases = ["/aic", "/aic/123"];
     for path in test_cases {
         let r = send_get_request(&app, path).await;
         assert_eq!(r.status(), 405, "Failed on path: {}", path);

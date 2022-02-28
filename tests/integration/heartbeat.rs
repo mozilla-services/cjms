@@ -12,7 +12,7 @@ async fn index_get() {
 #[tokio::test]
 async fn heartbeats_get() {
     let app = spawn_app().await;
-    let test_cases = vec!["/__heartbeat__", "/__lbheartbeat__"];
+    let test_cases = ["/__heartbeat__", "/__lbheartbeat__"];
     for path in test_cases {
         let r = send_get_request(&app, path).await;
         assert_eq!(r.status(), 200, "Failed on path: {}", path);
