@@ -19,13 +19,40 @@ async fn test_aic_get_is_not_allowed() {
 }
 
 #[tokio::test]
-async fn aic_create_success() {
-    /* Caller sends flowId and CJEvent value and not an AIC value
-        - create a new AIC id
-        - save creation time, expiration time, AIC id, flow ID, CJ event value
-        - return expiration time, and AIC id
-    */
+async fn aic_create_with_bad_data() {
+    let app = spawn_app().await;
+    let test_cases = [
+        json!({
+            "flow_id": random_ascii_string(),
+            "cj_id": 42,
+        }),
+        json!({
+            "flow_id": 42,
+            "cj_id": random_ascii_string(),
+        }),
+    ];
+    for data in test_cases {
+        let path = app.build_url("/aic");
+        let client = reqwest::Client::new();
+        let r = client
+            .post(&path)
+            .json(&data)
+            .send()
+            .await
+            .expect("Failed to POST");
+        assert_eq!(r.status(), 400);
+        let response = r.text().await.expect("Failed to get response text.");
+        assert!(response.contains("Json deserialize error"));
+    }
+}
 
+/* Caller sends flowId and CJEvent value and not an AIC value
+    - create a new AIC id
+    - save creation time, expiration time, AIC id, flow ID, CJ event value
+    - return expiration time, and AIC id
+*/
+#[tokio::test]
+async fn aic_create_success() {
     /* SETUP */
     let app = spawn_app().await;
     let cj_event_value = random_ascii_string();
@@ -83,42 +110,13 @@ async fn aic_create_success() {
     assert_eq!(saved.flow_id, flow_id);
 }
 
-#[tokio::test]
-async fn aic_create_with_bad_data() {
-    let app = spawn_app().await;
-    let test_cases = [
-        json!({
-            "flow_id": random_ascii_string(),
-            "cj_id": 42,
-        }),
-        json!({
-            "flow_id": 42,
-            "cj_id": random_ascii_string(),
-        }),
-    ];
-    for data in test_cases {
-        let path = app.build_url("/aic");
-        let client = reqwest::Client::new();
-        let r = client
-            .post(&path)
-            .json(&data)
-            .send()
-            .await
-            .expect("Failed to POST");
-        assert_eq!(r.status(), 400);
-        let response = r.text().await.expect("Failed to get response text.");
-        assert!(response.contains("Json deserialize error"));
-    }
-}
-
+/* Caller sends AIC id, flowId, new CJEvent value
+    - keep existing AIC id
+    - save new creation time, new expiration time, new flow ID, new CJ event value
+    - return new expiration time, existing AIC id
+*/
 #[tokio::test]
 async fn aic_update_with_existing_aic_and_new_flow_and_cjid() {
-    /* Caller sends AIC id, flowId, new CJEvent value
-        - keep existing AIC id
-        - save new creation time, new expiration time, new flow ID, new CJ event value
-        - return new expiration time, existing AIC id
-    */
-
     /* SETUP */
     let app = spawn_app().await;
     let cj_event_value_orig = random_ascii_string();
@@ -166,13 +164,13 @@ async fn aic_update_with_existing_aic_and_new_flow_and_cjid() {
     assert_eq!(saved.flow_id, flow_id_new);
 }
 
+/* Caller sends AIC id, flowId, existing CJEvent value
+    - keep existing AIC id, creation time, expiration time, cjevent value
+    - save new flow ID
+    - return existing expiration time, existing AIC id
+*/
 #[tokio::test]
 async fn aic_update_when_aic_and_cjevent_exists() {
-    /* Caller sends AIC id, flowId, existing CJEvent value
-        - keep existing AIC id, creation time, expiration time, cjevent value
-        - save new flow ID
-        - return existing expiration time, existing AIC id
-    */
     /* SETUP */
     let app = spawn_app().await;
     let cj_event_value_orig = random_ascii_string();
@@ -207,7 +205,6 @@ async fn aic_update_when_aic_and_cjevent_exists() {
 
     /* TEST */
     assert_eq!(aic_orig.id, response.aic_id);
-    // New expires time should be later than the original
     assert_eq!(
         response.expires.unix_timestamp(),
         aic_orig.expires.unix_timestamp()
@@ -222,13 +219,13 @@ async fn aic_update_when_aic_and_cjevent_exists() {
     assert_eq!(saved.flow_id, flow_id_new);
 }
 
+/* Caller sends flowId, CJEvent value, and AIC value but AIC doesn't exist in our DB
+    - create a new AIC id
+    - save creation time, expiration time, AIC id, flow ID, CJ event value
+    - return expiration time, and AIC id
+*/
 #[tokio::test]
 async fn aic_update_when_no_aic_exists() {
-    /* Caller sends flowId, CJEvent value, and AIC value but AIC doesn't exist in our DB
-        - create a new AIC id
-        - save creation time, expiration time, AIC id, flow ID, CJ event value
-        - return expiration time, and AIC id
-    */
     /* SETUP */
 
     let app = spawn_app().await;

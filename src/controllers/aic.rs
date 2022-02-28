@@ -43,10 +43,29 @@ pub async fn update(
     let aic = AICModel {
         db_pool: pool.as_ref(),
     };
-    match aic
-        .update(path.into_inner(), &data.cj_id, &data.flow_id)
-        .await
-    {
+    let aic_id = path.into_inner();
+    let existing = aic.fetch_one_by_id(aic_id).await;
+    let updated = match existing {
+        Ok(existing) => {
+            if existing.cj_event_value == data.cj_id {
+                // Only update the flow_id
+                aic.update_flow_id(aic_id, &data.flow_id).await
+            } else {
+                // Update both
+                aic.update_flow_id_and_cj_event_value(aic_id, &data.cj_id, &data.flow_id)
+                    .await
+            }
+        }
+        Err(e) => match e {
+            sqlx::Error::RowNotFound => {
+                // The requested aic didn't exist, let's make a fresh row
+                aic.create(&data.cj_id, &data.flow_id).await
+            }
+            _ => return HttpResponse::InternalServerError().finish(),
+        },
+    };
+
+    match updated {
         Ok(updated) => {
             let response = AICResponse {
                 aic_id: updated.id,
