@@ -15,6 +15,7 @@ Micro-service supporting VPN activities
 - Returns: JSON data with  `aic_id`, `expires` (a timestamp)
 - A cookie should then be set with the stated expiration time and the returned `aic_id`
 - Success - 201
+- All errors - 500
 
 `/aic/<aicID>` endpoint:
 - PUT only
@@ -22,6 +23,8 @@ Micro-service supporting VPN activities
 - Returns: JSON data with `aic_id`, `expires` (a timestamp)
 - A cookie should then be set with the stated expiration time and the returned `aic_id`
 - Success - 201
+- Unknown aicID - 404
+- All other errors - 500
 
 # Development pre-requisites
 #### Rust
