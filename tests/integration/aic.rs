@@ -218,7 +218,7 @@ fn assert_created_response(response: &AICResponse) {
     assert_eq!(Some(Version::Random), response.aic_id.get_version());
     /*
     Expires date is 30 days from today
-    (because we created the expires a few nano seconds a go, this is a minute under 30 days)
+    (because we created the expires a few nano seconds ago, this is a minute under 30 days)
     */
     assert_eq!(
         (response.expires - OffsetDateTime::now_utc()).whole_minutes(),
