@@ -166,38 +166,16 @@ async fn aic_update_when_aic_and_cjevent_exists() {
 }
 
 /* Caller sends flowId, CJEvent value, and AIC value but AIC doesn't exist in our DB
-    - create a new AIC id
-    - save creation time, expiration time, AIC id, flow ID, CJ event value
-    - return expiration time, and AIC id
+    - return 404
 */
 #[tokio::test]
 async fn aic_update_when_no_aic_exists() {
     /* SETUP */
-    let (app, cj_event_value, flow_id, data) = setup_aic_test().await;
-    let model = AICModel {
-        db_pool: &app.db_connection(),
-    };
-
+    let (app, _cj_event_value, _flow_id, data) = setup_aic_test().await;
     /* CALL */
     let path = format!("/aic/{}", Uuid::new_v4());
     let r = send_put_request(&app, &path, data).await;
-    assert_eq!(r.status(), 201);
-    let response: AICResponse = r.json().await.expect("Failed to get JSON response.");
-
-    /* TEST */
-    assert_created_response(&response);
-    let saved = assert_saved(
-        model,
-        response.aic_id,
-        response.expires.unix_timestamp(),
-        cj_event_value,
-        flow_id,
-    )
-    .await;
-    assert_eq!(
-        (saved.created - OffsetDateTime::now_utc()).whole_minutes(),
-        0
-    );
+    assert_eq!(r.status(), 404);
 }
 
 ///// HELPERS

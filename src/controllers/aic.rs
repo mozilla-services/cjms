@@ -57,10 +57,7 @@ pub async fn update(
             }
         }
         Err(e) => match e {
-            sqlx::Error::RowNotFound => {
-                // The requested aic didn't exist, let's make a fresh row
-                aic.create(&data.cj_id, &data.flow_id).await
-            }
+            sqlx::Error::RowNotFound => return HttpResponse::NotFound().finish(),
             _ => return HttpResponse::InternalServerError().finish(),
         },
     };
