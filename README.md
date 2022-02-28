@@ -77,6 +77,8 @@ fi
 exit 0
 ```
 
+Note: I've found the cargo sqlx prepare check to not work as expected for me and always suggest that a new prepare is needed :(
+
 ## Working with sqlx
 
 ### Writing new queries
