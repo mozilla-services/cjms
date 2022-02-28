@@ -70,6 +70,9 @@ fi
 if ! cargo clippy --all-targets --all-features -- -D warnings; then
     exit 1
 fi
+if ! cargo sqlx prepare --check -- --bin cjms; then
+    exit 1
+fi
 
 exit 0
 ```
