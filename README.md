@@ -5,6 +5,24 @@
 
 Micro-service supporting VPN activities
 
+## Endpoints
+
+### AIC - Affiliate Identifier Cookie
+
+`/aic`:
+- POST only
+- Accepts: JSON data with `flow_id`, `cj_id`
+- Returns: JSON data with  `aic_id`, `expires` (a timestamp)
+- A cookie should then be set with the stated expiration time and the returned `aic_id`
+- Success - 201
+
+`/aic/<aicID>` endpoint:
+- PUT only
+- Accepts: JSON data with `flow_id`, `cj_id`
+- Returns: JSON data with `aic_id`, `expires` (a timestamp)
+- A cookie should then be set with the stated expiration time and the returned `aic_id`
+- Success - 201
+
 # Development pre-requisites
 #### Rust
 
