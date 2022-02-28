@@ -57,3 +57,38 @@ pub fn random_ascii_string() -> String {
     let f = StringFaker::with(Vec::from(ASCII), 8..90);
     f.fake()
 }
+
+pub async fn send_get_request(app: &TestApp, path: &str) -> reqwest::Response {
+    let path = app.build_url(path);
+    reqwest::get(&path).await.expect("Failed to GET")
+}
+
+pub async fn send_post_request(
+    app: &TestApp,
+    path: &str,
+    data: serde_json::Value,
+) -> reqwest::Response {
+    let path = app.build_url(path);
+    let client = reqwest::Client::new();
+    client
+        .post(&path)
+        .json(&data)
+        .send()
+        .await
+        .expect("Failed to POST")
+}
+
+pub async fn send_put_request(
+    app: &TestApp,
+    path: &str,
+    data: serde_json::Value,
+) -> reqwest::Response {
+    let path = app.build_url(path);
+    let client = reqwest::Client::new();
+    client
+        .put(&path)
+        .json(&data)
+        .send()
+        .await
+        .expect("Failed to PUT")
+}
