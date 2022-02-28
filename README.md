@@ -99,6 +99,12 @@ Note: I've found the cargo sqlx prepare check to not work as expected for me and
 
 ## Working with sqlx
 
+sqlx does some implicit things looking for the DATABASE_URL in your environment, which includes looking for a `.env` file. If things aren't working as expected make sure you don't have a rogue `.env` file or environment variables. And be mindful of the difference between compile time checks and running the app.
+
+sqlx does compile time checks. For these two work one of two things has to be true:
+* There is a `DATABASE_URL` in the environment pointing to a database that is fully migrated
+* There is NOT a `DATABASE_URL` in the environment and then sqlx-cli will run in "offline" mode and use `sqlx-data.json`
+
 ### Writing new queries
 
 It took me a long time to figure out the mechanics of working with sqlx. Here's the key points:
