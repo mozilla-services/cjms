@@ -2,6 +2,7 @@ use actix_web::{
     dev::Server,
     web::{get, post, put, resource, Data},
     App, HttpServer,
+    middleware::Logger,
 };
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
@@ -12,6 +13,7 @@ pub fn run_server(listener: TcpListener, db_pool: PgPool) -> Result<Server, std:
     let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .service(resource("/").route(get().to(controllers::heartbeat::index)))
             .service(resource("/__heartbeat__").route(get().to(controllers::heartbeat::heartbeat)))
             .service(

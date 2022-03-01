@@ -20,18 +20,34 @@ pub struct AICRequest {
 }
 
 pub async fn create(data: web::Json<AICRequest>, pool: web::Data<PgPool>) -> HttpResponse {
+    // TODO attempt to fully instrument this function using the methods
+    // documented in the book.
+    // Good place to start since it is simple.
+    // Do not worry about instrumentation on the model method for now. It may
+    // need its own, or this may be the wrong level. But we will deal with that
+    // later.
+
+    let request_id = Uuid::new_v4();
+
+    tracing::info!("request_id {} - Test info", request_id);
+    tracing::error!("request_id {} - Test error", request_id);
+
     let aic = AICModel {
         db_pool: pool.as_ref(),
     };
     match aic.create(&data.cj_id, &data.flow_id).await {
         Ok(created) => {
+            tracing::info!("request_id {} - Successfully created new record", request_id);
             let response = AICResponse {
                 aic_id: created.id,
                 expires: created.expires,
             };
             HttpResponse::Created().json(response)
         }
-        Err(_) => HttpResponse::InternalServerError().finish(),
+        Err(e) => {
+            tracing::error!("request_id {} - Failed to create new record: {:?}", request_id, e);
+            HttpResponse::InternalServerError().finish()
+        }
     }
 }
 
@@ -58,7 +74,7 @@ pub async fn update(
         }
         Err(e) => match e {
             sqlx::Error::RowNotFound => return HttpResponse::NotFound().finish(),
-            _ => return HttpResponse::InternalServerError().finish(),
+            _ => return HttpResponse::InternalServerError().finish()
         },
     };
 
