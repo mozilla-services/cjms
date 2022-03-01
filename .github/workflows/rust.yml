@@ -16,24 +16,61 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: db_user
+          POSTGRES_PASSWORD: db_password
+          POSTGRES_DB: cjms
+        ports:
+          - 5432:5432
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+    - name: Mark whether cache loaded
+      run: |
+        if [[ -d "target" ]]; then
+          echo "cache_loaded=true" >> $GITHUB_ENV
+        else
+          echo "cache_loaded=false" >> $GITHUB_ENV
+        fi
     - name: Git checkout (reattach HEAD to Head Ref)
       run: git checkout "$(echo ${{ github.head_ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
       if: github.head_ref != ''
     - name: Git checkout (reattach HEAD to Ref)
       run: git checkout "$(echo ${{ github.ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
       if: github.head_ref == ''
+    - name: Copy settings file
+      run: cp settings.yaml.example settings.yaml
     - name: Setup coverage
-      run: cargo install cargo-tarpaulin
+      run: cargo install cargo-tarpaulin --force
+      if: env.cache_loaded == 'false'
     - name: Run tests inc. coverage
       run: cargo tarpaulin --ignore-tests --skip-clean --avoid-cfg-tarpaulin --coveralls ${{ secrets.COVERALLS_TOKEN }}
   lint:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
     - name: Lint check
       run: cargo clippy --all-targets --all-features -- -D warnings
   format:
@@ -46,7 +83,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-audit-${{ hashFiles('**/Cargo.lock') }}
+    - name: Mark whether cache loaded
+      run: |
+        if [[ -d "target" ]]; then
+          echo "cache_loaded=true" >> $GITHUB_ENV
+        else
+          echo "cache_loaded=false" >> $GITHUB_ENV
+        fi
     - name: Setup audit
       run: cargo install cargo-audit
+      if: env.cache_loaded == 'false'
     - name: Run audit
       run: cargo audit
