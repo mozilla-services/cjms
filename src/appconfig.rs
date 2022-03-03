@@ -17,7 +17,7 @@ pub fn run_server(
 ) -> Result<Server, std::io::Error> {
     let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
-        let cors = get_cors(settings);
+        let cors = get_cors(settings.clone());
         App::new()
             .wrap(cors)
             .service(resource("/").route(get().to(controllers::heartbeat::index)))

@@ -1,9 +1,10 @@
 use cjms::appconfig::{connect_to_database_and_migrate, run_server};
-use cjms::settings::{get_settings, Settings};
+use cjms::settings::{Settings, SettingsFile, _get_settings};
 use fake::{Fake, StringFaker};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct TestApp {
@@ -38,17 +39,20 @@ async fn create_test_database(database_url: &str) -> String {
 }
 
 pub async fn spawn_app() -> TestApp {
-    let settings = get_settings();
+    let settings = _get_settings(SettingsFile {});
     let listener =
-        TcpListener::bind(format!("{}:0", settings.host)).expect("Failed to bind random port");
+        TcpListener::bind(format!("{}:0", &settings.host)).expect("Failed to bind random port");
     let port = listener.local_addr().unwrap().port();
     let test_database_url = create_test_database(&settings.database_url).await;
     let db_pool = connect_to_database_and_migrate(&test_database_url).await;
-    let mut test_app_settings = settings.clone();
-    let server = run_server(settings, listener, db_pool).expect("Failed to start server");
+    let test_app_settings = Settings {
+        host: String::from(&settings.host),
+        port: format!("{}", port),
+        database_url: test_database_url,
+        environment: "test".to_string(),
+    };
+    let server = run_server(Arc::new(settings), listener, db_pool).expect("Failed to start server");
     let _ = tokio::spawn(server);
-    test_app_settings.database_url = test_database_url;
-    test_app_settings.port = format!("{}", port);
     TestApp {
         settings: test_app_settings,
     }

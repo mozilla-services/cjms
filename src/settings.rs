@@ -29,7 +29,7 @@ impl HasFile for SettingsFile {
     }
 }
 
-fn _get_settings(settings: impl HasFile) -> Arc<Settings> {
+pub fn _get_settings(settings: impl HasFile) -> Settings {
     let mut builder = Config::builder();
     // Either we use a settings.yaml file, or environment variables
     let settings_file = settings.file();
@@ -48,11 +48,11 @@ fn _get_settings(settings: impl HasFile) -> Arc<Settings> {
         Ok(settings) => settings,
         Err(e) => panic!("Config didn't match serialization. {:?}", e),
     };
-    Arc::new(settings)
+    settings
 }
 
 pub fn get_settings() -> Arc<Settings> {
-    _get_settings(SettingsFile {})
+    Arc::new(_get_settings(SettingsFile {}))
 }
 
 #[cfg(test)]
@@ -108,12 +108,12 @@ mod tests {
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const(String::new());
         let actual = _get_settings(mock);
-        let expected = Arc::new(Settings {
+        let expected = Settings {
             host: "111.2.3.6".to_string(),
             port: "2222".to_string(),
             database_url: "postgres://user:password@127.0.0.1:5432/test".to_string(),
             environment: "test".to_string(),
-        });
+        };
         assert_eq!(expected, actual);
         env::remove_var("HOST");
         env::remove_var("PORT");
@@ -133,12 +133,12 @@ mod tests {
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const(path_str);
         let settings = _get_settings(mock);
-        let expected = Arc::new(Settings {
+        let expected = Settings {
             host: "127.1.2.3".to_string(),
             port: "2222".to_string(),
             database_url: "postgres....".to_string(),
             environment: "prod".to_string(),
-        });
+        };
         assert_eq!(expected, settings);
         assert_eq!("127.1.2.3:2222", settings.server_address());
     }
