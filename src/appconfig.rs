@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{
     dev::Server,
     web::{get, post, put, resource, Data},
@@ -6,10 +7,11 @@ use actix_web::{
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
 
-use crate::controllers;
+use crate::{controllers, settings::Settings};
 
-pub fn run_server(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
+pub fn run_server(settings: &Settings, listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
     let db_pool = Data::new(db_pool);
+    let cors = get_cors(settings);
     let server = HttpServer::new(move || {
         App::new()
             .service(resource("/").route(get().to(controllers::heartbeat::index)))
@@ -35,4 +37,70 @@ pub async fn connect_to_database_and_migrate(database_url: &str) -> PgPool {
         .await
         .expect("Failed to migrate database.");
     connection_pool
+}
+
+fn get_cors(settings: &Settings) -> Cors {
+    let mut cors = Cors::default();
+    for origin in allowed_origins(settings) {
+        cors = cors.allowed_origin(origin);
+    }
+    cors = cors.allow_any_method();
+    cors
+}
+
+fn allowed_origins(_settings: &Settings) -> Vec<&'static str> {
+    vec![""]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serial_test::serial;
+    use std::env;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // Existing environment variables may mess with these tests
+
+    #[test]
+    fn test_allowed_origins_for_stage_and_dev() {
+        // Set env to dev / stage
+        let origins = allowed_origins(&Settings {
+            host: "_".to_string(),
+            port: "_".to_string(),
+            database_url: "_".to_string(),
+            env: "dev".to_string(),
+        });
+        assert_eq!(origins.len(), 7);
+        for expected_origin in [
+            "http://localhost:8000/",
+            "https://www-dev.allizom.org/",
+            "https://www-demo1.allizom.org/",
+            "https://www-demo2allizom.org/",
+            "https://www-demo3.allizom.org/",
+            "https://www-demo4.allizom.org/",
+            "https://www-demo5.allizom.org/",
+        ] {
+            assert!(origins.contains(&expected_origin));
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_allowed_origins_for_prod() {
+        // Set env to prod
+        let origins = allowed_origins(&Settings {
+            host: "_".to_string(),
+            port: "_".to_string(),
+            database_url: "_".to_string(),
+            env: "prod".to_string(),
+        });
+        assert_eq!(origins.len(), 2);
+        for expected_origin in [
+            "https://www.mozilla.org",
+            "https://www.allizom.org",
+        ] {
+            assert!(origins.contains(&expected_origin));
+        }
+    }
 }

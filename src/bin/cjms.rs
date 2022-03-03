@@ -8,6 +8,6 @@ async fn main() -> std::io::Result<()> {
     let addr = settings.server_address();
     let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
     println!("Server running at http://{}", addr);
-    run_server(TcpListener::bind(addr)?, db_pool)?.await?;
+    run_server(&settings, TcpListener::bind(addr)?, db_pool)?.await?;
     Ok(())
 }

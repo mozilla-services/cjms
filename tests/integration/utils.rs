@@ -44,7 +44,7 @@ pub async fn spawn_app() -> TestApp {
     let port = listener.local_addr().unwrap().port();
     let test_database_url = create_test_database(&settings.database_url).await;
     let db_pool = connect_to_database_and_migrate(&test_database_url).await;
-    let server = run_server(listener, db_pool).expect("Failed to start server");
+    let server = run_server(&settings, listener, db_pool).expect("Failed to start server");
     let _ = tokio::spawn(server);
     settings.database_url = test_database_url;
     settings.port = format!("{}", port);
