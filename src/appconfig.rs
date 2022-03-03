@@ -12,11 +12,12 @@ pub fn run_server(listener: TcpListener, db_pool: PgPool) -> Result<Server, std:
     let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
         App::new()
-            .service(resource("/").route(get().to(controllers::heartbeat::index)))
-            .service(resource("/__heartbeat__").route(get().to(controllers::heartbeat::heartbeat)))
+            .service(resource("/").route(get().to(controllers::custodial::index)))
+            .service(resource("/__heartbeat__").route(get().to(controllers::custodial::heartbeat)))
             .service(
-                resource("/__lbheartbeat__").route(get().to(controllers::heartbeat::heartbeat)),
+                resource("/__lbheartbeat__").route(get().to(controllers::custodial::heartbeat)),
             )
+            .service(resource("/__version__").route(get().to(controllers::custodial::version)))
             .service(resource("/aic").route(post().to(controllers::aic::create)))
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
             .app_data(db_pool.clone())

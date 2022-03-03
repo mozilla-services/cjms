@@ -1,4 +1,5 @@
 use crate::utils::{send_get_request, spawn_app};
+use cjms::controllers::custodial::VersionInfo;
 
 #[tokio::test]
 async fn index_get() {
@@ -17,4 +18,13 @@ async fn heartbeats_get() {
         let r = send_get_request(&app, path).await;
         assert_eq!(r.status(), 200, "Failed on path: {}", path);
     }
+}
+
+#[tokio::test]
+async fn version_get() {
+    let app = spawn_app().await;
+    let r = send_get_request(&app, "/__version__").await;
+    assert_eq!(r.status(), 200);
+    let body: VersionInfo = r.json().await.expect("Couldn't get JSON.");
+    assert_eq!(body.source, "https://github.com/mozilla-services/cjms");
 }
