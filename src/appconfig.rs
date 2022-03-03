@@ -10,14 +10,15 @@ use std::net::TcpListener;
 use crate::{controllers, settings::Settings};
 
 pub fn run_server(
-    settings: &Settings,
+    settings: Settings,
     listener: TcpListener,
     db_pool: PgPool,
 ) -> Result<Server, std::io::Error> {
     let db_pool = Data::new(db_pool);
-    let _cors = get_cors(settings);
     let server = HttpServer::new(move || {
+        let cors = get_cors(settings.clone());
         App::new()
+            .wrap(cors)
             .service(resource("/").route(get().to(controllers::heartbeat::index)))
             .service(resource("/__heartbeat__").route(get().to(controllers::heartbeat::heartbeat)))
             .service(
@@ -43,9 +44,9 @@ pub async fn connect_to_database_and_migrate(database_url: &str) -> PgPool {
     connection_pool
 }
 
-fn get_cors(settings: &Settings) -> Cors {
+fn get_cors(settings: Settings) -> Cors {
     let mut cors = Cors::default();
-    for origin in allowed_origins(settings) {
+    for origin in allowed_origins(&settings) {
         cors = cors.allowed_origin(origin);
     }
     cors = cors.allow_any_method();

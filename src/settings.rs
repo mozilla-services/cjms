@@ -12,6 +12,17 @@ pub struct Settings {
     pub environment: String,
 }
 
+impl Clone for Settings {
+    fn clone(&self) -> Settings {
+        Settings {
+            host: String::from(self.host.as_str()),
+            port: String::from(self.port.as_str()),
+            database_url: String::from(self.database_url.as_str()),
+            environment: String::from(self.environment.as_str()),
+        }
+    }
+}
+
 impl Settings {
     pub fn server_address(&self) -> String {
         format!("{}:{}", self.host, self.port)
