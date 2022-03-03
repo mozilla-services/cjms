@@ -1,6 +1,7 @@
 use actix_cors::Cors;
 use actix_web::{
     dev::Server,
+    http,
     web::{get, post, put, resource, Data},
     App, HttpServer,
 };
@@ -50,6 +51,7 @@ fn get_cors(settings: Settings) -> Cors {
         cors = cors.allowed_origin(origin);
     }
     cors = cors.allow_any_method();
+    cors = cors.allowed_headers(vec![http::header::ACCEPT, http::header::CONTENT_TYPE]);
     cors
 }
 
