@@ -46,12 +46,12 @@ pub async fn connect_to_database_and_migrate(database_url: &str) -> PgPool {
 }
 
 fn get_cors(settings: Settings) -> Cors {
-    let mut cors = Cors::default();
+    let mut cors = Cors::default()
+        .allow_any_method()
+        .allowed_headers(vec![http::header::ACCEPT, http::header::CONTENT_TYPE]);
     for origin in allowed_origins(&settings) {
         cors = cors.allowed_origin(origin);
     }
-    cors = cors.allow_any_method();
-    cors = cors.allowed_headers(vec![http::header::ACCEPT, http::header::CONTENT_TYPE]);
     cors
 }
 
