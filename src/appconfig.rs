@@ -7,7 +7,7 @@ use actix_web::{
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
 
-use crate::{controllers, settings::Settings};
+use crate::{controllers, settings::{Settings}};
 
 pub fn run_server(settings: &Settings, listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
     let db_pool = Data::new(db_pool);
@@ -48,53 +48,71 @@ fn get_cors(settings: &Settings) -> Cors {
     cors
 }
 
-fn allowed_origins(_settings: &Settings) -> Vec<&'static str> {
-    vec![""]
+fn allowed_origins(settings: &Settings) -> Vec<&'static str> {
+    let allowed = match settings.environment.as_str() {
+        "prod" => {
+            vec![
+                "https://www.mozilla.org",
+                "https://www.allizom.org",
+            ]
+
+        },
+        "dev" | "stage" => {
+            vec![
+                "http://localhost:8000",
+                "https://www-dev.allizom.org",
+                "https://www-demo1.allizom.org",
+                "https://www-demo2allizom.org",
+                "https://www-demo3.allizom.org",
+                "https://www-demo4.allizom.org",
+                "https://www-demo5.allizom.org",
+            ]
+        },
+        "test" => vec![],
+        _ => panic!("Invalid settings value"),
+    };
+    allowed
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serial_test::serial;
-    use std::env;
-    use std::io::Write;
-    use tempfile::NamedTempFile;
 
-    // Existing environment variables may mess with these tests
-
-    #[test]
-    fn test_allowed_origins_for_stage_and_dev() {
-        // Set env to dev / stage
-        let origins = allowed_origins(&Settings {
+    fn dummy_settings() -> Settings {
+        Settings {
             host: "_".to_string(),
             port: "_".to_string(),
             database_url: "_".to_string(),
-            env: "dev".to_string(),
-        });
-        assert_eq!(origins.len(), 7);
-        for expected_origin in [
-            "http://localhost:8000/",
-            "https://www-dev.allizom.org/",
-            "https://www-demo1.allizom.org/",
-            "https://www-demo2allizom.org/",
-            "https://www-demo3.allizom.org/",
-            "https://www-demo4.allizom.org/",
-            "https://www-demo5.allizom.org/",
-        ] {
-            assert!(origins.contains(&expected_origin));
+            environment: "_".to_string(),
         }
     }
 
     #[test]
-    #[serial]
+    fn test_allowed_origins_for_stage_and_dev() {
+        let mut settings = dummy_settings();
+        for test_case in ["stage", "dev"] {
+            settings.environment = test_case.to_string();
+            let origins = allowed_origins(&settings);
+            assert_eq!(origins.len(), 7);
+            for expected_origin in [
+                "http://localhost:8000",
+                "https://www-dev.allizom.org",
+                "https://www-demo1.allizom.org",
+                "https://www-demo2allizom.org",
+                "https://www-demo3.allizom.org",
+                "https://www-demo4.allizom.org",
+                "https://www-demo5.allizom.org",
+            ] {
+                assert!(origins.contains(&expected_origin), "Didn't find: {} in {:?}", expected_origin, origins);
+            }
+        }
+    }
+
+    #[test]
     fn test_allowed_origins_for_prod() {
-        // Set env to prod
-        let origins = allowed_origins(&Settings {
-            host: "_".to_string(),
-            port: "_".to_string(),
-            database_url: "_".to_string(),
-            env: "prod".to_string(),
-        });
+        let mut settings = dummy_settings();
+        settings.environment = "prod".to_string();
+        let origins = allowed_origins(&settings);
         assert_eq!(origins.len(), 2);
         for expected_origin in [
             "https://www.mozilla.org",
@@ -102,5 +120,19 @@ mod tests {
         ] {
             assert!(origins.contains(&expected_origin));
         }
+    }
+
+    #[test]
+    fn test_allowed_origins_for_test() {
+        let mut settings = dummy_settings();
+        settings.environment = "test".to_string();
+        let origins = allowed_origins(&settings);
+        assert_eq!(origins.len(), 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_allowed_origins_for_not_allowed() {
+        allowed_origins(&dummy_settings());
     }
 }
