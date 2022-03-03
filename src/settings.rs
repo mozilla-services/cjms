@@ -1,7 +1,7 @@
 use config::{Config, Environment, File, FileFormat};
 use std::fs;
 
-#[derive(serde::Deserialize, PartialEq, Eq, Debug)]
+#[derive(serde::Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct Settings {
     // Server host and port to run on
     pub host: String,
@@ -10,17 +10,6 @@ pub struct Settings {
     // What environment - dev, stage, prod
     // TODO - It would be good if this was an enum
     pub environment: String,
-}
-
-impl Clone for Settings {
-    fn clone(&self) -> Settings {
-        Settings {
-            host: String::from(self.host.as_str()),
-            port: String::from(self.port.as_str()),
-            database_url: String::from(self.database_url.as_str()),
-            environment: String::from(self.environment.as_str()),
-        }
-    }
 }
 
 impl Settings {
