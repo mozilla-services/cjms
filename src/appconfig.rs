@@ -7,11 +7,15 @@ use actix_web::{
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
 
-use crate::{controllers, settings::{Settings}};
+use crate::{controllers, settings::Settings};
 
-pub fn run_server(settings: &Settings, listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
+pub fn run_server(
+    settings: &Settings,
+    listener: TcpListener,
+    db_pool: PgPool,
+) -> Result<Server, std::io::Error> {
     let db_pool = Data::new(db_pool);
-    let cors = get_cors(settings);
+    let _cors = get_cors(settings);
     let server = HttpServer::new(move || {
         App::new()
             .service(resource("/").route(get().to(controllers::heartbeat::index)))
@@ -51,12 +55,8 @@ fn get_cors(settings: &Settings) -> Cors {
 fn allowed_origins(settings: &Settings) -> Vec<&'static str> {
     let allowed = match settings.environment.as_str() {
         "prod" => {
-            vec![
-                "https://www.mozilla.org",
-                "https://www.allizom.org",
-            ]
-
-        },
+            vec!["https://www.mozilla.org", "https://www.allizom.org"]
+        }
         "dev" | "stage" => {
             vec![
                 "http://localhost:8000",
@@ -67,7 +67,7 @@ fn allowed_origins(settings: &Settings) -> Vec<&'static str> {
                 "https://www-demo4.allizom.org",
                 "https://www-demo5.allizom.org",
             ]
-        },
+        }
         "test" => vec![],
         _ => panic!("Invalid settings value"),
     };
@@ -103,7 +103,12 @@ mod tests {
                 "https://www-demo4.allizom.org",
                 "https://www-demo5.allizom.org",
             ] {
-                assert!(origins.contains(&expected_origin), "Didn't find: {} in {:?}", expected_origin, origins);
+                assert!(
+                    origins.contains(&expected_origin),
+                    "Didn't find: {} in {:?}",
+                    expected_origin,
+                    origins
+                );
             }
         }
     }
@@ -114,10 +119,7 @@ mod tests {
         settings.environment = "prod".to_string();
         let origins = allowed_origins(&settings);
         assert_eq!(origins.len(), 2);
-        for expected_origin in [
-            "https://www.mozilla.org",
-            "https://www.allizom.org",
-        ] {
+        for expected_origin in ["https://www.mozilla.org", "https://www.allizom.org"] {
             assert!(origins.contains(&expected_origin));
         }
     }
