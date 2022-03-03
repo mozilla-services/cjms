@@ -6,18 +6,18 @@ use actix_web::{
     App, HttpServer,
 };
 use sqlx::{migrate, PgPool};
-use std::net::TcpListener;
+use std::{net::TcpListener, sync::Arc};
 
 use crate::{controllers, settings::Settings};
 
 pub fn run_server(
-    settings: Settings,
+    settings: Arc<Settings>,
     listener: TcpListener,
     db_pool: PgPool,
 ) -> Result<Server, std::io::Error> {
     let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
-        let cors = get_cors(settings.clone());
+        let cors = get_cors(settings);
         App::new()
             .wrap(cors)
             .service(resource("/").route(get().to(controllers::heartbeat::index)))
@@ -45,17 +45,17 @@ pub async fn connect_to_database_and_migrate(database_url: &str) -> PgPool {
     connection_pool
 }
 
-fn get_cors(settings: Settings) -> Cors {
+fn get_cors(settings: Arc<Settings>) -> Cors {
     let mut cors = Cors::default()
         .allow_any_method()
         .allowed_headers(vec![http::header::ACCEPT, http::header::CONTENT_TYPE]);
-    for origin in allowed_origins(&settings) {
+    for origin in allowed_origins(settings) {
         cors = cors.allowed_origin(origin);
     }
     cors
 }
 
-fn allowed_origins(settings: &Settings) -> Vec<&'static str> {
+fn allowed_origins(settings: Arc<Settings>) -> Vec<&'static str> {
     let allowed = match settings.environment.as_str() {
         "prod" => {
             vec!["https://www.mozilla.org", "https://www.allizom.org"]
@@ -92,10 +92,10 @@ mod tests {
 
     #[test]
     fn test_allowed_origins_for_stage_and_dev() {
-        let mut settings = dummy_settings();
         for test_case in ["stage", "dev"] {
+            let mut settings = dummy_settings();
             settings.environment = test_case.to_string();
-            let origins = allowed_origins(&settings);
+            let origins = allowed_origins(Arc::new(settings));
             assert_eq!(origins.len(), 7);
             for expected_origin in [
                 "http://localhost:8000",
@@ -120,7 +120,7 @@ mod tests {
     fn test_allowed_origins_for_prod() {
         let mut settings = dummy_settings();
         settings.environment = "prod".to_string();
-        let origins = allowed_origins(&settings);
+        let origins = allowed_origins(Arc::new(settings));
         assert_eq!(origins.len(), 2);
         for expected_origin in ["https://www.mozilla.org", "https://www.allizom.org"] {
             assert!(origins.contains(&expected_origin));
@@ -131,13 +131,13 @@ mod tests {
     fn test_allowed_origins_for_test() {
         let mut settings = dummy_settings();
         settings.environment = "test".to_string();
-        let origins = allowed_origins(&settings);
+        let origins = allowed_origins(Arc::new(settings));
         assert_eq!(origins.len(), 0);
     }
 
     #[test]
     #[should_panic]
     fn test_allowed_origins_for_not_allowed() {
-        allowed_origins(&dummy_settings());
+        allowed_origins(Arc::new(dummy_settings()));
     }
 }

@@ -1,5 +1,5 @@
 use config::{Config, Environment, File, FileFormat};
-use std::fs;
+use std::{fs, sync::Arc};
 
 #[derive(serde::Deserialize, PartialEq, Eq, Debug)]
 pub struct Settings {
@@ -10,17 +10,6 @@ pub struct Settings {
     // What environment - dev, stage, prod
     // TODO - It would be good if this was an enum
     pub environment: String,
-}
-
-impl Clone for Settings {
-    fn clone(&self) -> Settings {
-        Settings {
-            host: String::from(self.host.as_str()),
-            port: String::from(self.port.as_str()),
-            database_url: String::from(self.database_url.as_str()),
-            environment: String::from(self.environment.as_str()),
-        }
-    }
 }
 
 impl Settings {
@@ -40,7 +29,7 @@ impl HasFile for SettingsFile {
     }
 }
 
-fn _get_settings(settings: impl HasFile) -> Settings {
+fn _get_settings(settings: impl HasFile) -> Arc<Settings> {
     let mut builder = Config::builder();
     // Either we use a settings.yaml file, or environment variables
     let settings_file = settings.file();
@@ -55,13 +44,14 @@ fn _get_settings(settings: impl HasFile) -> Settings {
         },
     };
     let config = builder.build().expect("Config couldn't be built.");
-    match config.try_deserialize::<Settings>() {
+    let settings = match config.try_deserialize::<Settings>() {
         Ok(settings) => settings,
         Err(e) => panic!("Config didn't match serialization. {:?}", e),
-    }
+    };
+    Arc::new(settings)
 }
 
-pub fn get_settings() -> Settings {
+pub fn get_settings() -> Arc<Settings> {
     _get_settings(SettingsFile {})
 }
 
@@ -118,12 +108,12 @@ mod tests {
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const(String::new());
         let actual = _get_settings(mock);
-        let expected = Settings {
+        let expected = Arc::new(Settings {
             host: "111.2.3.6".to_string(),
             port: "2222".to_string(),
             database_url: "postgres://user:password@127.0.0.1:5432/test".to_string(),
             environment: "test".to_string(),
-        };
+        });
         assert_eq!(expected, actual);
         env::remove_var("HOST");
         env::remove_var("PORT");
@@ -143,12 +133,12 @@ mod tests {
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const(path_str);
         let settings = _get_settings(mock);
-        let expected = Settings {
+        let expected = Arc::new(Settings {
             host: "127.1.2.3".to_string(),
             port: "2222".to_string(),
             database_url: "postgres....".to_string(),
             environment: "prod".to_string(),
-        };
+        });
         assert_eq!(expected, settings);
         assert_eq!("127.1.2.3:2222", settings.server_address());
     }
