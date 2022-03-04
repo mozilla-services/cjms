@@ -25,6 +25,9 @@ jobs:
           "$GITHUB_REF_NAME" \
           "$GITHUB_REPOSITORY" > version.yaml
 
+      - name: List
+        run: ls -hal
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
         with:
