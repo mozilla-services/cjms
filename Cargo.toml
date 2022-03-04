@@ -1,7 +1,17 @@
 [package]
 name = "cjms"
-version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/mozilla-services/cjms"
+# Check git tags for actual version
+version = "1.0.0"
+
+[[bin]]
+name = "web"
+path = "src/bin/web.rs"
+
+[[bin]]
+name = "make_version_file"
+path = "src/bin/version.rs"
 
 [dependencies]
 actix-cors = "0.6.0"
