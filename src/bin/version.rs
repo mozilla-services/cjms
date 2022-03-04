@@ -1,23 +1,21 @@
 use cjms::controllers::custodial::VERSION_FILE;
-use cjms::settings::get_settings;
 use std::env;
 use std::fs;
 use std::process::Command;
 use std::str;
 
 fn main() -> std::io::Result<()> {
-    let settings = get_settings();
-
     // Repo link
     let source = env!("CARGO_PKG_REPOSITORY");
-    let (sha, tag) = match settings.environment.as_str() {
-        "ci" => {
+    let (sha, tag) = match env::var("CI") {
+        Ok(_) => {
+            // If we're in CI use local variables
             let sha = env::var("GITHUB_SHA").expect("Missing environment variable GITHUB_SHA");
             let tag =
                 env::var("GITHUB_REF_NAME").expect("Missing environment variable GITHUB_REF_NAME");
             (sha, tag)
         }
-        _ => {
+        Err(_) => {
             // Commit SHA
             let rev_parse_out = Command::new("git")
                 .arg("rev-parse")
@@ -77,17 +75,7 @@ mod tests {
     fn test_uses_env_vars_if_environment_is_ci() {
         env::set_var("GITHUB_SHA", "sha_123");
         env::set_var("GITHUB_REF_NAME", "ref_name_123");
-        fs::rename("settings.yaml", "settings.yaml.original").ok();
-        fs::write(
-            "settings.yaml",
-            r#"
-host: 123
-port: 123
-database_url: url
-environment: ci
-        "#,
-        )
-        .ok();
+        env::set_var("CI", "true");
         fs::remove_file(VERSION_FILE).ok();
         main().expect("Couldn't run version binary.");
         let file_stream = fs::read(VERSION_FILE).expect("Couldn't read version file");
@@ -99,6 +87,8 @@ environment: ci
             "{}",
             error_msg
         );
-        fs::rename("settings.yaml.original", "settings.yaml").ok();
+        env::remove_var("GITHUB_SHA");
+        env::remove_var("GITHUB_REF_NAME");
+        env::remove_var("CI");
     }
 }
