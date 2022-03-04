@@ -1,7 +1,7 @@
 FROM rust:1.57 as build
 WORKDIR /app
 COPY . /app
-ARG CI=$CI
+ARG CI
 ARG GITHUB_SHA
 ARG GITHUB_REF_NAME
 RUN echo $CI
