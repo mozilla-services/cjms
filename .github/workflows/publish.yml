@@ -17,6 +17,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Git checkout (reattach HEAD to Head Ref)
+        run: git checkout "$(echo ${{ github.head_ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
+        if: github.head_ref != ''
+      - name: Git checkout (reattach HEAD to Ref)
+        run: git checkout "$(echo ${{ github.ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
+        if: github.head_ref == ''
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
         with:

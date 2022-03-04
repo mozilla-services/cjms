@@ -14,5 +14,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Git checkout (reattach HEAD to Head Ref)
+      run: git checkout "$(echo ${{ github.head_ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
+      if: github.head_ref != ''
+    - name: Git checkout (reattach HEAD to Ref)
+      run: git checkout "$(echo ${{ github.ref }} | sed -E 's|refs/[a-zA-Z]+/||')"
+      if: github.head_ref == ''
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag cjms:$(date +%s)
