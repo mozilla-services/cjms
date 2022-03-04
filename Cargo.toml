@@ -3,6 +3,14 @@ name = "cjms"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "web"
+path = "src/bin/web.rs"
+
+[[bin]]
+name = "make_version_file"
+path = "src/bin/version.rs"
+
 [dependencies]
 actix-web = "4"
 config = { version = "0.12", default-features = false, features = ["yaml"] }
