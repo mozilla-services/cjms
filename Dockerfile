@@ -2,7 +2,7 @@ FROM rust:1.57 as build
 WORKDIR /app
 COPY . /app
 RUN cargo build --release
-RUN ./target/release/make_version_file
+RUN if [ ! -f "version.yaml" ]; then ./target/release/make_version_file; fi
 RUN cat version.yaml
 
 # Note: If you need to debug this image add ":debug" to the end of the next line

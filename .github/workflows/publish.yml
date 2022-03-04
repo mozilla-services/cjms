@@ -17,6 +17,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Make a version file
+        run: |
+          # create a version.yaml
+          printf 'commit: %s\nversion: %s\nsource: https://github.com/%s' \
+          "$GITHUB_SHA1" \
+          "$GITHUB_REF_NAME" \
+          "$GITHUB_REPOSITORY" > version.yaml
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -31,11 +39,6 @@ jobs:
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
-        env:
-          HOST: "ci"
-          port: "ci"
-          database_url: "ci"
-          environment: "ci"
         with:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
