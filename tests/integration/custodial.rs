@@ -1,5 +1,7 @@
+use std::fs;
+
 use crate::utils::{send_get_request, spawn_app};
-use cjms::controllers::custodial::VersionInfo;
+use cjms::controllers::custodial::{VersionInfo, VERSION_FILE};
 
 #[tokio::test]
 async fn index_get() {
@@ -22,9 +24,18 @@ async fn heartbeats_get() {
 
 #[tokio::test]
 async fn version_get() {
+    fs::write(
+        VERSION_FILE,
+        r#"
+commit: 123456
+source: a source
+version: the version
+    "#,
+    )
+    .expect("Failed to write test file.");
     let app = spawn_app().await;
     let r = send_get_request(&app, "/__version__").await;
     assert_eq!(r.status(), 200);
     let body: VersionInfo = r.json().await.expect("Couldn't get JSON.");
-    assert_eq!(body.source, "https://github.com/mozilla-services/cjms");
+    assert_eq!(body.source, "a source");
 }

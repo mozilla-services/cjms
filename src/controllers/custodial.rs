@@ -1,4 +1,5 @@
 use actix_web::{Error, HttpResponse};
+use config::{Config, File, FileFormat};
 use serde::{Deserialize, Serialize};
 
 /*
@@ -22,14 +23,14 @@ pub struct VersionInfo {
     pub version: String,
 }
 
-const VERSION_FILE: &str = "version.yaml";
+pub const VERSION_FILE: &str = "version.yaml";
 
 pub async fn version() -> Result<HttpResponse, Error> {
-    println!("version file is: {}", VERSION_FILE);
-    let response = VersionInfo {
-        commit: String::new(),
-        source: String::from("https://github.com/mozilla-services/cjms"),
-        version: String::new(),
+    let builder = Config::builder().add_source(File::new(VERSION_FILE, FileFormat::Yaml));
+    let config = builder.build().expect("Config couldn't be built.");
+    let response = match config.try_deserialize::<VersionInfo>() {
+        Ok(result) => result,
+        Err(e) => panic!("Config didn't match serialization. {:?}", e),
     };
     Ok(HttpResponse::Ok().json(response))
 }
@@ -46,16 +47,30 @@ mod tests {
 
     #[tokio::test]
     #[serial]
-    #[should_panic(expected = "Config didn't match serialization.")]
-    async fn missing_values_panics() {
+    #[should_panic(expected = "Config couldn't be built.")]
+    async fn missing_file_panics() {
         fs::remove_file(VERSION_FILE).ok();
         version().await.expect("Failed to call version().");
     }
 
     #[tokio::test]
     #[serial]
-    async fn returns_values_in_file() {
+    #[should_panic(expected = "Config didn't match serialization.")]
+    async fn missing_values_panics() {
+        fs::write(
+            VERSION_FILE,
+            r#"
+commit: 123456
+        "#,
+        )
+        .expect("Failed to write test file.");
+        version().await.expect("Failed to call version().");
         fs::remove_file(VERSION_FILE).ok();
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn returns_values_in_file() {
         fs::write(
             VERSION_FILE,
             r#"
@@ -64,7 +79,7 @@ source: a source
 version: the version
         "#,
         )
-        .expect("Failed to write test file: {}");
+        .expect("Failed to write test file.");
         let response = version().await.expect("Failed to call version().");
         let body = response.into_body();
         let body_data: VersionInfo =
@@ -73,5 +88,6 @@ version: the version
         assert_eq!(body_data.commit, "123456");
         assert_eq!(body_data.source, "a source");
         assert_eq!(body_data.version, "the version");
+        fs::remove_file(VERSION_FILE).ok();
     }
 }
