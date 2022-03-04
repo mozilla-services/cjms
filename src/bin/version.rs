@@ -36,3 +36,25 @@ fn main() -> std::io::Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_writes_a_new_file_that_has_source() {
+        fs::remove_file(VERSION_FILE).ok();
+        main().expect("Couldn't run version binary.");
+        let file_stream = fs::read(VERSION_FILE).expect("Couldn't read version file");
+        let version_file = str::from_utf8(&file_stream).expect("Couldn't read from version file.");
+        let source = env!("CARGO_PKG_REPOSITORY");
+        let error_msg = format!("Couldn't find source in: \n{}", version_file);
+        assert!(
+            version_file.contains(format!("source: {}", source).as_str()),
+            "{}",
+            error_msg
+        );
+        assert!(version_file.contains("commit:"), "{}", error_msg);
+        assert!(version_file.contains("version:"), "{}", error_msg);
+    }
+}
