@@ -1,10 +1,13 @@
 FROM rust:1.57 as build
 WORKDIR /app
 COPY . /app
-RUN cargo build --release
 ENV CI=CI
 ENV GITHUB_SHA=GITHUB_SHA
 ENV GITHUB_REF_NAME=GITHUB_REF_NAME
+RUN echo $CI
+RUN echo $GITHUB_SHA
+RUN echo $GITHUB_REF_NAME
+RUN cargo build --release
 RUN ./target/release/make_version_file
 RUN cat version.yaml
 

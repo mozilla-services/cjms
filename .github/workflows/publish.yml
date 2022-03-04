@@ -33,6 +33,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          build-args: GITHUB_SHA=${GITHUB_SHA}ENV CI=CI,GITHUB_REF_NAME=${GITHUB_REF_NAME},CI=${CI}
+          build-args: GITHUB_SHA=${{ github.sha }},GITHUB_REF_NAME=${{ github.ref_name }},CI=${{ ci }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
