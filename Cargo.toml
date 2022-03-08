@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+actix-cors = "0.6.0"
 actix-web = "4"
 config = { version = "0.12", default-features = false, features = ["yaml"] }
 serde = { version = "1", features = ["derive"] }
