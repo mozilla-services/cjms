@@ -45,6 +45,7 @@ https://www.postgresql.org/docs/14/index.html
 
 - Have postgres running on your machine.
 - Know your database url `postgres://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}`
+- The user will need permission to create databases (at a minimum, used by integration tests) - `ALTER USER username CREATEDB;`
 - Install [sqlx-cli](https://github.com/launchbadge/sqlx/tree/master/sqlx-cli) `cargo install sqlx-cli`
 - If needed create your database `sqlx database create --database-url="<database url>"`
 
