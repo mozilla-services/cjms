@@ -37,6 +37,7 @@ Many optional utilities are useful when developing cjms and can be installed wit
 * cargo-edit
 * cargo-audit
 * cargo-tarpaulin
+* cargo-udeps (requires nightly compiler toolchain)
 
 I have found the VSCode extension `rust-analyzer` to give me the richest experience while developing.
 #### Postgres

@@ -6,8 +6,6 @@ edition = "2021"
 [dependencies]
 actix-web = "4"
 config = { version = "0.12", default-features = false, features = ["yaml"] }
-env_logger = "0.9.0"
-log = "0.4.14"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
 sqlx = { version = "0.5.11", features = ["offline", "postgres", "runtime-actix-rustls", "time", "uuid"] }
@@ -15,12 +13,16 @@ sqlx = { version = "0.5.11", features = ["offline", "postgres", "runtime-actix-r
 time = { version = "0.2.27", features = ["serde"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tracing = { version = "0.1.31", features = ["log"] }
+tracing-bunyan-formatter = "0.3"
+tracing-log = "0.1"
+tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
 # uuid must be 0.8 for sqlx support
 uuid = { version = "0.8", features = ["v4", "serde"] }
 
 [dev-dependencies]
 fake = "2.4.3"
 mockall = "0.11.0"
+once_cell = "1"
 reqwest = { version = "0.11.9", features = ["json"] }
 serial_test = "0.6.0"
 tempfile = "3.3.0"

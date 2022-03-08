@@ -6,6 +6,8 @@ use uuid::Uuid;
 
 use crate::models::aic::AICModel;
 
+use tracing::Instrument;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AICResponse {
     pub aic_id: Uuid,
@@ -32,10 +34,21 @@ pub async fn create(data: web::Json<AICRequest>, pool: web::Data<PgPool>) -> Htt
     tracing::info!("request_id {} - Test info", request_id);
     tracing::error!("request_id {} - Test error", request_id);
 
+    let request_span = tracing::info_span!(
+        "Adding a test span with some data",
+        %request_id,
+        some_fake_data = "abc123",
+    );
+    let _request_span_guard = request_span.enter();
+
+    let query_span = tracing::info_span!(
+        "Logging the query itself"
+    );
+
     let aic = AICModel {
         db_pool: pool.as_ref(),
     };
-    match aic.create(&data.cj_id, &data.flow_id).await {
+    match aic.create(&data.cj_id, &data.flow_id).instrument(query_span).await {
         Ok(created) => {
             tracing::info!("request_id {} - Successfully created new record", request_id);
             let response = AICResponse {

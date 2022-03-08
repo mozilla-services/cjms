@@ -1,10 +1,26 @@
 use cjms::appconfig::{connect_to_database_and_migrate, run_server};
+use cjms::telemetry::{get_subscriber, init_subscriber};
 use cjms::settings::{get_settings, Settings};
 use fake::{Fake, StringFaker};
+use once_cell::sync::Lazy;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use uuid::Uuid;
+
+// TODO doc this
+static TRACING: Lazy<()> = Lazy::new(|| {
+    let default_filter_level = "info".to_string();
+    let subscriber_name = "test".to_string();
+
+    if std::env::var("TEST_LOG").is_ok() {
+        let subscriber = get_subscriber(subscriber_name, default_filter_level, std::io::stdout);
+        init_subscriber(subscriber);
+    } else {
+        let subscriber = get_subscriber(subscriber_name, default_filter_level, std::io::sink);
+        init_subscriber(subscriber);
+    };
+});
 
 pub struct TestApp {
     pub settings: Settings,
@@ -38,16 +54,21 @@ async fn create_test_database(database_url: &str) -> String {
 }
 
 pub async fn spawn_app() -> TestApp {
+    Lazy::force(&TRACING);
+
     let mut settings = get_settings();
     let listener =
-        TcpListener::bind(format!("{}:0", settings.host)).expect("Failed to bind random port");
+        TcpListener::bind(format!("{}:0", settings.host))
+        .expect("Failed to bind random port");
     let port = listener.local_addr().unwrap().port();
     let test_database_url = create_test_database(&settings.database_url).await;
     let db_pool = connect_to_database_and_migrate(&test_database_url).await;
     let server = run_server(listener, db_pool).expect("Failed to start server");
     let _ = tokio::spawn(server);
+
     settings.database_url = test_database_url;
     settings.port = format!("{}", port);
+
     TestApp { settings }
 }
 
