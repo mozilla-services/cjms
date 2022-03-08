@@ -8,7 +8,6 @@ pub struct Settings {
     pub port: String,
     pub database_url: String,
     // What environment - dev, stage, prod
-    // TODO - It would be good if this was an enum
     pub environment: String,
 }
 
