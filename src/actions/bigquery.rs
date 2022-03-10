@@ -18,10 +18,8 @@ pub async fn get_access_token_from_metadata() -> String {
         .await;
     match resp {
         Ok(r) => {
-            println!("The response is: {:?}", r);
             let content: WorkloadIdentityAccessToken =
                 r.json().await.expect("Couldn't deserialize.");
-            println!("The json is: {:?}", content);
             content.access_token
         }
         Err(e) => {
@@ -41,9 +39,10 @@ pub async fn run_bq_table_get(bq_access_token: String, query: &str) -> Response 
         .post("https://www.googleapis.com/bigquery/v2/projects/moz-fx-cjms-nonprod-9a36/queries")
         .header("Authorization", format!("Bearer {}", bq_access_token))
         .json(&json!({
-            "kind": "ARRAY",
+            "kind": "bigquery#queryResponse",
             "query": query,
-            "useLegacySql": false
+            "useLegacySql": false,
+            "useQueryCache": false,
         }))
         .send()
         .await
