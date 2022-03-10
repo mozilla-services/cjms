@@ -1,6 +1,6 @@
 use fake::{Fake, StringFaker};
-use rand::random;
 use rand::seq::SliceRandom;
+use rand::Rng;
 use sqlx::{query_as, Error, PgPool};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
@@ -32,15 +32,16 @@ pub struct SubscriptionModel<'a> {
 
 impl SubscriptionModel<'_> {
     pub async fn create(&self) -> Result<Subscription, Error> {
+        let mut rng = rand::thread_rng();
         let id = Uuid::new_v4();
         let report_timestamp = OffsetDateTime::now_utc();
-        let subscription_start_date = report_timestamp - Duration::hours(random::<i64>());
+        let subscription_start_date = report_timestamp - Duration::hours(rng.gen_range(1..48));
         let fxa_uid = random_ascii_string();
-        let quantity = random::<i32>();
+        let quantity = 1;
         let plan_id = random_ascii_string();
         let currencies = vec!["USD", "GBP", "EUR"];
         let plan_currency = currencies.choose(&mut rand::thread_rng());
-        let plan_amount = random::<i32>();
+        let plan_amount = rng.gen_range(99..1099);
         let countries = vec!["US", "DE", "FR"];
         let country = countries.choose(&mut rand::thread_rng());
         let promotion_codes = "";

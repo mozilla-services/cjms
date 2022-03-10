@@ -36,10 +36,14 @@ pub fn run_server(
     Ok(server)
 }
 
-pub async fn connect_to_database_and_migrate(database_url: &str) -> PgPool {
-    let connection_pool = PgPool::connect(database_url)
+pub async fn connect_to_database(database_url: &str) -> PgPool {
+    PgPool::connect(database_url)
         .await
-        .expect("Failed to connect to Postgres.");
+        .expect("Failed to connect to Postgres.")
+}
+
+pub async fn connect_to_database_and_migrate(database_url: &str) -> PgPool {
+    let connection_pool = connect_to_database(database_url).await;
     migrate!("./migrations")
         .run(&connection_pool)
         .await
