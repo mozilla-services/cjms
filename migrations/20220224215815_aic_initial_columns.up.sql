@@ -1,4 +1,4 @@
--- Add up migration script here
+-- Create AIC table
 CREATE TABLE aic (
 id uuid NOT NULL,
 PRIMARY KEY (id),

@@ -28,6 +28,7 @@ pub fn run_server(
             .service(resource("/__version__").route(get().to(controllers::custodial::version)))
             .service(resource("/aic").route(post().to(controllers::aic::create)))
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
+            .service(resource("/check_sub").route(get().to(controllers::subscription::check)))
             .app_data(db_pool.clone())
     })
     .listen(listener)?

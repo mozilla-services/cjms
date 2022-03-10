@@ -13,10 +13,16 @@ path = "src/bin/web.rs"
 name = "make_version_file"
 path = "src/bin/version.rs"
 
+[[bin]]
+name = "check_subscription"
+path = "src/bin/check_subscription.rs"
+
 [dependencies]
 actix-cors = "0.6.0"
 actix-web = "4"
 config = { version = "0.12", default-features = false, features = ["yaml"] }
+fake = "2.4.3"
+rand = "0.8.5"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
 sqlx = { version = "0.5.11", features = ["offline", "postgres", "runtime-actix-rustls", "time", "uuid"] }
@@ -27,7 +33,6 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 uuid = { version = "0.8", features = ["v4", "serde"] }
 
 [dev-dependencies]
-fake = "2.4.3"
 mockall = "0.11.0"
 reqwest = { version = "0.11.9", features = ["json"] }
 serial_test = "0.6.0"
