@@ -13,6 +13,7 @@ SELECT
   LIMIT 3
                 "#;
     let response = run_bq_table_get(big_query_access_token, query).await;
+    println!("Raw response: {:?}", response);
     let data: GetQueryResultsResponse = response.json().await.expect("Couldn't extract body.");
     println!("BQ response: {:?}", data);
     /*
