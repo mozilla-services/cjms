@@ -1,6 +1,6 @@
 {
   "db": "PostgreSQL",
-  "05e396c8b1153d9cdc3d45c35abd5906161d482aa131cf8666f3c0202e8dde52": {
+  "f6cc061c1d19c43885858653c00a166879bed0c88d5010a4311919594a281120": {
     "describe": {
       "columns": [
         {
@@ -9,24 +9,49 @@
           "type_info": "Uuid"
         },
         {
-          "name": "cj_event_value",
+          "name": "report_timestamp",
           "ordinal": 1,
-          "type_info": "Text"
+          "type_info": "Timestamptz"
         },
         {
-          "name": "flow_id",
+          "name": "subscription_start_date",
           "ordinal": 2,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "fxa_uid",
+          "ordinal": 3,
           "type_info": "Text"
         },
         {
-          "name": "created",
-          "ordinal": 3,
-          "type_info": "Timestamptz"
+          "name": "quantity",
+          "ordinal": 4,
+          "type_info": "Int4"
         },
         {
-          "name": "expires",
-          "ordinal": 4,
-          "type_info": "Timestamptz"
+          "name": "plan_id",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "plan_currency",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "plan_amount",
+          "ordinal": 7,
+          "type_info": "Int4"
+        },
+        {
+          "name": "country",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "promotion_codes",
+          "ordinal": 9,
+          "type_info": "Text"
         }
       ],
       "nullable": [
@@ -34,137 +59,7 @@
         false,
         false,
         false,
-        false
-      ],
-      "parameters": {
-        "Left": []
-      }
-    },
-    "query": "SELECT * FROM aic"
-  },
-  "56df35b03ee8145783edc4d00a32f9ef89837643edf5602844e550c93ba5cfd0": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "cj_event_value",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "flow_id",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "created",
-          "ordinal": 3,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "expires",
-          "ordinal": 4,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
         false,
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Uuid"
-        ]
-      }
-    },
-    "query": "UPDATE aic\n            SET flow_id = $1\n            WHERE id = $2\n\t\t\tRETURNING *"
-  },
-  "9e303b2b6ebf017cf77da7164b42650a7af1eaba834da57617da7310af2b5ab9": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "cj_event_value",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "flow_id",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "created",
-          "ordinal": 3,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "expires",
-          "ordinal": 4,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Timestamptz",
-          "Timestamptz",
-          "Uuid"
-        ]
-      }
-    },
-    "query": "UPDATE aic\n            SET\n                cj_event_value = $1,\n                flow_id = $2,\n                created = $3,\n                expires = $4\n            WHERE id = $5\n\t\t\tRETURNING *"
-  },
-  "c705eede93655cf085d9d78d82287fb39cbffc54ed579db822a5d45c6a473e20": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "cj_event_value",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "flow_id",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "created",
-          "ordinal": 3,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "expires",
-          "ordinal": 4,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
         false,
         false,
         false,
@@ -174,57 +69,18 @@
       "parameters": {
         "Left": [
           "Uuid",
-          "Text",
-          "Text",
           "Timestamptz",
-          "Timestamptz"
+          "Timestamptz",
+          "Text",
+          "Int4",
+          "Text",
+          "Text",
+          "Int4",
+          "Text",
+          "Text"
         ]
       }
     },
-    "query": "INSERT INTO aic (id, cj_event_value, flow_id, created, expires)\n\t\t\tVALUES ($1, $2, $3, $4, $5)\n\t\t\tRETURNING *"
-  },
-  "d8188ef1269dd87d8b804cef756bf64f238cf2ccb2971d50e1c3561b0279e0ec": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "cj_event_value",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "flow_id",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "created",
-          "ordinal": 3,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "expires",
-          "ordinal": 4,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "SELECT * FROM aic WHERE id = $1"
+    "query": "INSERT INTO subscription (id, report_timestamp, subscription_start_date, fxa_uid, quantity, plan_id, plan_currency, plan_amount, country, promotion_codes)\n\t\t\tVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)\n\t\t\tRETURNING *"
   }
 }
