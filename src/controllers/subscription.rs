@@ -1,10 +1,38 @@
 use actix_web::{web, Error, HttpResponse};
 use gcp_bigquery_client::{model::query_request::QueryRequest, Client};
+use serde::Deserialize;
 use sqlx::PgPool;
 
 use crate::models::subscription::SubscriptionModel;
 
+#[derive(Deserialize, Debug)]
+pub struct WorkloadIdentityAccessToken {
+    pub access_token: String,
+    pub expires_in: i32,
+    pub token_type: String,
+}
+
 pub async fn check_subscriptions(pool: &PgPool) {
+    // Manually run the code that gets the access token by workload identity to see what response we get
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .get("http://metadata/computeMetadata/v1/instance/service-accounts/default/token")
+        .header("Metadata-Flavor", "Google")
+        .send()
+        .await;
+    match resp {
+        Ok(r) => {
+            println!("The response is: {:?}", r);
+            let content: WorkloadIdentityAccessToken =
+                r.json().await.expect("Couldn't deserialize.");
+            println!("The json is: {:?}", content);
+        }
+        Err(e) => {
+            println!("The error is: {:?}", e);
+        }
+    }
+
     let client = Client::with_workload_identity(true)
         .await
         .expect("Could not connect to BigQuery with workload identity");
