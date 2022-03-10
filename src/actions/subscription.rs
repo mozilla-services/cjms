@@ -1,6 +1,6 @@
 use sqlx::PgPool;
 
-use crate::actions::bigquery::run_bq_table_get;
+use crate::actions::bigquery::{run_bq_table_get, GetQueryResultsResponse};
 use crate::models::subscription::SubscriptionModel;
 
 pub async fn check_subscriptions(pool: &PgPool, big_query_access_token: String) {
@@ -8,27 +8,13 @@ pub async fn check_subscriptions(pool: &PgPool, big_query_access_token: String) 
 
     let query = r#"
 SELECT
-  CURRENT_TIMESTAMP AS report_timestamp,
-  subscription_start_date,
-  subscription_id, -- transaction id
-  fxa_uid,
-  1 AS quantity,
-  plan_id, -- sku
-  plan_currency,
-  plan_amount,
-  country,
-  promotion_codes,
-  -- aic -- not available yet
-  FROM `mozdata.mozilla_vpn.all_subscriptions`
-  WHERE
-  -- Exclude IAP providers
-  provider NOT IN ("Apple Store", "Google Play")
-  ORDER BY subscription_start_date DESC
+  *
+  FROM `moz-fx-cjms-nonprod-9a36.cjms_bigquery.sarah_test`
   LIMIT 3
                 "#;
     let response = run_bq_table_get(big_query_access_token, query).await;
-    let data = response.text().await.expect("Couldn't extract body.");
-    println!("BQ response: {}", data);
+    let data: GetQueryResultsResponse = response.json().await.expect("Couldn't extract body.");
+    println!("BQ response: {:?}", data);
     /*
     match rs {
         Ok(mut result) => {
