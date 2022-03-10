@@ -1,6 +1,7 @@
 settings.yaml
 version.yaml
 .vscode
+*.json
 
 # Useful when building new sqlx macros
 .env
