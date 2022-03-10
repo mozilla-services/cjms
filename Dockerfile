@@ -10,7 +10,7 @@ RUN cat version.yaml
 
 # Note: If you need to debug this image add ":debug" to the end of the next line
 # https://github.com/GoogleContainerTools/distroless/blob/main/README.md#debug-images
-FROM gcr.io/distroless/cc:debug
+FROM gcr.io/distroless/cc
 COPY --from=build /app/target/release/web /
 COPY --from=build /app/target/release/check_subscription /
 COPY --from=build /app/version.yaml /
