@@ -1,34 +1,20 @@
-use sqlx::PgPool;
-
-use crate::actions::bigquery::lib::run_bq_table_get;
-use crate::actions::bigquery::model::{GetQueryResultsResponse, QueryResponse, ResultSet};
+use crate::actions::bigquery::lib::get_bq_results;
 use crate::models::subscription::SubscriptionModel;
 use crate::settings::Settings;
+use sqlx::PgPool;
 
 pub async fn check_subscriptions(
     pool: &PgPool,
     big_query_access_token: String,
     settings: Settings,
 ) {
-    // Manually run the code that gets the access token by workload identity to see what response we get
     let project = settings.gcp_project;
-    let query = format!(
-        "SELECT * FROM `{}.cjms_bigquery.sarah_test` LIMIT 3",
-        &project
-    );
-    let response = run_bq_table_get(&big_query_access_token, &query, &project).await;
-    let query_results: GetQueryResultsResponse =
-        response.json().await.expect("Couldn't extract body.");
-    let mut rs = ResultSet::new(QueryResponse::from(query_results));
-    while rs.next_row() {
-        let plan_id = rs.get_string_by_name("plan_id").expect("no plan_id");
-        let start = rs
-            .get_i64_by_name("subscription_start_date")
-            .expect("no start date");
-        println!("plan_id: {:?} | subscription_start: {:?}", plan_id, start);
-    }
+    let query =
+        "SELECT * FROM `cjms_bigquery.sarah_test` WHERE report_timestamp IS NOT NULL LIMIT 3";
+    let mut rs = get_bq_results(&big_query_access_token, query, &project).await;
     let subs = SubscriptionModel { db_pool: pool };
-    for _ in 0..3 {
-        subs.create().await.expect("Create failed :(");
+    while rs.next_row() {
+        let subscription = subs.create_from_big_query_resultset(&rs).await;
+        println!("subscription: {:?}", subscription);
     }
 }

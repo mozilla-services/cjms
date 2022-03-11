@@ -1,6 +1,8 @@
-use reqwest::{self, Response};
+use reqwest;
 use serde::Deserialize;
 use serde_json::json;
+
+use super::model::{GetQueryResultsResponse, QueryResponse, ResultSet};
 
 #[derive(Deserialize, Debug)]
 pub struct WorkloadIdentityAccessToken {
@@ -33,13 +35,13 @@ pub async fn get_access_token_from_env() -> String {
     std::env::var("BQ_ACCESS_TOKEN").expect("BQ_ACCESS_TOKEN not available")
 }
 
-pub async fn run_bq_table_get(bq_access_token: &str, query: &str, project: &str) -> Response {
+pub async fn get_bq_results(bq_access_token: &str, query: &str, project: &str) -> ResultSet {
     let client = reqwest::Client::new();
     let api_path = format!(
         "https://www.googleapis.com/bigquery/v2/projects/{}/queries",
         project
     );
-    client
+    let response = client
         .post(api_path)
         .header("Authorization", format!("Bearer {}", bq_access_token))
         .json(&json!({
@@ -47,9 +49,12 @@ pub async fn run_bq_table_get(bq_access_token: &str, query: &str, project: &str)
             "query": query,
             "useLegacySql": false,
             // TODO - TESTING ONLY
-            "useQueryCache": false,
+            //"useQueryCache": false,
         }))
         .send()
         .await
-        .expect("Failed to get BigQuery query")
+        .expect("Failed to get BigQuery query");
+    let query_results: GetQueryResultsResponse =
+        response.json().await.expect("Couldn't extract body.");
+    ResultSet::new(QueryResponse::from(query_results))
 }

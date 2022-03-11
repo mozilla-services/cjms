@@ -371,7 +371,6 @@ dependencies = [
  "config",
  "fake",
  "mockall",
- "rand",
  "reqwest",
  "serde",
  "serde_json",

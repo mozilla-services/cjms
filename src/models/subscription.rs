@@ -1,16 +1,8 @@
-use fake::{Fake, StringFaker};
-use rand::seq::SliceRandom;
-use rand::Rng;
 use sqlx::{query_as, Error, PgPool};
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 use uuid::Uuid;
 
-pub fn random_ascii_string() -> String {
-    const ASCII: &str =
-        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@";
-    let f = StringFaker::with(Vec::from(ASCII), 8..32);
-    f.fake()
-}
+use crate::actions::bigquery::model::ResultSet;
 
 #[derive(Debug)]
 pub struct Subscription {
@@ -31,19 +23,25 @@ pub struct SubscriptionModel<'a> {
 }
 
 impl SubscriptionModel<'_> {
-    pub async fn create(&self) -> Result<Subscription, Error> {
-        let mut rng = rand::thread_rng();
+    pub async fn create_from_big_query_resultset(
+        &self,
+        rs: &ResultSet,
+    ) -> Result<Subscription, Error> {
         let id = Uuid::new_v4();
-        let report_timestamp = OffsetDateTime::now_utc();
-        let subscription_start_date = report_timestamp - Duration::hours(rng.gen_range(1..48));
-        let fxa_uid = random_ascii_string();
-        let quantity = 1;
-        let plan_id = random_ascii_string();
-        let currencies = vec!["USD", "GBP", "EUR"];
-        let plan_currency = currencies.choose(&mut rand::thread_rng());
-        let plan_amount = rng.gen_range(99..1099);
-        let countries = vec!["US", "DE", "FR"];
-        let country = countries.choose(&mut rand::thread_rng());
+        let report_timestamp = OffsetDateTime::from_unix_timestamp(
+            rs.get_i64_by_name("report_timestamp").unwrap().unwrap(),
+        );
+        let subscription_start_date = OffsetDateTime::from_unix_timestamp(
+            rs.get_i64_by_name("subscription_start_date")
+                .unwrap()
+                .unwrap(),
+        );
+        let fxa_uid = rs.get_string_by_name("fxa_uid").unwrap().unwrap();
+        let quantity = rs.get_i64_by_name("quantity").unwrap().unwrap();
+        let plan_id = rs.get_string_by_name("plan_id").unwrap().unwrap();
+        let plan_currency = rs.get_string_by_name("plan_currency").unwrap().unwrap();
+        let plan_amount = rs.get_i64_by_name("plan_amount").unwrap().unwrap();
+        let country = rs.get_string_by_name("country").unwrap().unwrap();
         let promotion_codes = "";
         query_as!(
             Subscription,
@@ -54,10 +52,10 @@ impl SubscriptionModel<'_> {
             report_timestamp,
 			subscription_start_date,
 			fxa_uid,
-			quantity,
+			i32::try_from(quantity).ok(),
 			plan_id,
 			plan_currency,
-			plan_amount,
+			i32::try_from(plan_amount).ok(),
 			country,
 			promotion_codes
         )
