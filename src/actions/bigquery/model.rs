@@ -1,52 +1,55 @@
-use reqwest::{self, Response};
+/*
+The contents of this file were taken from various parts of https://github.com/lquerel/gcp-bigquery-client
+with sincere thanks to https://github.com/lquerel and the gcp-bigquery-client contributors
+https://github.com/lquerel/gcp-bigquery-client/graphs/contributors
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+*/
+
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::Value;
+use std::collections::HashMap;
+use thiserror::Error;
 
-#[derive(Deserialize, Debug)]
-pub struct WorkloadIdentityAccessToken {
-    pub access_token: String,
-    pub expires_in: i32,
-    pub token_type: String,
-}
+#[derive(Error, Debug)]
+pub enum BQError {
+    #[error("No data available. The result set is positioned before the first or after the last row. Try to call the method next on your result set.")]
+    NoDataAvailable,
 
-pub async fn get_access_token_from_metadata() -> String {
-    let client = reqwest::Client::new();
-    let resp = client
-        .get("http://metadata/computeMetadata/v1/instance/service-accounts/default/token")
-        .header("Metadata-Flavor", "Google")
-        .send()
-        .await;
-    match resp {
-        Ok(r) => {
-            let content: WorkloadIdentityAccessToken =
-                r.json().await.expect("Couldn't deserialize.");
-            content.access_token
-        }
-        Err(e) => {
-            println!("The error is: {:?}", e);
-            panic!("We can't go on.");
-        }
-    }
-}
+    #[error("Invalid column index (col_index: {col_index})")]
+    InvalidColumnIndex { col_index: usize },
 
-pub async fn get_access_token_from_env() -> String {
-    std::env::var("BQ_ACCESS_TOKEN").expect("BQ_ACCESS_TOKEN not available")
-}
+    #[error("Invalid column name (col_name: {col_name})")]
+    InvalidColumnName { col_name: String },
 
-pub async fn run_bq_table_get(bq_access_token: &str, query: &str) -> Response {
-    let client = reqwest::Client::new();
-    client
-        .post("https://www.googleapis.com/bigquery/v2/projects/moz-fx-cjms-nonprod-9a36/queries")
-        .header("Authorization", format!("Bearer {}", bq_access_token))
-        .json(&json!({
-            "kind": "bigquery#queryResponse",
-            "query": query,
-            "useLegacySql": false,
-            "useQueryCache": false,
-        }))
-        .send()
-        .await
-        .expect("Failed to get BigQuery query")
+    #[error("Invalid column type (col_index: {col_index}, col_type: {col_type}, type_requested: {type_requested})")]
+    InvalidColumnType {
+        col_index: usize,
+        col_type: String,
+        type_requested: String,
+    },
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -415,6 +418,255 @@ impl From<GetQueryResultsResponse> for QueryResponse {
             schema: resp.schema,
             total_bytes_processed: resp.total_bytes_processed,
             total_rows: resp.total_rows,
+        }
+    }
+}
+
+/// Set of rows in response to a SQL query
+#[derive(Debug)]
+pub struct ResultSet {
+    cursor: i64,
+    row_count: i64,
+    query_response: QueryResponse,
+    fields: HashMap<String, usize>,
+}
+
+impl ResultSet {
+    pub fn new(query_response: QueryResponse) -> Self {
+        if query_response.job_complete.unwrap_or(false) {
+            // rows and tables schema are only present for successfully completed jobs.
+            let row_count = query_response.rows.as_ref().map_or(0, Vec::len) as i64;
+            let table_schema = query_response.schema.as_ref().expect("Expecting a schema");
+            let table_fields = table_schema
+                .fields
+                .as_ref()
+                .expect("Expecting a non empty list of fields");
+            let fields: HashMap<String, usize> = table_fields
+                .iter()
+                .enumerate()
+                .map(|(pos, field)| (field.name.clone(), pos))
+                .collect();
+            Self {
+                cursor: -1,
+                row_count,
+                query_response,
+                fields,
+            }
+        } else {
+            Self {
+                cursor: -1,
+                row_count: 0,
+                query_response,
+                fields: HashMap::new(),
+            }
+        }
+    }
+
+    pub fn query_response(&self) -> &QueryResponse {
+        &self.query_response
+    }
+
+    /// Moves the cursor froward one row from its current position.
+    /// A ResultSet cursor is initially positioned before the first row; the first call to the method next makes the
+    /// first row the current row; the second call makes the second row the current row, and so on.
+    pub fn next_row(&mut self) -> bool {
+        if self.cursor == (self.row_count - 1) {
+            false
+        } else {
+            self.cursor += 1;
+            true
+        }
+    }
+
+    /// Total number of rows in this result set.
+    pub fn row_count(&self) -> usize {
+        self.row_count as usize
+    }
+
+    /// List of column names for this result set.
+    pub fn column_names(&self) -> Vec<String> {
+        self.fields.keys().cloned().collect()
+    }
+
+    /// Returns the index for a column name.
+    pub fn column_index(&self, column_name: &str) -> Option<&usize> {
+        self.fields.get(column_name)
+    }
+
+    pub fn get_i64(&self, col_index: usize) -> Result<Option<i64>, BQError> {
+        let json_value = self.get_json_value(col_index)?;
+        match &json_value {
+            None => Ok(None),
+            Some(json_value) => match json_value {
+                serde_json::Value::Number(value) => Ok(value.as_i64()),
+                serde_json::Value::String(value) => {
+                    match (value.parse::<i64>(), value.parse::<f64>()) {
+                        (Ok(v), _) => Ok(Some(v)),
+                        (Err(_), Ok(v)) => Ok(Some(v as i64)),
+                        _ => Err(BQError::InvalidColumnType {
+                            col_index,
+                            col_type: ResultSet::json_type(json_value),
+                            type_requested: "I64".into(),
+                        }),
+                    }
+                }
+                _ => Err(BQError::InvalidColumnType {
+                    col_index,
+                    col_type: ResultSet::json_type(json_value),
+                    type_requested: "I64".into(),
+                }),
+            },
+        }
+    }
+
+    pub fn get_i64_by_name(&self, col_name: &str) -> Result<Option<i64>, BQError> {
+        let col_index = self.fields.get(col_name);
+        match col_index {
+            None => Err(BQError::InvalidColumnName {
+                col_name: col_name.into(),
+            }),
+            Some(col_index) => self.get_i64(*col_index),
+        }
+    }
+
+    pub fn get_f64(&self, col_index: usize) -> Result<Option<f64>, BQError> {
+        let json_value = self.get_json_value(col_index)?;
+        match &json_value {
+            None => Ok(None),
+            Some(json_value) => match json_value {
+                serde_json::Value::Number(value) => Ok(value.as_f64()),
+                serde_json::Value::String(value) => {
+                    let value: Result<f64, _> = value.parse();
+                    match &value {
+                        Err(_) => Err(BQError::InvalidColumnType {
+                            col_index,
+                            col_type: ResultSet::json_type(json_value),
+                            type_requested: "F64".into(),
+                        }),
+                        Ok(value) => Ok(Some(*value)),
+                    }
+                }
+                _ => Err(BQError::InvalidColumnType {
+                    col_index,
+                    col_type: ResultSet::json_type(json_value),
+                    type_requested: "F64".into(),
+                }),
+            },
+        }
+    }
+
+    pub fn get_f64_by_name(&self, col_name: &str) -> Result<Option<f64>, BQError> {
+        let col_index = self.fields.get(col_name);
+        match col_index {
+            None => Err(BQError::InvalidColumnName {
+                col_name: col_name.into(),
+            }),
+            Some(col_index) => self.get_f64(*col_index),
+        }
+    }
+
+    pub fn get_bool(&self, col_index: usize) -> Result<Option<bool>, BQError> {
+        let json_value = self.get_json_value(col_index)?;
+        match &json_value {
+            None => Ok(None),
+            Some(json_value) => match json_value {
+                serde_json::Value::Bool(value) => Ok(Some(*value)),
+                serde_json::Value::String(value) => {
+                    let value: Result<bool, _> = value.parse();
+                    match &value {
+                        Err(_) => Err(BQError::InvalidColumnType {
+                            col_index,
+                            col_type: ResultSet::json_type(json_value),
+                            type_requested: "Bool".into(),
+                        }),
+                        Ok(value) => Ok(Some(*value)),
+                    }
+                }
+                _ => Err(BQError::InvalidColumnType {
+                    col_index,
+                    col_type: ResultSet::json_type(json_value),
+                    type_requested: "Bool".into(),
+                }),
+            },
+        }
+    }
+
+    pub fn get_bool_by_name(&self, col_name: &str) -> Result<Option<bool>, BQError> {
+        let col_index = self.fields.get(col_name);
+        match col_index {
+            None => Err(BQError::InvalidColumnName {
+                col_name: col_name.into(),
+            }),
+            Some(col_index) => self.get_bool(*col_index),
+        }
+    }
+
+    pub fn get_string(&self, col_index: usize) -> Result<Option<String>, BQError> {
+        let json_value = self.get_json_value(col_index)?;
+        match json_value {
+            None => Ok(None),
+            Some(json_value) => match json_value {
+                serde_json::Value::String(value) => Ok(Some(value)),
+                serde_json::Value::Number(value) => Ok(Some(value.to_string())),
+                serde_json::Value::Bool(value) => Ok(Some(value.to_string())),
+                _ => Err(BQError::InvalidColumnType {
+                    col_index,
+                    col_type: ResultSet::json_type(&json_value),
+                    type_requested: "String".into(),
+                }),
+            },
+        }
+    }
+
+    pub fn get_string_by_name(&self, col_name: &str) -> Result<Option<String>, BQError> {
+        let col_index = self.fields.get(col_name);
+        match col_index {
+            None => Err(BQError::InvalidColumnName {
+                col_name: col_name.into(),
+            }),
+            Some(col_index) => self.get_string(*col_index),
+        }
+    }
+
+    pub fn get_json_value(&self, col_index: usize) -> Result<Option<serde_json::Value>, BQError> {
+        if self.cursor < 0 || self.cursor == self.row_count {
+            return Err(BQError::NoDataAvailable);
+        }
+        if col_index >= self.fields.len() {
+            return Err(BQError::InvalidColumnIndex { col_index });
+        }
+
+        Ok(self
+            .query_response
+            .rows
+            .as_ref()
+            .and_then(|rows| rows.get(self.cursor as usize))
+            .and_then(|row| row.columns.as_ref())
+            .and_then(|cols| cols.get(col_index))
+            .and_then(|col| col.value.clone()))
+    }
+
+    pub fn get_json_value_by_name(
+        &self,
+        col_name: &str,
+    ) -> Result<Option<serde_json::Value>, BQError> {
+        let col_pos = self.fields.get(col_name);
+        match col_pos {
+            None => Err(BQError::InvalidColumnName {
+                col_name: col_name.into(),
+            }),
+            Some(col_pos) => self.get_json_value(*col_pos),
+        }
+    }
+
+    fn json_type(json_value: &serde_json::Value) -> String {
+        match json_value {
+            Value::Null => "Null".into(),
+            Value::Bool(_) => "Bool".into(),
+            Value::Number(_) => "Number".into(),
+            Value::String(_) => "String".into(),
+            Value::Array(_) => "Array".into(),
+            Value::Object(_) => "Object".into(),
         }
     }
 }

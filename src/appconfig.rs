@@ -92,6 +92,7 @@ mod tests {
             port: "_".to_string(),
             database_url: "_".to_string(),
             environment: "_".to_string(),
+            gcp_project: "_".to_string(),
         }
     }
 

@@ -1,6 +1,6 @@
 use std::env;
 
-use cjms::actions::bigquery;
+use cjms::actions::bigquery::lib::{get_access_token_from_env, get_access_token_from_metadata};
 use cjms::actions::subscription::check_subscriptions;
 use cjms::appconfig::connect_to_database;
 use cjms::settings::get_settings;
@@ -14,8 +14,8 @@ async fn main() -> std::io::Result<()> {
     }
     let access_type = &args[1];
     let bq_access_token = match access_type.as_str() {
-        "env" => bigquery::get_access_token_from_env().await,
-        "metadata" => bigquery::get_access_token_from_metadata().await,
+        "env" => get_access_token_from_env().await,
+        "metadata" => get_access_token_from_metadata().await,
         _ => {
             panic!("Run command with access_type specified `./check_subscription env` or `./check_subscription metadata`.")
         }
@@ -24,7 +24,7 @@ async fn main() -> std::io::Result<()> {
     println!("Start time: {}", OffsetDateTime::now_utc());
     let settings = get_settings();
     let db_pool = connect_to_database(&settings.database_url).await;
-    check_subscriptions(&db_pool, bq_access_token).await;
+    check_subscriptions(&db_pool, bq_access_token, settings).await;
     db_pool.close().await;
     println!("End time: {}", OffsetDateTime::now_utc());
     Ok(())

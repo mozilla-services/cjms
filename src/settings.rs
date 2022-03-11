@@ -7,8 +7,15 @@ pub struct Settings {
     pub host: String,
     pub port: String,
     pub database_url: String,
-    // What environment - dev, stage, prod
+    // What environment - local, dev, stage, prod
     pub environment: String,
+    // TODO - clean this up
+    #[serde(default = "default_gcp_project")]
+    pub gcp_project: String,
+}
+
+fn default_gcp_project() -> String {
+    "moz-fx-cjms-nonprod-9a36".to_string()
 }
 
 impl Settings {
@@ -111,6 +118,7 @@ mod tests {
             port: "2222".to_string(),
             database_url: "postgres://user:password@127.0.0.1:5432/test".to_string(),
             environment: "test".to_string(),
+            gcp_project: default_gcp_project(),
         };
         assert_eq!(expected, actual);
         env::remove_var("HOST");
@@ -136,6 +144,7 @@ mod tests {
             port: "2222".to_string(),
             database_url: "postgres....".to_string(),
             environment: "prod".to_string(),
+            gcp_project: default_gcp_project(),
         };
         assert_eq!(expected, settings);
         assert_eq!("127.1.2.3:2222", settings.server_address());
