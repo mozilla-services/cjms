@@ -33,7 +33,7 @@ pub async fn get_access_token_from_env() -> String {
     std::env::var("BQ_ACCESS_TOKEN").expect("BQ_ACCESS_TOKEN not available")
 }
 
-pub async fn run_bq_table_get(bq_access_token: String, query: &str) -> Response {
+pub async fn run_bq_table_get(bq_access_token: &str, query: &str) -> Response {
     let client = reqwest::Client::new();
     client
         .post("https://www.googleapis.com/bigquery/v2/projects/moz-fx-cjms-nonprod-9a36/queries")

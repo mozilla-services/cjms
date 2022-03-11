@@ -12,8 +12,13 @@ SELECT
   FROM `moz-fx-cjms-nonprod-9a36.cjms_bigquery.sarah_test`
   LIMIT 3
                 "#;
-    let response = run_bq_table_get(big_query_access_token, query).await;
+    let response = run_bq_table_get(&big_query_access_token, query).await;
     println!("Raw response: {:?}", response);
+    println!(
+        "Raw body: {}",
+        response.text().await.expect("Couldn't extract body")
+    );
+    let response = run_bq_table_get(&big_query_access_token, query).await;
     let data: GetQueryResultsResponse = response.json().await.expect("Couldn't extract body.");
     println!("BQ response: {:?}", data);
     /*
