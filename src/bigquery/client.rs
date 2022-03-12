@@ -1,9 +1,11 @@
 use async_trait::async_trait;
 use serde::Deserialize;
+use serde_json::json;
 
 struct BQClient {
     query_api_url: String,
     access_token: String,
+    client: reqwest::Client,
 }
 
 impl BQClient {
@@ -12,10 +14,25 @@ impl BQClient {
         BQClient {
             query_api_url: format!("{}/bigquery/v2/projects/{}/queries", domain, project),
             access_token: token.get().await,
+            client: reqwest::Client::new(),
         }
     }
     pub async fn get_bq_results(&self, query: &str) {
-        println!("{}", query);
+        let resp = self
+            .client
+            .post(self.query_api_url.as_str())
+            .header("Authorization", format!("Bearer {}", self.access_token))
+            .json(&json!({
+                "kind": "bigquery#queryResponse",
+                "query": query,
+                "useLegacySql": false,
+            }))
+            .send()
+            .await
+            .expect("Did not successfully query bigquery");
+        if resp.status() != 200 {
+            panic!("Did not successfully query bigquery. {:?}", resp)
+        }
     }
 }
 
@@ -68,16 +85,24 @@ impl GetAccessToken for AccessTokenFromEnv {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::random_ascii_string;
+    use crate::test_utils::random_simple_ascii_string;
     use serial_test::serial;
-    use wiremock::{matchers::method, Mock, MockServer, ResponseTemplate};
+    use wiremock::{
+        matchers::{any, body_json, header, method, path},
+        Mock, MockServer, ResponseTemplate,
+    };
+
+    fn mock_access_token(token: Option<String>) -> MockGetAccessToken {
+        let token = token.unwrap_or(random_simple_ascii_string());
+        let mut mock_access_token = MockGetAccessToken::new();
+        mock_access_token.expect_get().returning(|| token);
+        mock_access_token
+    }
 
     #[tokio::test]
     async fn new_should_set_default_big_query_endpoint() {
-        let mut mock = MockGetAccessToken::new();
-        mock.expect_get().times(1).returning(random_ascii_string);
-        let project = random_ascii_string();
-        let bq = BQClient::new(&project, mock, None).await;
+        let project = random_simple_ascii_string();
+        let bq = BQClient::new(&project, mock_access_token(None), None).await;
         assert_eq!(
             bq.query_api_url,
             format!(
@@ -89,9 +114,12 @@ mod tests {
 
     #[tokio::test]
     async fn new_should_set_default_passed_in_domain() {
-        let mut mock = MockGetAccessToken::new();
-        mock.expect_get().times(1).returning(random_ascii_string);
-        let bq = BQClient::new("its_a_project", mock, Some("http://localhost")).await;
+        let bq = BQClient::new(
+            "its_a_project",
+            mock_access_token(None),
+            Some("http://localhost"),
+        )
+        .await;
         assert_eq!(
             bq.query_api_url,
             "http://localhost/bigquery/v2/projects/its_a_project/queries"
@@ -100,12 +128,13 @@ mod tests {
 
     #[tokio::test]
     async fn new_should_call_get_from_token() {
-        let access_token = "called_get_on_token";
-        let mut mock = MockGetAccessToken::new();
-        mock.expect_get()
-            .times(1)
-            .returning(|| access_token.to_string());
-        let bq = BQClient::new(&random_ascii_string(), mock, None).await;
+        let access_token = "called_get_on_token".to_string();
+        let bq = BQClient::new(
+            &random_simple_ascii_string(),
+            mock_access_token(Some(access_token)),
+            None,
+        )
+        .await;
         assert_eq!(bq.access_token, access_token);
     }
 
@@ -115,7 +144,7 @@ mod tests {
     async fn missing_env_var_panics() {
         std::env::remove_var("BQ_ACCESS_TOKEN");
         let token_from_env = AccessTokenFromEnv {};
-        BQClient::new(&random_ascii_string(), token_from_env, None).await;
+        BQClient::new(&random_simple_ascii_string(), token_from_env, None).await;
     }
 
     #[tokio::test]
@@ -123,7 +152,7 @@ mod tests {
     async fn pod_metadata_panics() {
         // As we can't simulate a pod, we test the panic.
         let token_from_metadata = AccessTokenFromMetadata {};
-        BQClient::new(&random_ascii_string(), token_from_metadata, None).await;
+        BQClient::new(&random_simple_ascii_string(), token_from_metadata, None).await;
     }
 
     #[tokio::test]
@@ -132,45 +161,77 @@ mod tests {
         let access_token = "env_access_token";
         std::env::set_var("BQ_ACCESS_TOKEN", access_token);
         let token_from_env = AccessTokenFromEnv {};
-        let bq = BQClient::new(&random_ascii_string(), token_from_env, None).await;
+        let bq = BQClient::new(&random_simple_ascii_string(), token_from_env, None).await;
         assert_eq!(bq.access_token, access_token);
         std::env::remove_var("BQ_ACCESS_TOKEN");
     }
 
     #[tokio::test]
     async fn bq_client_query_calls_query_endpoint_with_path_headers_and_query() {
-        let access_token = "called_get_on_token";
-        let mut mock_access_token = MockGetAccessToken::new();
-        mock_access_token
-            .expect_get()
-            .times(1)
-            .returning(|| access_token.to_string());
-
+        let access_token = "bearer_token_for_request".to_string();
         let mock_google = MockServer::start().await;
-
-        /*
-        Mock::given(header("Content-Type", "application/json"))
-            .and(path("/email"))
-            .and(method("POST"))
-            .respond_with(ResponseTemplate::new(200))
-            .expect(1)
-            .mount(&mock_google)
-            .await;
-        */
-        Mock::given(method("GET"))
-            .respond_with(ResponseTemplate::new(200))
-            .expect(1)
-            .mount(&mock_google)
-            .await;
-
         let bq = BQClient::new(
-            &random_ascii_string(),
-            mock_access_token,
+            &random_simple_ascii_string(),
+            mock_access_token(Some(access_token)),
             Some(&mock_google.uri()),
         )
         .await;
-
+        let expected_path = bq.query_api_url.trim_start_matches(&mock_google.uri());
         let query = r#"SELECT * FROM `dataset.table`;"#;
+        Mock::given(method("POST"))
+            .and(path(expected_path))
+            .and(header(
+                "Authorization",
+                format!("Bearer {}", access_token).as_str(),
+            ))
+            .and(body_json(&json!({
+                "kind": "bigquery#queryResponse",
+                "query": query,
+                "useLegacySql": false,
+            })))
+            .respond_with(ResponseTemplate::new(200))
+            .expect(1)
+            .mount(&mock_google)
+            .await;
+
         bq.get_bq_results(query).await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "Did not successfully query bigquery.")]
+    async fn bq_client_query_panics_on_500() {
+        // This tests the manual panic, not the expect.
+        // Not sure how to generate a redirect loop to test the first.
+        // This is fine.
+        let mock_google = MockServer::start().await;
+        let bq = BQClient::new(
+            &random_simple_ascii_string(),
+            mock_access_token(None),
+            Some(&mock_google.uri()),
+        )
+        .await;
+        Mock::given(any())
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&mock_google)
+            .await;
+        bq.get_bq_results("").await;
+    }
+
+    #[tokio::test]
+    async fn bq_client_returns_a_result_set_that_we_can_read_values_from() {
+        let mock_google = MockServer::start().await;
+        let bq = BQClient::new(
+            &random_simple_ascii_string(),
+            mock_access_token(None),
+            Some(&mock_google.uri()),
+        )
+        .await;
+        let response = todo!(); // FILL OUT JSON!!!!!!
+        Mock::given(any())
+            .respond_with(response)
+            .mount(&mock_google)
+            .await;
+
+        let result = bq.get_bq_results("SELECT * FROM `dataset.table`;").await;
     }
 }
