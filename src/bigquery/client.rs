@@ -2,6 +2,8 @@ use async_trait::async_trait;
 use serde::Deserialize;
 use serde_json::json;
 
+use super::model::{GetQueryResultsResponse, QueryResponse, ResultSet};
+
 struct BQClient {
     query_api_url: String,
     access_token: String,
@@ -17,7 +19,7 @@ impl BQClient {
             client: reqwest::Client::new(),
         }
     }
-    pub async fn get_bq_results(&self, query: &str) {
+    pub async fn get_bq_results(&self, query: &str) -> ResultSet {
         let resp = self
             .client
             .post(self.query_api_url.as_str())
@@ -33,7 +35,9 @@ impl BQClient {
         if resp.status() != 200 {
             panic!("Did not successfully query bigquery. {:?}", resp)
         }
-        resp.text().await.expect("yes");
+        let query_results: GetQueryResultsResponse =
+            resp.json().await.expect("Couldn't extract body.");
+        ResultSet::new(QueryResponse::from(query_results))
     }
 }
 
@@ -85,13 +89,23 @@ impl GetAccessToken for AccessTokenFromEnv {
 
 #[cfg(test)]
 mod tests {
+    use std::{fs::File, io::Read};
+
     use super::*;
     use crate::test_utils::random_simple_ascii_string;
+    use serde_json::Value;
     use serial_test::serial;
     use wiremock::{
         matchers::{any, body_json, header, method, path},
         Mock, MockServer, ResponseTemplate,
     };
+
+    fn fixture_bigquery_response() -> Value {
+        let mut file = File::open("tests/fixtures/bigquery_response.json").unwrap();
+        let mut data = String::new();
+        file.read_to_string(&mut data).unwrap();
+        serde_json::from_str(&data).expect("JSON was not well-formatted")
+    }
 
     #[tokio::test]
     async fn new_should_set_default_big_query_endpoint() {
@@ -178,6 +192,7 @@ mod tests {
         .await;
         let expected_path = bq.query_api_url.trim_start_matches(&mock_google.uri());
         let query = r#"SELECT * FROM `dataset.table`;"#;
+        let response = ResponseTemplate::new(200).set_body_json(fixture_bigquery_response());
         Mock::given(method("POST"))
             .and(path(expected_path))
             .and(header(
@@ -189,7 +204,7 @@ mod tests {
                 "query": query,
                 "useLegacySql": false,
             })))
-            .respond_with(ResponseTemplate::new(200))
+            .respond_with(response)
             .expect(1)
             .mount(&mock_google)
             .await;
@@ -222,6 +237,30 @@ mod tests {
     }
 
     #[tokio::test]
+    #[should_panic(expected = "Couldn't extract body.")]
+    async fn bq_client_query_panics_on_bad_body() {
+        // This tests the manual panic, not the expect.
+        // Not sure how to generate a redirect loop to test the first.
+        // This is fine.
+        let mut mock_token = MockGetAccessToken::new();
+        mock_token
+            .expect_get()
+            .returning(random_simple_ascii_string);
+        let mock_google = MockServer::start().await;
+        let bq = BQClient::new(
+            &random_simple_ascii_string(),
+            mock_token,
+            Some(&mock_google.uri()),
+        )
+        .await;
+        Mock::given(any())
+            .respond_with(ResponseTemplate::new(200))
+            .mount(&mock_google)
+            .await;
+        bq.get_bq_results("").await;
+    }
+
+    #[tokio::test]
     async fn bq_client_returns_a_result_set_that_we_can_read_values_from() {
         let mut mock_token = MockGetAccessToken::new();
         mock_token
@@ -234,15 +273,20 @@ mod tests {
             Some(&mock_google.uri()),
         )
         .await;
-        let dummy_response = std::fs::read_to_string("tests/fixtures/bigquery_response.json")
-            .expect("Couldn't read test file.");
-        let response = ResponseTemplate::new(200).set_body_json(dummy_response);
+
+        let response = ResponseTemplate::new(200).set_body_json(fixture_bigquery_response());
         Mock::given(any())
             .respond_with(response)
             .mount(&mock_google)
             .await;
 
-        let result = bq.get_bq_results("SELECT * FROM `dataset.table`;").await;
-        println!("{:?}", result);
+        let mut rs = bq.get_bq_results("SELECT * FROM `dataset.table`;").await;
+        let mut row_count = 0;
+        while rs.next_row() {
+            row_count += 1;
+        }
+        assert_eq!(row_count, 3);
+        // Build three objects and compare.
+        todo!();
     }
 }
