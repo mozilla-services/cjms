@@ -33,6 +33,7 @@ impl BQClient {
         if resp.status() != 200 {
             panic!("Did not successfully query bigquery. {:?}", resp)
         }
+        resp.text().await.expect("yes");
     }
 }
 
@@ -92,17 +93,14 @@ mod tests {
         Mock, MockServer, ResponseTemplate,
     };
 
-    fn mock_access_token(token: Option<String>) -> MockGetAccessToken {
-        let token = token.unwrap_or(random_simple_ascii_string());
-        let mut mock_access_token = MockGetAccessToken::new();
-        mock_access_token.expect_get().returning(|| token);
-        mock_access_token
-    }
-
     #[tokio::test]
     async fn new_should_set_default_big_query_endpoint() {
+        let mut mock_token = MockGetAccessToken::new();
+        mock_token
+            .expect_get()
+            .returning(random_simple_ascii_string);
         let project = random_simple_ascii_string();
-        let bq = BQClient::new(&project, mock_access_token(None), None).await;
+        let bq = BQClient::new(&project, mock_token, None).await;
         assert_eq!(
             bq.query_api_url,
             format!(
@@ -114,12 +112,11 @@ mod tests {
 
     #[tokio::test]
     async fn new_should_set_default_passed_in_domain() {
-        let bq = BQClient::new(
-            "its_a_project",
-            mock_access_token(None),
-            Some("http://localhost"),
-        )
-        .await;
+        let mut mock_token = MockGetAccessToken::new();
+        mock_token
+            .expect_get()
+            .returning(random_simple_ascii_string);
+        let bq = BQClient::new("its_a_project", mock_token, Some("http://localhost")).await;
         assert_eq!(
             bq.query_api_url,
             "http://localhost/bigquery/v2/projects/its_a_project/queries"
@@ -128,13 +125,12 @@ mod tests {
 
     #[tokio::test]
     async fn new_should_call_get_from_token() {
-        let access_token = "called_get_on_token".to_string();
-        let bq = BQClient::new(
-            &random_simple_ascii_string(),
-            mock_access_token(Some(access_token)),
-            None,
-        )
-        .await;
+        let access_token = "called_get_on_token";
+        let mut mock_token = MockGetAccessToken::new();
+        mock_token
+            .expect_get()
+            .returning(|| access_token.to_string());
+        let bq = BQClient::new(&random_simple_ascii_string(), mock_token, None).await;
         assert_eq!(bq.access_token, access_token);
     }
 
@@ -168,11 +164,15 @@ mod tests {
 
     #[tokio::test]
     async fn bq_client_query_calls_query_endpoint_with_path_headers_and_query() {
-        let access_token = "bearer_token_for_request".to_string();
+        let access_token = "bearer_token_for_request";
+        let mut mock_token = MockGetAccessToken::new();
+        mock_token
+            .expect_get()
+            .returning(|| access_token.to_string());
         let mock_google = MockServer::start().await;
         let bq = BQClient::new(
             &random_simple_ascii_string(),
-            mock_access_token(Some(access_token)),
+            mock_token,
             Some(&mock_google.uri()),
         )
         .await;
@@ -203,10 +203,14 @@ mod tests {
         // This tests the manual panic, not the expect.
         // Not sure how to generate a redirect loop to test the first.
         // This is fine.
+        let mut mock_token = MockGetAccessToken::new();
+        mock_token
+            .expect_get()
+            .returning(random_simple_ascii_string);
         let mock_google = MockServer::start().await;
         let bq = BQClient::new(
             &random_simple_ascii_string(),
-            mock_access_token(None),
+            mock_token,
             Some(&mock_google.uri()),
         )
         .await;
@@ -219,19 +223,26 @@ mod tests {
 
     #[tokio::test]
     async fn bq_client_returns_a_result_set_that_we_can_read_values_from() {
+        let mut mock_token = MockGetAccessToken::new();
+        mock_token
+            .expect_get()
+            .returning(random_simple_ascii_string);
         let mock_google = MockServer::start().await;
         let bq = BQClient::new(
             &random_simple_ascii_string(),
-            mock_access_token(None),
+            mock_token,
             Some(&mock_google.uri()),
         )
         .await;
-        let response = todo!(); // FILL OUT JSON!!!!!!
+        let dummy_response = std::fs::read_to_string("tests/fixtures/bigquery_response.json")
+            .expect("Couldn't read test file.");
+        let response = ResponseTemplate::new(200).set_body_json(dummy_response);
         Mock::given(any())
             .respond_with(response)
             .mount(&mock_google)
             .await;
 
         let result = bq.get_bq_results("SELECT * FROM `dataset.table`;").await;
+        println!("{:?}", result);
     }
 }

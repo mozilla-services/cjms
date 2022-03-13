@@ -1,0 +1,86 @@
+{
+  "kind": "bigquery#queryResponse",
+  "schema": {
+    "fields": [
+      {
+        "name": "start_date",
+        "type": "TIMESTAMP",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "plan_id",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "plan_amount",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "promotion_codes",
+        "type": "STRING",
+        "mode": "REPEATED"
+      }
+    ]
+  },
+  "jobReference": {
+    "projectId": "moz-fx",
+    "jobId": "job_FBJlFsQ9M9G_Jfe8M3sd",
+    "location": "us2"
+  },
+  "totalRows": "3",
+  "rows": [
+    {
+      "f": [
+        {
+          "v": "1.646954329E9"
+        },
+        {
+          "v": "price_1Iw85dJNcmPzuWtRyhMDdtM7"
+        },
+        {
+          "v": "5988"
+        },
+        {
+          "v": ["a", "b"]
+        }
+      ]
+    },
+    {
+      "f": [
+        {
+          "v": "1.646954616E9"
+        },
+        {
+          "v": "price_1Iw85dJNcmPzuWtRyhMDdtM7"
+        },
+        {
+          "v": "5988"
+        },
+        {
+          "v": []
+        }
+      ]
+    },
+    {
+      "f": [
+        {
+          "v": "1.647020804141794E9"
+        },
+        {
+          "v": "price_1Iw85dJNcmPzuWtRyhMDdtM7"
+        },
+        {
+          "v": "5988"
+        },
+        {
+          "v": []
+        }
+      ]
+    }
+  ],
+  "totalBytesProcessed": "0",
+  "jobComplete": true,
+  "cacheHit": true
+}
