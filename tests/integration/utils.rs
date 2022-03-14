@@ -56,20 +56,21 @@ async fn create_test_database(database_url: &str) -> String {
 pub async fn spawn_app() -> TestApp {
     Lazy::force(&TRACING);
 
-    let mut settings = get_settings();
+    let settings = get_settings();
     let listener =
         TcpListener::bind(format!("{}:0", settings.host))
         .expect("Failed to bind random port");
     let port = listener.local_addr().unwrap().port();
     let test_database_url = create_test_database(&settings.database_url).await;
     let db_pool = connect_to_database_and_migrate(&test_database_url).await;
-    let server = run_server(listener, db_pool).expect("Failed to start server");
+    let mut test_app_settings = settings.clone();
+    let server = run_server(settings, listener, db_pool).expect("Failed to start server");
     let _ = tokio::spawn(server);
-
-    settings.database_url = test_database_url;
-    settings.port = format!("{}", port);
-
-    TestApp { settings }
+    test_app_settings.database_url = test_database_url;
+    test_app_settings.port = format!("{}", port);
+    TestApp {
+        settings: test_app_settings,
+    }
 }
 
 pub fn random_ascii_string() -> String {

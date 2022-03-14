@@ -1,4 +1,5 @@
 settings.yaml
+version.yaml
 .vscode
 
 # Useful when building new sqlx macros

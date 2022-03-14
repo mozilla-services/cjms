@@ -1,11 +1,14 @@
 use config::{Config, Environment, File, FileFormat};
 use std::fs;
 
-#[derive(serde::Deserialize, PartialEq, Eq, Debug)]
+#[derive(serde::Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct Settings {
+    // Server host and port to run on
     pub host: String,
     pub port: String,
     pub database_url: String,
+    // What environment - dev, stage, prod
+    pub environment: String,
 }
 
 impl Settings {
@@ -99,6 +102,7 @@ mod tests {
             "DATABASE_URL",
             "postgres://user:password@127.0.0.1:5432/test",
         );
+        env::set_var("ENVIRONMENT", "test");
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const(String::new());
         let actual = _get_settings(mock);
@@ -106,11 +110,13 @@ mod tests {
             host: "111.2.3.6".to_string(),
             port: "2222".to_string(),
             database_url: "postgres://user:password@127.0.0.1:5432/test".to_string(),
+            environment: "test".to_string(),
         };
         assert_eq!(expected, actual);
         env::remove_var("HOST");
         env::remove_var("PORT");
         env::remove_var("DATABASE_URL");
+        env::remove_var("ENVIRONMENT");
     }
 
     #[test]
@@ -119,6 +125,7 @@ mod tests {
         writeln!(file, "host: 127.1.2.3").unwrap();
         writeln!(file, "port: 2222").unwrap();
         writeln!(file, "database_url: postgres....").unwrap();
+        writeln!(file, "environment: prod").unwrap();
         let path = file.into_temp_path();
         let path_str = format!("{}", path.display());
         let mut mock = MockHasFile::new();
@@ -128,6 +135,7 @@ mod tests {
             host: "127.1.2.3".to_string(),
             port: "2222".to_string(),
             database_url: "postgres....".to_string(),
+            environment: "prod".to_string(),
         };
         assert_eq!(expected, settings);
         assert_eq!("127.1.2.3:2222", settings.server_address());
