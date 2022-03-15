@@ -1,5 +1,6 @@
 pub mod appconfig;
 pub mod bigquery;
+pub mod cjms;
 pub mod controllers;
 pub mod models;
 pub mod settings;
