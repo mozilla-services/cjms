@@ -1,4 +1,4 @@
-use cjms::{
+use lib::{
     controllers::aic::AICResponse,
     models::aic::{AICModel, AIC},
 };

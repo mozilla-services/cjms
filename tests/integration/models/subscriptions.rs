@@ -1,5 +1,5 @@
 use crate::utils::{random_ascii_string, random_currency_or_country, random_price, spawn_app};
-use cjms::models::subscriptions::{Subscription, SubscriptionModel};
+use lib::models::subscriptions::{Subscription, SubscriptionModel};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 

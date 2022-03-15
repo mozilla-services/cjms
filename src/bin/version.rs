@@ -1,4 +1,4 @@
-use cjms::controllers::custodial::VERSION_FILE;
+use lib::controllers::custodial::VERSION_FILE;
 use std::process::Command;
 use std::str;
 use std::{env, fs};

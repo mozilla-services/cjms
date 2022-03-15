@@ -1,5 +1,5 @@
 use crate::utils::{random_ascii_string, spawn_app};
-use cjms::models::aic::AICModel;
+use lib::models::aic::AICModel;
 use uuid::Uuid;
 
 #[tokio::test]

@@ -6,7 +6,8 @@ use time::OffsetDateTime;
 use super::model::{GetQueryResultsResponse, QueryResponse, ResultSet};
 
 pub struct BQClient {
-    query_api_url: String,
+    domain: String,
+    pub project: String,
     access_token: String,
     client: reqwest::Client,
 }
@@ -15,15 +16,22 @@ impl BQClient {
     pub async fn new(project: &str, token: impl GetAccessToken, domain: Option<&str>) -> BQClient {
         let domain = domain.unwrap_or("https://www.googleapis.com");
         BQClient {
-            query_api_url: format!("{}/bigquery/v2/projects/{}/queries", domain, project),
+            domain: domain.to_string(),
+            project: project.to_string(),
             access_token: token.get().await,
             client: reqwest::Client::new(),
         }
     }
+    pub fn query_api_url(&self) -> String {
+        format!(
+            "{}/bigquery/v2/projects/{}/queries",
+            self.domain, self.project
+        )
+    }
     pub async fn get_bq_results(&self, query: &str) -> ResultSet {
         let resp = self
             .client
-            .post(self.query_api_url.as_str())
+            .post(self.query_api_url().as_str())
             .header("Authorization", format!("Bearer {}", self.access_token))
             .json(&json!({
                 "kind": "bigquery#queryResponse",
@@ -112,7 +120,7 @@ mod tests {
     use std::{fs::File, io::Read};
 
     use super::*;
-    use crate::utils::random_simple_ascii_string;
+    use crate::test_utils::random_simple_ascii_string;
     use serde_json::Value;
     use serial_test::serial;
     use wiremock::{
@@ -136,7 +144,7 @@ mod tests {
         let project = random_simple_ascii_string();
         let bq = BQClient::new(&project, mock_token, None).await;
         assert_eq!(
-            bq.query_api_url,
+            bq.query_api_url(),
             format!(
                 "https://www.googleapis.com/bigquery/v2/projects/{}/queries",
                 project
@@ -152,7 +160,7 @@ mod tests {
             .returning(random_simple_ascii_string);
         let bq = BQClient::new("its_a_project", mock_token, Some("http://localhost")).await;
         assert_eq!(
-            bq.query_api_url,
+            bq.query_api_url(),
             "http://localhost/bigquery/v2/projects/its_a_project/queries"
         );
     }
@@ -210,7 +218,8 @@ mod tests {
             Some(&mock_google.uri()),
         )
         .await;
-        let expected_path = bq.query_api_url.trim_start_matches(&mock_google.uri());
+        let url = bq.query_api_url();
+        let expected_path = url.trim_start_matches(&mock_google.uri());
         let query = r#"SELECT * FROM `dataset.table`;"#;
         let response = ResponseTemplate::new(200).set_body_json(fixture_bigquery_response());
         Mock::given(method("POST"))

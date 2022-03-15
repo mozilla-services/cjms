@@ -1,5 +1,7 @@
-use cjms::appconfig::{connect_to_database_and_migrate, run_server};
-use cjms::settings::get_settings;
+use lib::{
+    appconfig::{connect_to_database_and_migrate, run_server},
+    settings::get_settings,
+};
 use std::net::TcpListener;
 
 #[actix_web::main]

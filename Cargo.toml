@@ -17,6 +17,10 @@ path = "src/bin/version.rs"
 name = "check_subscription"
 path = "src/bin/check_subscription.rs"
 
+[lib]
+name = "lib"
+path = "src/lib/mod.rs"
+
 [dependencies]
 actix-cors = "0.6.0"
 actix-web = "4"

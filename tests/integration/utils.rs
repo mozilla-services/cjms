@@ -1,6 +1,6 @@
-use cjms::appconfig::{connect_to_database_and_migrate, run_server};
-use cjms::settings::{get_settings, Settings};
 use fake::{Fake, StringFaker};
+use lib::appconfig::{connect_to_database_and_migrate, run_server};
+use lib::settings::{get_settings, Settings};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
