@@ -5,7 +5,7 @@ use time::OffsetDateTime;
 
 use super::model::{GetQueryResultsResponse, QueryResponse, ResultSet};
 
-struct BQClient {
+pub struct BQClient {
     query_api_url: String,
     access_token: String,
     client: reqwest::Client,
@@ -63,7 +63,7 @@ pub fn get_commaseperatedstring_from_resultset_column(rs: &ResultSet, column_nam
 
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
-trait GetAccessToken {
+pub trait GetAccessToken {
     async fn get(&self) -> String;
 }
 
