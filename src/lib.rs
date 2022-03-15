@@ -5,7 +5,7 @@ pub mod models;
 pub mod settings;
 
 #[cfg(test)]
-pub mod test_utils {
+pub mod utils {
     use fake::{Fake, StringFaker};
 
     pub fn random_ascii_string() -> String {

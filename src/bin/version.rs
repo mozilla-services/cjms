@@ -45,7 +45,7 @@ fn main() -> std::io::Result<()> {
 }
 
 #[cfg(test)]
-mod tests {
+mod test_bin_version {
     use super::*;
     use serial_test::serial;
 

@@ -79,7 +79,7 @@ fn allowed_origins(settings: &Settings) -> Vec<&'static str> {
 }
 
 #[cfg(test)]
-mod tests {
+mod test_appconfig {
     use super::*;
 
     fn dummy_settings() -> Settings {

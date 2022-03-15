@@ -112,7 +112,7 @@ mod tests {
     use std::{fs::File, io::Read};
 
     use super::*;
-    use crate::test_utils::random_simple_ascii_string;
+    use crate::utils::random_simple_ascii_string;
     use serde_json::Value;
     use serial_test::serial;
     use wiremock::{

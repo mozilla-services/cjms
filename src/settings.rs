@@ -54,7 +54,7 @@ pub fn get_settings() -> Settings {
 }
 
 #[cfg(test)]
-mod tests {
+mod test_settings {
     use super::*;
     use serial_test::serial;
     use std::env;
