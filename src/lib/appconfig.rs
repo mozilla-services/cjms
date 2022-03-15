@@ -61,7 +61,7 @@ fn allowed_origins(settings: &Settings) -> Vec<&'static str> {
         "prod" => {
             vec!["https://www.mozilla.org", "https://www.allizom.org"]
         }
-        "dev" | "stage" => {
+        "local" | "dev" | "stage" => {
             vec![
                 "http://localhost:8000",
                 "https://www-dev.allizom.org",
@@ -81,20 +81,11 @@ fn allowed_origins(settings: &Settings) -> Vec<&'static str> {
 #[cfg(test)]
 mod test_appconfig {
     use super::*;
-
-    fn dummy_settings() -> Settings {
-        Settings {
-            host: "_".to_string(),
-            port: "_".to_string(),
-            database_url: "_".to_string(),
-            environment: "_".to_string(),
-            gcp_project: "_".to_string(),
-        }
-    }
+    use crate::test_utils::empty_settings;
 
     #[test]
     fn test_allowed_origins_for_stage_and_dev() {
-        let mut settings = dummy_settings();
+        let mut settings = empty_settings();
         for test_case in ["stage", "dev"] {
             settings.environment = test_case.to_string();
             let origins = allowed_origins(&settings);
@@ -120,7 +111,7 @@ mod test_appconfig {
 
     #[test]
     fn test_allowed_origins_for_prod() {
-        let mut settings = dummy_settings();
+        let mut settings = empty_settings();
         settings.environment = "prod".to_string();
         let origins = allowed_origins(&settings);
         assert_eq!(origins.len(), 2);
@@ -131,7 +122,7 @@ mod test_appconfig {
 
     #[test]
     fn test_allowed_origins_for_test() {
-        let mut settings = dummy_settings();
+        let mut settings = empty_settings();
         settings.environment = "test".to_string();
         let origins = allowed_origins(&settings);
         assert_eq!(origins.len(), 0);
@@ -140,6 +131,6 @@ mod test_appconfig {
     #[test]
     #[should_panic]
     fn test_allowed_origins_for_not_allowed() {
-        allowed_origins(&dummy_settings());
+        allowed_origins(&empty_settings());
     }
 }

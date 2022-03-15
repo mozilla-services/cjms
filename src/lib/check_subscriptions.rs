@@ -1,9 +1,6 @@
 /*
  * A collection of functions used by bin/check_subscription.rs
  */
-
-use std::env;
-
 use crate::bigquery::client::{AccessTokenFromEnv, AccessTokenFromMetadata, BQClient};
 use crate::settings::Settings;
 
@@ -12,57 +9,67 @@ pub async fn get_bqclient(settings: &Settings) -> BQClient {
     // - the correct setting of token when using metadata
     // - the correct setting of project when using metadata
     // Take appropriate caution when updating this function.
-    match use_env(env::args().collect()) {
+    match use_env(settings) {
         true => BQClient::new(&settings.gcp_project, AccessTokenFromEnv {}, None).await,
         false => BQClient::new(&settings.gcp_project, AccessTokenFromMetadata {}, None).await,
     }
 }
 
-fn use_env(args: Vec<String>) -> bool {
-    println!("ARGS ARE: {:?}", args);
-    let mut use_env = false;
-    if args.len() == 2 {
-        assert_eq!(
-            &args[1],
-            "env",
-            "Invalid param passed to check_subscription. Use `./check_subscription env` or `./check_subscription` (to use pod metadata).");
-        use_env = true;
+fn use_env(settings: &Settings) -> bool {
+    match settings.environment.as_str() {
+        "dev" | "stage" | "prod" => false,
+        "local" | "test" => true,
+        _ => panic!("Invalid environment value. Must be local | test | dev | stage | prod."),
     }
-    use_env
 }
 
 #[cfg(test)]
 mod tests {
 
+    use std::env;
+
     use super::*;
+    use serial_test::serial;
+
     use crate::settings::test_settings::get_test_settings;
+    use crate::test_utils::empty_settings;
 
     #[test]
     fn test_use_env_true() {
-        let args = vec!["_".to_string(), "env".to_string()];
-        let use_env = use_env(args);
-        assert!(use_env);
+        let mut settings = empty_settings();
+        for test_case in ["local", "test"] {
+            settings.environment = test_case.to_string();
+            let use_env = use_env(&settings);
+            assert!(use_env);
+        }
     }
 
     #[test]
     fn test_use_env_false() {
-        let args = vec!["_".to_string()];
-        let use_env = use_env(args);
-        assert!(!use_env);
+        let mut settings = empty_settings();
+        for test_case in ["dev", "stage", "prod"] {
+            settings.environment = test_case.to_string();
+            let use_env = use_env(&settings);
+            assert!(!use_env);
+        }
     }
 
     #[test]
-    #[should_panic(expected = "Invalid param passed to check_subscription.")]
+    #[should_panic(expected = "Invalid environment value. Must be local | test |")]
     fn test_use_env_invalid() {
-        let args = vec!["_".to_string(), "_".to_string()];
-        let use_env = use_env(args);
-        assert!(!use_env);
+        let mut settings = empty_settings();
+        settings.environment = "misc".to_string();
+        use_env(&settings);
     }
 
     #[tokio::test]
+    #[serial]
     async fn test_get_bq_client_from_env_uses_project_correctly() {
-        let settings = get_test_settings("test_gcp_project");
+        env::set_var("BQ_ACCESS_TOKEN", "a token");
+        let mut settings = get_test_settings("test_gcp_project");
+        settings.environment = "local".to_string();
         let bq = get_bqclient(&settings).await;
         assert_eq!(bq.project, "test_gcp_project");
+        env::remove_var("BQ_ACCESS_TOKEN");
     }
 }
