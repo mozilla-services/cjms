@@ -20,7 +20,7 @@ fn use_env(args: Vec<String>) -> bool {
         assert_eq!(
             &args[1],
             "env",
-            "Run command with access_type specified `./check_subscription env` or `./check_subscription` to use pod metadata.");
+            "Invalid param passed to check_subscription. Use `./check_subscription env` or `./check_subscription` (to use pod metadata).");
         use_env = true;
     }
     use_env
@@ -35,5 +35,20 @@ mod test_bin_check_subscription {
         let args = vec!["_".to_string(), "env".to_string()];
         let use_env = use_env(args);
         assert!(use_env);
+    }
+
+    #[test]
+    fn test_use_env_false() {
+        let args = vec!["_".to_string()];
+        let use_env = use_env(args);
+        assert!(!use_env);
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid param passed to check_subscription.")]
+    fn test_use_env_invalid() {
+        let args = vec!["_".to_string(), "_".to_string()];
+        let use_env = use_env(args);
+        assert!(!use_env);
     }
 }
