@@ -61,6 +61,16 @@ pub fn random_ascii_string() -> String {
     f.fake()
 }
 
+pub fn random_currency_or_country() -> String {
+    const LETTERS: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let f = StringFaker::with(Vec::from(LETTERS), 1..5);
+    f.fake()
+}
+
+pub fn random_price() -> i32 {
+    (99..7899).fake()
+}
+
 pub async fn send_get_request(app: &TestApp, path: &str) -> reqwest::Response {
     let path = app.build_url(path);
     reqwest::get(&path).await.expect("Failed to GET")

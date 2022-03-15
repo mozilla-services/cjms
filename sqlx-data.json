@@ -87,6 +87,189 @@
     },
     "query": "UPDATE aic\n            SET flow_id = $1\n            WHERE id = $2\n\t\t\tRETURNING *"
   },
+  "599e389e80195a15d299677cba91f3a5a88ebf317787c90fa0fe03c812306e67": {
+    "describe": {
+      "columns": [
+        {
+          "name": "aic_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "cj_event_value",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "flow_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "report_timestamp",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "subscription_created",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "subscription_id",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "fxa_uid",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "quantity",
+          "ordinal": 7,
+          "type_info": "Int4"
+        },
+        {
+          "name": "plan_id",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "plan_currency",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "plan_amount",
+          "ordinal": 10,
+          "type_info": "Int4"
+        },
+        {
+          "name": "country",
+          "ordinal": 11,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "SELECT * FROM subscriptions WHERE aic_id = $1"
+  },
+  "719fc0225d6620da17e1403e4c79b833b18128c2f8c2111dc74a09d54ba1a862": {
+    "describe": {
+      "columns": [
+        {
+          "name": "aic_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "cj_event_value",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "flow_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "report_timestamp",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "subscription_created",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "subscription_id",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "fxa_uid",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "quantity",
+          "ordinal": 7,
+          "type_info": "Int4"
+        },
+        {
+          "name": "plan_id",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "plan_currency",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "plan_amount",
+          "ordinal": 10,
+          "type_info": "Int4"
+        },
+        {
+          "name": "country",
+          "ordinal": 11,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Timestamptz",
+          "Timestamptz",
+          "Text",
+          "Text",
+          "Int4",
+          "Text",
+          "Text",
+          "Int4",
+          "Text"
+        ]
+      }
+    },
+    "query": "INSERT INTO subscriptions (aic_id, cj_event_value, flow_id, report_timestamp, subscription_created, subscription_id, fxa_uid, quantity, plan_id, plan_currency, plan_amount, country)\n\t\t\tVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n\t\t\tRETURNING *"
+  },
   "9e303b2b6ebf017cf77da7164b42650a7af1eaba834da57617da7310af2b5ab9": {
     "describe": {
       "columns": [
