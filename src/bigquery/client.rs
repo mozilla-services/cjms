@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use serde::Deserialize;
 use serde_json::json;
+use time::OffsetDateTime;
 
 use super::model::{GetQueryResultsResponse, QueryResponse, ResultSet};
 
@@ -39,6 +40,25 @@ impl BQClient {
             resp.json().await.expect("Couldn't extract body.");
         ResultSet::new(QueryResponse::from(query_results))
     }
+}
+
+pub fn get_offsetdatetime_from_resultset_column(
+    rs: &ResultSet,
+    column_name: &str,
+) -> OffsetDateTime {
+    // Note this panics if we get bad or no data back from big query
+    // TODO - Think of cleaner handling strategy (can this wait to see if we actually get bad data in practice?)
+    OffsetDateTime::from_unix_timestamp(rs.get_i64_by_name(column_name).unwrap().unwrap())
+}
+
+pub fn get_commaseperatedstring_from_resultset_column(rs: &ResultSet, column_name: &str) -> String {
+    let promotion_codes_raw = rs
+        .get_json_value_by_name(column_name)
+        .unwrap()
+        .unwrap()
+        .to_string();
+    let promotion_codes: Vec<String> = serde_json::from_str(&promotion_codes_raw).unwrap();
+    promotion_codes.join(",")
 }
 
 #[cfg_attr(test, mockall::automock)]
@@ -281,12 +301,36 @@ mod tests {
             .await;
 
         let mut rs = bq.get_bq_results("SELECT * FROM `dataset.table`;").await;
-        let mut row_count = 0;
-        while rs.next_row() {
-            row_count += 1;
+        assert_eq!(rs.row_count(), 3);
+        struct TestItem {
+            start_date: OffsetDateTime,
+            plan_id: String,
+            plan_amount: i64,
+            promotion_codes: String,
         }
-        assert_eq!(row_count, 3);
-        // Build three objects and compare.
-        todo!();
+        let mut rows: Vec<TestItem> = Vec::new();
+        while rs.next_row() {
+            let start_date = get_offsetdatetime_from_resultset_column(&rs, "start_date");
+            let promotion_codes =
+                get_commaseperatedstring_from_resultset_column(&rs, "promotion_codes");
+            rows.push(TestItem {
+                start_date,
+                plan_id: rs.get_string_by_name("plan_id").unwrap().unwrap(),
+                plan_amount: rs.get_i64_by_name("plan_amount").unwrap().unwrap(),
+                promotion_codes,
+            });
+        }
+        // One test for each data type. Plus one test that rows are different.
+        assert_eq!(
+            rows[0].start_date.unix_timestamp(),
+            OffsetDateTime::parse("2022-03-10 23:18:49 +0000", "%F %T %z")
+                .unwrap()
+                .unix_timestamp()
+        );
+        assert_eq!(rows[0].plan_id, "price_1Iw85dJNcmPzuWtRyhMDdtM7");
+        assert_eq!(rows[0].promotion_codes, "a,b");
+        assert_eq!(rows[0].plan_amount, 3988);
+        assert_eq!(rows[1].plan_amount, 4988);
+        assert_eq!(rows[2].plan_amount, 5988);
     }
 }
