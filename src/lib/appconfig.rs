@@ -72,7 +72,6 @@ fn allowed_origins(settings: &Settings) -> Vec<&'static str> {
                 "https://www-demo5.allizom.org",
             ]
         }
-        "test" => vec![],
         _ => panic!("Invalid settings value"),
     };
     allowed
@@ -86,7 +85,7 @@ mod test_appconfig {
     #[test]
     fn test_allowed_origins_for_stage_and_dev() {
         let mut settings = empty_settings();
-        for test_case in ["stage", "dev"] {
+        for test_case in ["local", "stage", "dev"] {
             settings.environment = test_case.to_string();
             let origins = allowed_origins(&settings);
             assert_eq!(origins.len(), 7);
@@ -118,14 +117,6 @@ mod test_appconfig {
         for expected_origin in ["https://www.mozilla.org", "https://www.allizom.org"] {
             assert!(origins.contains(&expected_origin));
         }
-    }
-
-    #[test]
-    fn test_allowed_origins_for_test() {
-        let mut settings = empty_settings();
-        settings.environment = "test".to_string();
-        let origins = allowed_origins(&settings);
-        assert_eq!(origins.len(), 0);
     }
 
     #[test]

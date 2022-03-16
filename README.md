@@ -66,9 +66,9 @@ If configuring with environment variables, all variables, listed in settings.yam
 
 ## Auto-magic behavior based on environment
 
-Valid values for environment are: local | test | dev | stage | prod.
+Valid values for environment are: local | dev | stage | prod.
 
-* If using local | test, you must have BQ_ACCESS_TOKEN set in your environment.
+* If using local, you must have BQ_ACCESS_TOKEN set in your environment when running bins that access big query.
 * CORS changes based on environment (see appconfig)
 
 

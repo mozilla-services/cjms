@@ -21,8 +21,8 @@ pub async fn get_bqclient(settings: &Settings) -> BQClient {
 fn use_env(settings: &Settings) -> bool {
     match settings.environment.as_str() {
         "dev" | "stage" | "prod" => false,
-        "local" | "test" => true,
-        _ => panic!("Invalid environment value. Must be local | test | dev | stage | prod."),
+        "local" => true,
+        _ => panic!("Invalid environment value. Must be local | dev | stage | prod."),
     }
 }
 pub struct BQClient {
@@ -161,11 +161,9 @@ mod tests {
     #[test]
     fn test_use_env_true() {
         let mut settings = empty_settings();
-        for test_case in ["local", "test"] {
-            settings.environment = test_case.to_string();
-            let use_env = use_env(&settings);
-            assert!(use_env);
-        }
+        settings.environment = "local".to_string();
+        let use_env = use_env(&settings);
+        assert!(use_env);
     }
 
     #[test]
@@ -179,7 +177,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid environment value. Must be local | test |")]
+    #[should_panic(expected = "Invalid environment value. Must be local | dev |")]
     fn test_use_env_invalid() {
         let mut settings = empty_settings();
         settings.environment = "misc".to_string();
