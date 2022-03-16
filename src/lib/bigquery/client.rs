@@ -3,8 +3,28 @@ use serde::Deserialize;
 use serde_json::json;
 use time::OffsetDateTime;
 
+use crate::settings::Settings;
+
 use super::model::{GetQueryResultsResponse, QueryResponse, ResultSet};
 
+pub async fn get_bqclient(settings: &Settings) -> BQClient {
+    // Note we don't have tests that check:
+    // - the correct setting of token when using metadata
+    // - the correct setting of project when using metadata
+    // Take appropriate caution when updating this function.
+    match use_env(settings) {
+        true => BQClient::new(&settings.gcp_project, AccessTokenFromEnv {}, None).await,
+        false => BQClient::new(&settings.gcp_project, AccessTokenFromMetadata {}, None).await,
+    }
+}
+
+fn use_env(settings: &Settings) -> bool {
+    match settings.environment.as_str() {
+        "dev" | "stage" | "prod" => false,
+        "local" | "test" => true,
+        _ => panic!("Invalid environment value. Must be local | test | dev | stage | prod."),
+    }
+}
 pub struct BQClient {
     domain: String,
     pub project: String,
@@ -117,10 +137,13 @@ impl GetAccessToken for AccessTokenFromEnv {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::Read};
+    use std::{env, fs::File, io::Read};
 
     use super::*;
-    use crate::test_utils::random_simple_ascii_string;
+    use crate::{
+        settings::test_settings::get_test_settings,
+        test_utils::{empty_settings, random_simple_ascii_string},
+    };
     use serde_json::Value;
     use serial_test::serial;
     use wiremock::{
@@ -133,6 +156,45 @@ mod tests {
         let mut data = String::new();
         file.read_to_string(&mut data).unwrap();
         serde_json::from_str(&data).expect("JSON was not well-formatted")
+    }
+
+    #[test]
+    fn test_use_env_true() {
+        let mut settings = empty_settings();
+        for test_case in ["local", "test"] {
+            settings.environment = test_case.to_string();
+            let use_env = use_env(&settings);
+            assert!(use_env);
+        }
+    }
+
+    #[test]
+    fn test_use_env_false() {
+        let mut settings = empty_settings();
+        for test_case in ["dev", "stage", "prod"] {
+            settings.environment = test_case.to_string();
+            let use_env = use_env(&settings);
+            assert!(!use_env);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid environment value. Must be local | test |")]
+    fn test_use_env_invalid() {
+        let mut settings = empty_settings();
+        settings.environment = "misc".to_string();
+        use_env(&settings);
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_get_bq_client_from_env_uses_project_correctly() {
+        env::set_var("BQ_ACCESS_TOKEN", "a token");
+        let mut settings = get_test_settings("test_gcp_project");
+        settings.environment = "local".to_string();
+        let bq = get_bqclient(&settings).await;
+        assert_eq!(bq.project, "test_gcp_project");
+        env::remove_var("BQ_ACCESS_TOKEN");
     }
 
     #[tokio::test]

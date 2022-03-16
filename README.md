@@ -64,6 +64,14 @@ Then run the server:
 
 If configuring with environment variables, all variables, listed in settings.yaml.example must be available.
 
+## Auto-magic behavior based on environment
+
+Valid values for environment are: local | test | dev | stage | prod.
+
+* If using local | test, you must have BQ_ACCESS_TOKEN set in your environment.
+* CORS changes based on environment (see appconfig)
+
+
 # Run tests
 
 `cargo test`

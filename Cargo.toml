@@ -14,8 +14,8 @@ name = "make_version_file"
 path = "src/bin/version.rs"
 
 [[bin]]
-name = "check_subscription"
-path = "src/bin/check_subscription.rs"
+name = "check_subscriptions"
+path = "src/bin/check_subscriptions.rs"
 
 [lib]
 name = "lib"
