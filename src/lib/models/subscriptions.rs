@@ -10,6 +10,7 @@ pub struct Subscription {
     pub subscription_id: String,
     pub report_timestamp: OffsetDateTime,
     pub subscription_created: OffsetDateTime,
+    // Note this is a hash
     pub fxa_uid: String,
     pub quantity: i32,
     pub plan_id: String,
@@ -37,8 +38,9 @@ impl PartialEq for Subscription {
         self.country == other.country &&
         self.aic_id == other.aic_id &&
         self.cj_event_value == other.cj_event_value &&
-        self.status == other.status &&
-        self.status_history == other.status_history
+        self.status == other.status
+        // Compare manually if needed
+        //self.status_history == other.status_history
     }
 }
 impl Eq for Subscription {}
@@ -95,6 +97,16 @@ impl SubscriptionModel<'_> {
             Subscription,
             "SELECT * FROM subscriptions WHERE id = $1",
             id
+        )
+        .fetch_one(self.db_pool)
+        .await
+    }
+
+    pub async fn fetch_one_by_flow_id(&self, flow_id: &str) -> Result<Subscription, Error> {
+        query_as!(
+            Subscription,
+            "SELECT * FROM subscriptions WHERE flow_id = $1",
+            flow_id
         )
         .fetch_one(self.db_pool)
         .await

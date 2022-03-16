@@ -58,10 +58,15 @@ async fn test_subscription_model_fetch_ones_by_unique_ids() {
         .await
         .expect("Could not fetch from DB.");
     assert_eq!(sub, result);
+    let result = model
+        .fetch_one_by_flow_id(&sub.flow_id)
+        .await
+        .expect("Could not fetch from DB.");
+    assert_eq!(sub, result);
 }
 
 #[tokio::test]
-async fn test_subscription_model_fetch_one_if_not_available() {
+async fn test_subscription_model_fetch_ones_if_not_available() {
     let app = spawn_app().await;
     let model = SubscriptionModel {
         db_pool: &app.db_connection(),
@@ -73,6 +78,15 @@ async fn test_subscription_model_fetch_one_if_not_available() {
         .expect("Failed to create test object.");
     let bad_id = Uuid::new_v4();
     let result = model.fetch_one_by_id(&bad_id).await;
+    match result {
+        Err(sqlx::Error::RowNotFound) => {
+            println!("Success");
+        }
+        _ => {
+            panic!("This should not have happened.");
+        }
+    };
+    let result = model.fetch_one_by_flow_id("nope").await;
     match result {
         Err(sqlx::Error::RowNotFound) => {
             println!("Success");

@@ -1,0 +1,136 @@
+{
+    "kind": "bigquery#queryResponse",
+    "schema": {
+        "fields": [
+            {
+                "name": "report_timestamp",
+                "type": "TIMESTAMP",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "subscription_created",
+                "type": "TIMESTAMP",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "subscription_id",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "fxa_uid",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "quantity",
+                "type": "INTEGER",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "plan_id",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "plan_currency",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "plan_amount",
+                "type": "INTEGER",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "country",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "flow_id",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            }
+        ]
+    },
+    "jobReference": {
+        "projectId": "moz-fx-cjms-nonprod-9a36",
+        "jobId": "job_E61zcQ7D1RrcxQs0KjWou1kC_-xm",
+        "location": "US"
+    },
+    "totalRows": "2",
+    "rows": [
+        {
+            "f": [
+                {
+                    "v": "1.647464393672304E9"
+                },
+                {
+                    "v": "1.647450897E9"
+                },
+                {
+                    "v": "sub_1Ke0R3Kb9q6OnNsLD1OIZsxm"
+                },
+                {
+                    "v": "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7"
+                },
+                {
+                    "v": "1"
+                },
+                {
+                    "v": "price_1J0owvKb9q6OnNsLExNhEDXm"
+                },
+                {
+                    "v": "usd"
+                },
+                {
+                    "v": "100"
+                },
+                {
+                    "v": "us"
+                },
+                {
+                    "v": "531c7ddd31d17cbb608dcf9c8f40be89fe957c951cb5a2acd7052e6765efafcb"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "1.647464393672304E9"
+                },
+                {
+                    "v": "1.647449981E9"
+                },
+                {
+                    "v": "sub_1Ke0CHKb9q6OnNsLe2fSFt2W"
+                },
+                {
+                    "v": "bc5bdcb1c00baf74c85d19413c3889d4653c9a79f5715a45389241ef6fc51ecb"
+                },
+                {
+                    "v": "1"
+                },
+                {
+                    "v": "price_1J0Y12Kb9q6OnNsL4SB2hhmp"
+                },
+                {
+                    "v": "usd"
+                },
+                {
+                    "v": "4794"
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": "6d8c011f70525c1d04aaa9813f93a3cdfc7316b95cdc172c48b1d6b7a522d338"
+                }
+            ]
+        }
+    ],
+    "totalBytesProcessed": "462",
+    "jobComplete": true,
+    "cacheHit": false
+}
