@@ -1,5 +1,6 @@
 use crate::utils::{get_db_pool, random_ascii_string};
-use lib::models::aic::AICModel;
+use lib::models::aic::{AICModel, AIC};
+use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
 #[tokio::test]
@@ -14,7 +15,7 @@ async fn test_aic_model_fetch_one_by_uuid() {
         .fetch_one_by_id(created.id)
         .await
         .expect("Could not fetch from DB.");
-    assert_eq!(result.id, created.id);
+    assert_eq!(result, created);
 }
 
 #[tokio::test]
@@ -35,4 +36,26 @@ async fn test_aic_model_fetch_one_by_uuid_if_not_available() {
             panic!("This should not have happened.");
         }
     };
+}
+
+#[tokio::test]
+async fn test_aic_model_create_by_aic() {
+    let db_pool = get_db_pool().await;
+    let model = AICModel { db_pool: &db_pool };
+    let aic = AIC {
+        id: Uuid::new_v4(),
+        flow_id: random_ascii_string(),
+        cj_event_value: random_ascii_string(),
+        created: OffsetDateTime::now_utc(),
+        expires: OffsetDateTime::now_utc() + Duration::days(10),
+    };
+    model
+        .create_from_aic(&aic)
+        .await
+        .expect("Failed to create test object.");
+    let result = model
+        .fetch_one_by_id(aic.id)
+        .await
+        .expect("Could not fetch from DB.");
+    assert_eq!(result, aic);
 }

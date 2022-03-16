@@ -3,7 +3,7 @@ use sqlx::{query_as, Error, PgPool};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct Subscription {
     pub id: Uuid,
     pub flow_id: String,
@@ -21,6 +21,27 @@ pub struct Subscription {
     pub status: String,
     pub status_history: JsonValue,
 }
+impl PartialEq for Subscription {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id &&
+        self.flow_id == other.flow_id &&
+        self.subscription_id == other.subscription_id &&
+        // When timestamps go in and out of database they lose precision to milliseconds
+        self.report_timestamp.millisecond() == other.report_timestamp.millisecond() &&
+        self.subscription_created.millisecond() == other.subscription_created.millisecond() &&
+        self.fxa_uid == other.fxa_uid &&
+        self.quantity == other.quantity &&
+        self.plan_id == other.plan_id &&
+        self.plan_currency == other.plan_currency &&
+        self.plan_amount == other.plan_amount &&
+        self.country == other.country &&
+        self.aic_id == other.aic_id &&
+        self.cj_event_value == other.cj_event_value &&
+        self.status == other.status &&
+        self.status_history == other.status_history
+    }
+}
+impl Eq for Subscription {}
 
 pub struct SubscriptionModel<'a> {
     pub db_pool: &'a PgPool,

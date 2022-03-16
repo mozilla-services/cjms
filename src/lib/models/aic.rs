@@ -10,12 +10,39 @@ pub struct AIC {
     pub created: OffsetDateTime,
     pub expires: OffsetDateTime,
 }
+impl PartialEq for AIC {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id &&
+        self.cj_event_value == other.cj_event_value &&
+        self.flow_id == other.flow_id &&
+        // When timestamps go in and out of database they lose precision to milliseconds
+        self.created.millisecond() == other.created.millisecond() &&
+        self.expires.millisecond() == other.expires.millisecond()
+    }
+}
+impl Eq for AIC {}
 
 pub struct AICModel<'a> {
     pub db_pool: &'a PgPool,
 }
 
 impl AICModel<'_> {
+    pub async fn create_from_aic(&self, aic: &AIC) -> Result<AIC, Error> {
+        query_as!(
+            AIC,
+            r#"INSERT INTO aic (id, cj_event_value, flow_id, created, expires)
+			VALUES ($1, $2, $3, $4, $5)
+			RETURNING *"#,
+            aic.id,
+            aic.cj_event_value,
+            aic.flow_id,
+            aic.created,
+            aic.expires
+        )
+        .fetch_one(self.db_pool)
+        .await
+    }
+
     pub async fn create(&self, cj_event_value: &str, flow_id: &str) -> Result<AIC, Error> {
         let id = Uuid::new_v4();
         let created = OffsetDateTime::now_utc();

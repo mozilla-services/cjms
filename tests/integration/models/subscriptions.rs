@@ -39,7 +39,7 @@ async fn test_subscription_model_create_from_subscription_struct() {
         .fetch_one_by_id(&sub.id)
         .await
         .expect("Could not fetch from DB.");
-    assert_eq!(result.aic_id, sub.aic_id);
+    assert_eq!(result, sub);
 }
 
 #[tokio::test]
@@ -57,11 +57,11 @@ async fn test_subscription_model_fetch_ones_by_unique_ids() {
         .fetch_one_by_id(&sub.id)
         .await
         .expect("Could not fetch from DB.");
-    assert_eq!(sub.aic_id, result.aic_id);
+    assert_eq!(sub, result);
 }
 
 #[tokio::test]
-async fn test_aic_model_fetch_one_if_not_available() {
+async fn test_subscription_model_fetch_one_if_not_available() {
     let app = spawn_app().await;
     let model = SubscriptionModel {
         db_pool: &app.db_connection(),
