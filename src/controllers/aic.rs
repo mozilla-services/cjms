@@ -18,7 +18,12 @@ pub struct AICResponse {
 #[derive(Serialize, Deserialize)]
 pub struct AICRequest {
     pub flow_id: String,
+    #[serde(default = "empty_cj_id")]
     pub cj_id: String,
+}
+
+fn empty_cj_id() -> String {
+    "empty_cj_id".to_string()
 }
 
 pub async fn create(data: web::Json<AICRequest>, pool: web::Data<PgPool>) -> HttpResponse {
@@ -76,7 +81,7 @@ pub async fn update(
     let existing = aic.fetch_one_by_id(aic_id).await;
     let updated = match existing {
         Ok(existing) => {
-            if existing.cj_event_value == data.cj_id {
+            if existing.cj_event_value == data.cj_id || data.cj_id == empty_cj_id() {
                 // Only update the flow_id
                 aic.update_flow_id(aic_id, &data.flow_id).await
             } else {

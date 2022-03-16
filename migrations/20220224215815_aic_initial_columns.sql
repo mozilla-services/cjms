@@ -1,9 +1,8 @@
--- Add up migration script here
 CREATE TABLE aic (
-id uuid NOT NULL,
+id uuid NOT NULL UNIQUE,
 PRIMARY KEY (id),
 cj_event_value TEXT NOT NULL,
-flow_id TEXT NOT NULL,
+flow_id TEXT NOT NULL UNIQUE,
 created TIMESTAMPTZ NOT NULL,
 expires TIMESTAMPTZ NOT NULL
 );

@@ -11,7 +11,7 @@ Micro-service supporting VPN activities
 
 `/aic`:
 - POST only
-- Accepts: JSON data with `flow_id`, `cj_id`
+- Accepts: JSON data with `flow_id` (required), `cj_id` (required)
 - Returns: JSON data with  `aic_id`, `expires` (a timestamp)
 - A cookie should then be set with the stated expiration time and the returned `aic_id`
 - Success - 201
@@ -19,7 +19,7 @@ Micro-service supporting VPN activities
 
 `/aic/<aicID>` endpoint:
 - PUT only
-- Accepts: JSON data with `flow_id`, `cj_id`
+- Accepts: JSON data with `flow_id` (required), `cj_id` (optional)
 - Returns: JSON data with `aic_id`, `expires` (a timestamp)
 - A cookie should then be set with the stated expiration time and the returned `aic_id`
 - Success - 201
