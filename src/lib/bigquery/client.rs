@@ -152,7 +152,7 @@ mod tests {
     };
 
     fn fixture_bigquery_response() -> Value {
-        let mut file = File::open("tests/fixtures/bigquery_response.json").unwrap();
+        let mut file = File::open("tests/fixtures/bigquery_generic_response.json").unwrap();
         let mut data = String::new();
         file.read_to_string(&mut data).unwrap();
         serde_json::from_str(&data).expect("JSON was not well-formatted")

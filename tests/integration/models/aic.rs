@@ -1,13 +1,11 @@
-use crate::utils::{random_ascii_string, spawn_app};
+use crate::utils::{get_db_pool, random_ascii_string};
 use lib::models::aic::AICModel;
 use uuid::Uuid;
 
 #[tokio::test]
 async fn test_aic_model_fetch_one_by_uuid() {
-    let app = spawn_app().await;
-    let model = AICModel {
-        db_pool: &app.db_connection(),
-    };
+    let db_pool = get_db_pool().await;
+    let model = AICModel { db_pool: &db_pool };
     let created = model
         .create(&random_ascii_string(), &random_ascii_string())
         .await
@@ -21,10 +19,8 @@ async fn test_aic_model_fetch_one_by_uuid() {
 
 #[tokio::test]
 async fn test_aic_model_fetch_one_by_uuid_if_not_available() {
-    let app = spawn_app().await;
-    let model = AICModel {
-        db_pool: &app.db_connection(),
-    };
+    let db_pool = get_db_pool().await;
+    let model = AICModel { db_pool: &db_pool };
     model
         .create(&random_ascii_string(), &random_ascii_string())
         .await

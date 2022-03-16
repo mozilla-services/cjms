@@ -15,6 +15,3 @@ pub async fn fetch_and_process_new_subscriptions(_bq: BQClient) {
 
     // Move aic row to aic_archive table
 }
-
-#[cfg(test)]
-mod tests {}

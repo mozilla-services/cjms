@@ -2,7 +2,7 @@ use fake::{Fake, StringFaker};
 use lib::appconfig::{connect_to_database_and_migrate, run_server};
 use lib::settings::{get_settings, Settings};
 use sqlx::postgres::PgPoolOptions;
-use sqlx::{Connection, Executor, PgConnection, PgPool};
+use sqlx::{Connection, Executor, PgConnection, PgPool, Pool, Postgres};
 use std::net::TcpListener;
 use uuid::Uuid;
 
@@ -35,6 +35,12 @@ async fn create_test_database(database_url: &str) -> String {
         .expect("Failed to create test database.");
     println!("Database is: {}", randomized_test_database_url);
     randomized_test_database_url
+}
+
+pub async fn get_db_pool() -> Pool<Postgres> {
+    let settings = get_settings();
+    let test_database_url = create_test_database(&settings.database_url).await;
+    connect_to_database_and_migrate(&test_database_url).await
 }
 
 pub async fn spawn_app() -> TestApp {
