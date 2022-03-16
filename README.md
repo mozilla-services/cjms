@@ -234,3 +234,7 @@ into main. The supports the following workflow elements:
 PRs should be squash merged into the release branch.
 
 Release branch should be merged with a merge commit into main.
+
+
+TODO: document how to expose logs during tests
+TODO: document use of RUST_LOG environment variable

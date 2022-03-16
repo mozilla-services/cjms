@@ -8,6 +8,7 @@ use actix_web::{
 };
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
+use tracing_actix_web::TracingLogger;
 
 use crate::{controllers, settings::Settings};
 
@@ -20,7 +21,7 @@ pub fn run_server(
     let server = HttpServer::new(move || {
         let cors = get_cors(settings.clone());
         App::new()
-            .wrap(Logger::default())
+            .wrap(TracingLogger::default())
             .wrap(cors)
             .service(resource("/").route(get().to(controllers::custodial::index)))
             .service(resource("/__heartbeat__").route(get().to(controllers::custodial::heartbeat)))

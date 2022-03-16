@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::models::aic::AICModel;
 
-use tracing::Instrument;
+// TODO figure out how import sorting works in Rust
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AICResponse {
@@ -26,36 +26,25 @@ fn empty_cj_id() -> String {
     "empty_cj_id".to_string()
 }
 
+// TODO how to log the data argument automatically?
+#[tracing::instrument(
+    name = "Adding a test request-level span with some data",
+    skip(data, pool),
+    fields(
+        some_fake_data = "abc123"
+    )
+)]
 pub async fn create(data: web::Json<AICRequest>, pool: web::Data<PgPool>) -> HttpResponse {
-    // TODO attempt to fully instrument this function using the methods
-    // documented in the book.
-    // Good place to start since it is simple.
-    // Do not worry about instrumentation on the model method for now. It may
-    // need its own, or this may be the wrong level. But we will deal with that
-    // later.
-
-    let request_id = Uuid::new_v4();
-
-    tracing::info!("request_id {} - Test info", request_id);
-    tracing::error!("request_id {} - Test error", request_id);
-
-    let request_span = tracing::info_span!(
-        "Adding a test span with some data",
-        %request_id,
-        some_fake_data = "abc123",
-    );
-    let _request_span_guard = request_span.enter();
-
-    let query_span = tracing::info_span!(
-        "Logging the query itself"
-    );
+    // TODO remove these
+    tracing::info!("Test info");
+    tracing::error!("Test error");
 
     let aic = AICModel {
         db_pool: pool.as_ref(),
     };
-    match aic.create(&data.cj_id, &data.flow_id).instrument(query_span).await {
+    match aic.create(&data.cj_id, &data.flow_id).await {
         Ok(created) => {
-            tracing::info!("request_id {} - Successfully created new record", request_id);
+            tracing::info!("Successfully created new record");
             let response = AICResponse {
                 aic_id: created.id,
                 expires: created.expires,
@@ -63,7 +52,7 @@ pub async fn create(data: web::Json<AICRequest>, pool: web::Data<PgPool>) -> Htt
             HttpResponse::Created().json(response)
         }
         Err(e) => {
-            tracing::error!("request_id {} - Failed to create new record: {:?}", request_id, e);
+            tracing::error!("Failed to create new record: {:?}", e);
             HttpResponse::InternalServerError().finish()
         }
     }

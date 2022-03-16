@@ -24,6 +24,7 @@ sqlx = { version = "0.5.11", features = ["offline", "postgres", "runtime-actix-r
 time = { version = "0.2.27", features = ["serde"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tracing = { version = "0.1.31", features = ["log"] }
+tracing-actix-web = "0.5.1"
 tracing-bunyan-formatter = "0.3"
 tracing-log = "0.1"
 tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
