@@ -6,11 +6,12 @@ use lib::bigquery::client::{AccessTokenFromEnv, BQClient};
 use lib::check_subscriptions::fetch_and_process_new_subscriptions;
 use lib::models::aic::{AICModel, AIC};
 use lib::models::subscriptions::{Subscription, SubscriptionModel};
+use pretty_assertions::assert_eq;
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::Value;
 use serial_test::serial;
-use time::{Format, OffsetDateTime};
-use uuid::Uuid;
+use time::{date, time, Format, OffsetDateTime};
+use uuid::{Uuid, Version};
 use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
 use crate::utils::get_db_pool;
@@ -45,7 +46,7 @@ fn test_aics() -> Vec<AIC> {
 }
 
 fn fixture_bigquery_response() -> Value {
-    let mut file = File::open("tests/fixtures/bigquery_generic_response.json").unwrap();
+    let mut file = File::open("tests/fixtures/bigquery_subscriptions_response.json").unwrap();
     let mut data = String::new();
     file.read_to_string(&mut data).unwrap();
     serde_json::from_str(&data).expect("JSON was not well-formatted")
@@ -76,7 +77,7 @@ async fn check_subscriptions() {
     }
 
     // Go!
-    fetch_and_process_new_subscriptions(bq).await;
+    fetch_and_process_new_subscriptions(bq, &db_pool).await;
 
     // Check results
     let sub_model = SubscriptionModel { db_pool: &db_pool };
@@ -87,40 +88,52 @@ async fn check_subscriptions() {
         .fetch_one_by_flow_id(sub_1_flow_id)
         .await
         .expect("Failed to get sub 1");
-    let _sub_2 = sub_model
+    let sub_2 = sub_model
         .fetch_one_by_flow_id(sub_2_flow_id)
         .await
         .expect("Failed to get sub 2");
 
-    let aic_1 = aic_model.fetch_one().await.expect("Failed to fetch aic_1");
-    let _aic_2 = aic_model.fetch_one().await.expect("Failed to fetch aic_2");
+    for sub in &[&sub_1, &sub_2] {
+        // Test that subs have a uuid as "id".
+        // This is used for oid for cj reporting
+        assert_eq!(Some(Version::Random), sub.id.get_version());
+    }
 
+    let aic_1 = aic_model
+        .fetch_one_by_flow_id(&sub_1.flow_id)
+        .await
+        .expect("Failed to fetch aic_1");
+    let _aic_2 = aic_model
+        .fetch_one_by_flow_id(&sub_2.flow_id)
+        .await
+        .expect("Failed to fetch aic_2");
+    let report_timestamp = date!(2022 - 03 - 16)
+        .with_time(time!(20:59:53))
+        .assume_utc();
+    let subscription_created = date!(2022 - 03 - 16)
+        .with_time(time!(17:14:57))
+        .assume_utc();
     assert_eq!(
         sub_1,
         Subscription {
             id: sub_1.id, // We can't know this ahead of time
             flow_id: sub_1_flow_id.to_string(),
             subscription_id: "sub_1Ke0R3Kb9q6OnNsLD1OIZsxm".to_string(),
-            report_timestamp: OffsetDateTime::parse(
-                "2022-03-16 20:59:53.672304 UTC",
-                Format::Rfc3339
-            )
-            .unwrap(),
-            subscription_created: OffsetDateTime::parse("2022-03-16 17:14:57 UTC", Format::Rfc3339)
-                .unwrap(),
+            report_timestamp,
+            subscription_created,
             fxa_uid: "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7".to_string(),
             quantity: 1,
             plan_id: "price_1J0owvKb9q6OnNsLExNhEDXm".to_string(),
             plan_currency: "usd".to_string(),
             plan_amount: 100,
-            country: "".to_string(),
+            country: Some("us - THIS IS SUB 1".to_string()),
             aic_id: Some(aic_1.id),
-            cj_event_value: Some(aic_1.flow_id.to_string()),
-            status: "not_reported".to_string(),
-            status_history: json!([{
-                "status": "not_reported",
-                "timestamp": ""
-            }])
+            cj_event_value: Some(aic_1.cj_event_value.to_string()),
+            status: None, //Some("not_reported".to_string()),
+            status_history: None, /*Some(json!([{
+                              "status": "not_reported",
+                              "timestamp": ""
+                          }])) */
         }
     );
 

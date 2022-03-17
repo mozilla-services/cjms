@@ -10,9 +10,9 @@ quantity INT NOT NULL,
 plan_id TEXT NOT NULL,
 plan_currency TEXT NOT NULL,
 plan_amount INT NOT NULL,
-country TEXT NOT NULL,
+country TEXT,
 aic_id uuid,
 cj_event_value TEXT,
-status TEXT NOT NULL,
-status_history json NOT NULL
+status TEXT,
+status_history json
 );

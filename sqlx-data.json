@@ -1,5 +1,49 @@
 {
   "db": "PostgreSQL",
+  "04072f22e77f905903b0705d7aeb76c4325dffc5bfb8451ca3e5d829fb440f8b": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "cj_event_value",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "flow_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "created",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "expires",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT * FROM aic WHERE flow_id = $1"
+  },
   "05e396c8b1153d9cdc3d45c35abd5906161d482aa131cf8666f3c0202e8dde52": {
     "describe": {
       "columns": [
@@ -132,11 +176,11 @@
         false,
         false,
         false,
-        false,
         true,
         true,
-        false,
-        false
+        true,
+        true,
+        true
       ],
       "parameters": {
         "Left": [
@@ -281,11 +325,11 @@
         false,
         false,
         false,
-        false,
         true,
         true,
-        false,
-        false
+        true,
+        true,
+        true
       ],
       "parameters": {
         "Left": [
@@ -447,11 +491,11 @@
         false,
         false,
         false,
-        false,
         true,
         true,
-        false,
-        false
+        true,
+        true,
+        true
       ],
       "parameters": {
         "Left": [

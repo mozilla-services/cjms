@@ -112,8 +112,14 @@ impl AICModel<'_> {
             .await
     }
 
-    pub async fn fetch_one_by_id(&self, id: Uuid) -> Result<AIC, Error> {
+    pub async fn fetch_one_by_id(&self, id: &Uuid) -> Result<AIC, Error> {
         query_as!(AIC, "SELECT * FROM aic WHERE id = $1", id)
+            .fetch_one(self.db_pool)
+            .await
+    }
+
+    pub async fn fetch_one_by_flow_id(&self, flow_id: &str) -> Result<AIC, Error> {
+        query_as!(AIC, "SELECT * FROM aic WHERE flow_id = $1", flow_id)
             .fetch_one(self.db_pool)
             .await
     }

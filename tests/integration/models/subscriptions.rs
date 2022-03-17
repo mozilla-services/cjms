@@ -16,11 +16,11 @@ fn make_fake_sub() -> Subscription {
         plan_id: random_ascii_string(),
         plan_currency: random_currency_or_country(),
         plan_amount: random_price(),
-        country: random_currency_or_country(),
+        country: Some(random_currency_or_country()),
         aic_id: Some(Uuid::new_v4()),
         cj_event_value: Some(random_ascii_string()),
-        status: random_ascii_string(),
-        status_history: json!([]),
+        status: Some(random_ascii_string()),
+        status_history: Some(json!([])),
     }
 }
 

@@ -16,11 +16,11 @@ pub struct Subscription {
     pub plan_id: String,
     pub plan_currency: String,
     pub plan_amount: i32,
-    pub country: String,
+    pub country: Option<String>,
     pub aic_id: Option<Uuid>,
     pub cj_event_value: Option<String>,
-    pub status: String,
-    pub status_history: JsonValue,
+    pub status: Option<String>,
+    pub status_history: Option<JsonValue>,
 }
 impl PartialEq for Subscription {
     fn eq(&self, other: &Self) -> bool {

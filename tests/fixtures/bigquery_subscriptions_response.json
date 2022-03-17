@@ -59,7 +59,7 @@
         "jobId": "job_E61zcQ7D1RrcxQs0KjWou1kC_-xm",
         "location": "US"
     },
-    "totalRows": "2",
+    "totalRows": "5",
     "rows": [
         {
             "f": [
@@ -88,7 +88,109 @@
                     "v": "100"
                 },
                 {
-                    "v": "us"
+                    "v": "us - THIS IS SUB 1"
+                },
+                {
+                    "v": "531c7ddd31d17cbb608dcf9c8f40be89fe957c951cb5a2acd7052e6765efafcb"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": null
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": "THIS IS AN INTENTIONAL TEST - WITH MISSING VALUES AS NULL"
+                },
+                {
+                    "v": "nulls"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": ""
+                },
+                {
+                    "v": ""
+                },
+                {
+                    "v": ""
+                },
+                {
+                    "v": ""
+                },
+                {
+                    "v": ""
+                },
+                {
+                    "v": ""
+                },
+                {
+                    "v": ""
+                },
+                {
+                    "v": ""
+                },
+                {
+                    "v": "THIS IS AN INTENTIONAL TEST - WITH MISSING VALUES AS EMPTY STRINGS"
+                },
+                {
+                    "v": "empty strings"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "1.647464393672304E9"
+                },
+                {
+                    "v": "1.647450897E9"
+                },
+                {
+                    "v": "sub_1Ke0R3Kb9q6OnNsLD1OIZsxm"
+                },
+                {
+                    "v": "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7"
+                },
+                {
+                    "v": "1"
+                },
+                {
+                    "v": "price_1J0owvKb9q6OnNsLExNhEDXm"
+                },
+                {
+                    "v": "usd"
+                },
+                {
+                    "v": "100"
+                },
+                {
+                    "v": "THIS IS AN INTENTIONAL DUPE OF SUB_1 THAT SHOULD FAIL TO BE ENTERED"
                 },
                 {
                     "v": "531c7ddd31d17cbb608dcf9c8f40be89fe957c951cb5a2acd7052e6765efafcb"

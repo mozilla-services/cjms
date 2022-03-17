@@ -1,4 +1,10 @@
 /*
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+AND
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -13,32 +19,38 @@ limitations under the License.
 
 
 The contents of this file were taken from various parts of https://github.com/lquerel/gcp-bigquery-client
-with sincere thanks to https://github.com/lquerel and the gcp-bigquery-client contributors
-https://github.com/lquerel/gcp-bigquery-client/graphs/contributors
+and adapted to our needs.
+Sincere thanks to https://github.com/lquerel and the gcp-bigquery-client contributors
+https://github.com/lquerel/gcp-bigquery-client/graphs/contributors.
+
 */
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use thiserror::Error;
+use time::OffsetDateTime;
 
 #[derive(Error, Debug)]
 pub enum BQError {
-    #[error("No data available. The result set is positioned before the first or after the last row. Try to call the method next on your result set.")]
+    #[error("BQError: No data available. The result set is positioned before the first or after the last row. Try to call the method next on your result set.")]
     NoDataAvailable,
 
-    #[error("Invalid column index (col_index: {col_index})")]
+    #[error("BQError: Invalid column index (col_index: {col_index})")]
     InvalidColumnIndex { col_index: usize },
 
-    #[error("Invalid column name (col_name: {col_name})")]
+    #[error("BQError: Invalid column name (col_name: {col_name})")]
     InvalidColumnName { col_name: String },
 
-    #[error("Invalid column type (col_index: {col_index}, col_type: {col_type}, type_requested: {type_requested})")]
+    #[error("BQError: Invalid column type (col_index: {col_index}, col_type: {col_type}, type_requested: {type_requested})")]
     InvalidColumnType {
         col_index: usize,
         col_type: String,
         type_requested: String,
     },
+
+    #[error("BQError: Could not cast integer from i64 to i32")]
+    IntegerCastUnsuccessful,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -656,6 +668,65 @@ impl ResultSet {
             Value::String(_) => "String".into(),
             Value::Array(_) => "Array".into(),
             Value::Object(_) => "Object".into(),
+        }
+    }
+
+    // require_ methods raise an error if data is None
+
+    pub fn require_offsetdatetime_by_name(
+        &self,
+        column_name: &str,
+    ) -> Result<OffsetDateTime, BQError> {
+        let data = self.get_i64_by_name(column_name);
+        match data {
+            Ok(maybe_data) => match maybe_data {
+                Some(data) => Ok(OffsetDateTime::from_unix_timestamp(data)),
+                None => Err(BQError::NoDataAvailable),
+            },
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn require_commaseperatedstring_by_name(
+        &self,
+        column_name: &str,
+    ) -> Result<String, BQError> {
+        let promotion_codes_raw = self.get_json_value_by_name(column_name);
+        match promotion_codes_raw {
+            Ok(maybe_data) => match maybe_data {
+                Some(data) => {
+                    let data = data.to_string();
+                    let promotion_codes: Vec<String> = serde_json::from_str(&data).unwrap();
+                    Ok(promotion_codes.join(","))
+                }
+                None => Err(BQError::NoDataAvailable),
+            },
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn require_string_by_name(&self, column_name: &str) -> Result<String, BQError> {
+        let data = self.get_string_by_name(column_name);
+        match data {
+            Ok(maybe_data) => match maybe_data {
+                Some(data) => Ok(data),
+                None => Err(BQError::NoDataAvailable),
+            },
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn require_i32_by_name(&self, column_name: &str) -> Result<i32, BQError> {
+        let data = self.get_i64_by_name(column_name);
+        match data {
+            Ok(maybe_data) => match maybe_data {
+                Some(data) => match i32::try_from(data) {
+                    Ok(data) => Ok(data),
+                    Err(_) => Err(BQError::IntegerCastUnsuccessful),
+                },
+                None => Err(BQError::NoDataAvailable),
+            },
+            Err(e) => Err(e),
         }
     }
 }

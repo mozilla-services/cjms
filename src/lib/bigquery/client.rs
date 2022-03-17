@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 use serde::Deserialize;
 use serde_json::json;
-use time::OffsetDateTime;
 
 use crate::settings::Settings;
 
-use super::model::{GetQueryResultsResponse, QueryResponse, ResultSet};
+pub use super::model::{BQError, ResultSet};
+use super::model::{GetQueryResultsResponse, QueryResponse};
 
 pub async fn get_bqclient(settings: &Settings) -> BQClient {
     // Note we don't have tests that check:
@@ -70,25 +70,6 @@ impl BQClient {
     }
 }
 
-pub fn get_offsetdatetime_from_resultset_column(
-    rs: &ResultSet,
-    column_name: &str,
-) -> OffsetDateTime {
-    // Note this panics if we get bad or no data back from big query
-    // TODO - Think of cleaner handling strategy (can this wait to see if we actually get bad data in practice?)
-    OffsetDateTime::from_unix_timestamp(rs.get_i64_by_name(column_name).unwrap().unwrap())
-}
-
-pub fn get_commaseperatedstring_from_resultset_column(rs: &ResultSet, column_name: &str) -> String {
-    let promotion_codes_raw = rs
-        .get_json_value_by_name(column_name)
-        .unwrap()
-        .unwrap()
-        .to_string();
-    let promotion_codes: Vec<String> = serde_json::from_str(&promotion_codes_raw).unwrap();
-    promotion_codes.join(",")
-}
-
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait GetAccessToken {
@@ -146,6 +127,7 @@ mod tests {
     };
     use serde_json::Value;
     use serial_test::serial;
+    use time::OffsetDateTime;
     use wiremock::{
         matchers::{any, body_json, header, method, path},
         Mock, MockServer, ResponseTemplate,
@@ -379,9 +361,12 @@ mod tests {
         }
         let mut rows: Vec<TestItem> = Vec::new();
         while rs.next_row() {
-            let start_date = get_offsetdatetime_from_resultset_column(&rs, "start_date");
-            let promotion_codes =
-                get_commaseperatedstring_from_resultset_column(&rs, "promotion_codes");
+            let start_date = rs
+                .require_offsetdatetime_by_name("start_date")
+                .expect("Should get start_date");
+            let promotion_codes = rs
+                .require_commaseperatedstring_by_name("promotion_codes")
+                .expect("Should get promotion codes");
             rows.push(TestItem {
                 start_date,
                 plan_id: rs.get_string_by_name("plan_id").unwrap().unwrap(),
