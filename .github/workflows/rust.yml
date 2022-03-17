@@ -75,7 +75,7 @@ jobs:
       run: cargo clippy --all-targets --all-features -- -D warnings
     - name: Check if offline migrations haven't been submitted (this will cause other CI builds pieces to fail)
       if: ${{ failure() }}
-      run: cargo install sqlx-cli && cargo sqlx prepare --check -- --lib
+      run: cargo install sqlx-cli && cargo sqlx prepare  --database-url="postgres://not_a_database" --check -- --lib
   format:
     runs-on: ubuntu-latest
     steps:
