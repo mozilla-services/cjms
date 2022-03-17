@@ -42,6 +42,110 @@
     },
     "query": "SELECT * FROM aic"
   },
+  "3284a809ba6e9cee6247b55669639a5af602449c4370f659bdec3baecef05ba9": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "flow_id",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "subscription_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "report_timestamp",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "subscription_created",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "fxa_uid",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "quantity",
+          "ordinal": 6,
+          "type_info": "Int4"
+        },
+        {
+          "name": "plan_id",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "plan_currency",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "plan_amount",
+          "ordinal": 9,
+          "type_info": "Int4"
+        },
+        {
+          "name": "country",
+          "ordinal": 10,
+          "type_info": "Text"
+        },
+        {
+          "name": "aic_id",
+          "ordinal": 11,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "cj_event_value",
+          "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "status",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "status_history",
+          "ordinal": 14,
+          "type_info": "Json"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT * FROM subscriptions WHERE flow_id = $1"
+  },
   "56df35b03ee8145783edc4d00a32f9ef89837643edf5602844e550c93ba5cfd0": {
     "describe": {
       "columns": [
