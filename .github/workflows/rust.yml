@@ -104,3 +104,18 @@ jobs:
       if: env.cache_loaded == 'false'
     - name: Run audit
       run: cargo audit
+  offline-migrations:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-offline-migrations-${{ hashFiles('**/Cargo.lock') }}
+    - name: Check if offline migrations haven't been submitted (this will cause other CI builds pieces to fail)
+      run: cargo sqlx prepare --check -- --lib
