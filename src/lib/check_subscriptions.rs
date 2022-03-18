@@ -120,12 +120,5 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 }
             },
         };
-
-        // Mark status as either:
-        // - subscription_to_report
-        // Add details to status_history blob
-
-        // For every result, make an entry in the subscriptions table
-        // - if it doesn't exist, by flow_id
     }
 }

@@ -285,6 +285,18 @@
     },
     "query": "UPDATE aic\n            SET flow_id = $1\n            WHERE id = $2\n\t\t\tRETURNING *"
   },
+  "59667aa3192457887958b2a8f6b155ff147a56d39783bb8227d4d7f008db07c2": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "DELETE FROM aic WHERE id = $1"
+  },
   "5e2cc28f4812b98e358215812f3c93933563466a34ed0fa82e4eebf614ecb79f": {
     "describe": {
       "columns": [
