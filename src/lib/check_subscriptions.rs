@@ -46,7 +46,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
         let mut sub = match make_subscription_from_bq_row(&rs) {
             Ok(sub) => sub,
             Err(e) => {
-                // TODO - Log information and get a metric
+                // TODO - LOGGING - Log information and get a metric
                 println!(
                     "Failed to make subscription for bq result row. {:?}. Continuing...",
                     e
@@ -54,21 +54,20 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 continue;
             }
         };
+        // - TODO NOW - append the aic_id and cj_event_value (if found in aic_archive table)
+        //            - UNIFY AIC_ARCHIVE AND AIC MODEL AND USE A UNION AND JUST CHANGE NAMES
         let get_aic_for_sub = aics.fetch_one_by_flow_id(&sub.flow_id).await;
         match get_aic_for_sub {
             Ok(aic) => {
-                // - append the aic_id and cj_event_value (if found in aic or aic_archive table)
                 sub.aic_id = Some(aic.id);
                 sub.cj_event_value = Some(aic.cj_event_value.clone());
                 sub.aic_expires = Some(aic.expires);
 
-                // TODO - Handle this case on report
-                // - mark status do_not_report (if subscription_starttime is after aic expires)
-                // Add details to status_history blob
                 match aics_archive.create_from_aic(&aic).await {
                     Ok(to_delete) => {
                         // TODO - Discuss the use of initiating a panic here.
-                        // I think this is a time when it's a good idea because something very unexpected would be happening
+                        // I think this is a time when it's a good idea because
+                        // something very unexpected would be happening
                         // here and it's not clear how to recover.
                         aics.delete(&to_delete.id)
                             .await
@@ -80,9 +79,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                     }
                 };
             }
-            // - TODO - append the aic_id and cj_event_value (if found in aic_archive table)
             Err(e) => {
-                // TODO - maybe lets make the subscription row anyway..
                 println!(
                     "Errorr getting aic for subscription: {:?}. Continuing....",
                     e
@@ -99,9 +96,9 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
             Ok(sub) => sub,
             Err(e) => match e {
                 sqlx::Error::Database(e) => {
-                    // The code for duplicate key constraints e.g. duplicate flow id issues
+                    // 23505 is the code for unique constraints e.g. duplicate flow id issues
                     if e.code() == Some(std::borrow::Cow::Borrowed("23505")) {
-                        // ToDo add some specific logging / metrics around duplicate key issues.
+                        // TODO - LOGGING - add some specific logging / metrics around duplicate key issues.
                         // This could help us see that we have an ETL issue.
                         println!("Duplicate Key Violation");
                     }

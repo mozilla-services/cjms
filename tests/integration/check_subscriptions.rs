@@ -67,22 +67,19 @@ fn get_value_from_status_history_array(
 #[serial]
 async fn check_subscriptions() {
     // SETUP
-
+    let db_pool = get_db_pool().await;
+    let sub_model = SubscriptionModel { db_pool: &db_pool };
+    let aic_model = AICModel { db_pool: &db_pool };
+    let aic_archive_model = AICArchiveModel { db_pool: &db_pool };
     // Setup fake bigquery with results to return
     env::set_var("BQ_ACCESS_TOKEN", "a token");
     let mock_bq = MockServer::start().await;
     let bq = BQClient::new("a project", AccessTokenFromEnv {}, Some(&mock_bq.uri())).await;
-
     let response = ResponseTemplate::new(200).set_body_json(fixture_bigquery_response());
     Mock::given(any())
         .respond_with(response)
         .mount(&mock_bq)
         .await;
-
-    let db_pool = get_db_pool().await;
-    let sub_model = SubscriptionModel { db_pool: &db_pool };
-    let aic_model = AICModel { db_pool: &db_pool };
-    let aic_archive_model = AICArchiveModel { db_pool: &db_pool };
     // Setup AIC entries
     for aic in test_aics() {
         aic_model
@@ -106,8 +103,8 @@ async fn check_subscriptions() {
         .fetch_one_by_flow_id(sub_2_flow_id)
         .await
         .expect("Failed to get sub 2");
-    // Expect aic table to no longer have the two new subs
     for flow_id in &[&sub_1.flow_id, &sub_2.flow_id] {
+        // Expect aic table to no longer have the two new subs
         match aic_model.fetch_one_by_flow_id(flow_id).await {
             Err(sqlx::Error::RowNotFound) => {}
             _ => {
@@ -156,9 +153,9 @@ async fn check_subscriptions() {
     let sub_1_status_history_0_status =
         get_value_from_status_history_array(&sub_1.status_history.unwrap(), 0, "status");
     assert_eq!(&sub_1_status_history_0_status, r#""not_reported""#);
-    // Sub two is the last one so all the failure cases in the test fixture should have been handled if 2 is also created.
-    // TODO: when we add logging we could test for those logs to have been created
     assert_eq!(
+        // Sub two is the last one so all the failure cases in the test fixture should have been handled if 2 is also created.
+        // TODO - LOGGING - when we add logging we could test for those logs to have been created
         sub_2,
         Subscription {
             id: sub_2.id, // We can't know this ahead of time
@@ -184,10 +181,10 @@ async fn check_subscriptions() {
         }
     );
 
-    // TODO
-    // - Add in a sub response with a flow id we don't have
-    // - Add in a sub response with an aic id that's in the archive table
-    // - Add in a sub that does not need to be reported because
+    // TODO NOW
+    // - Add in edge cases into fixtures:
+    // - a sub response with a flow id we don't have
+    // - a sub response with an aic id that's in the archive table
 
     // CLEAN UP
     env::remove_var("BQ_ACCESS_TOKEN");
