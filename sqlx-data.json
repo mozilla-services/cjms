@@ -196,6 +196,50 @@
     },
     "query": "SELECT * FROM subscriptions WHERE flow_id = $1"
   },
+  "46767918c04bf7e40b267bfa2264461e812535c0bb52a8d5e7e3ceea6e27e3af": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "cj_event_value",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "flow_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "created",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "expires",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT * FROM aic_archive WHERE flow_id = $1"
+  },
   "56df35b03ee8145783edc4d00a32f9ef89837643edf5602844e550c93ba5cfd0": {
     "describe": {
       "columns": [
@@ -240,6 +284,98 @@
       }
     },
     "query": "UPDATE aic\n            SET flow_id = $1\n            WHERE id = $2\n\t\t\tRETURNING *"
+  },
+  "5e2cc28f4812b98e358215812f3c93933563466a34ed0fa82e4eebf614ecb79f": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "cj_event_value",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "flow_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "created",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "expires",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Timestamptz",
+          "Timestamptz"
+        ]
+      }
+    },
+    "query": "INSERT INTO aic_archive (id, cj_event_value, flow_id, created, expires)\n\t\t\tVALUES ($1, $2, $3, $4, $5)\n\t\t\tRETURNING *"
+  },
+  "6e83facdcb2bb61fbf5e1bdfe1b9aae61ba0df428119cc71961bc83813e7ef40": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "cj_event_value",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "flow_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "created",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "expires",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "SELECT * FROM aic_archive WHERE id = $1"
   },
   "9e303b2b6ebf017cf77da7164b42650a7af1eaba834da57617da7310af2b5ab9": {
     "describe": {

@@ -124,3 +124,37 @@ impl AICModel<'_> {
             .await
     }
 }
+
+pub struct AICArchiveModel<'a> {
+    pub db_pool: &'a PgPool,
+}
+
+impl AICArchiveModel<'_> {
+    pub async fn create_from_aic(&self, aic: &AIC) -> Result<AIC, Error> {
+        query_as!(
+            AIC,
+            r#"INSERT INTO aic_archive (id, cj_event_value, flow_id, created, expires)
+			VALUES ($1, $2, $3, $4, $5)
+			RETURNING *"#,
+            aic.id,
+            aic.cj_event_value,
+            aic.flow_id,
+            aic.created,
+            aic.expires
+        )
+        .fetch_one(self.db_pool)
+        .await
+    }
+
+    pub async fn fetch_one_by_id(&self, id: &Uuid) -> Result<AIC, Error> {
+        query_as!(AIC, "SELECT * FROM aic_archive WHERE id = $1", id)
+            .fetch_one(self.db_pool)
+            .await
+    }
+
+    pub async fn fetch_one_by_flow_id(&self, flow_id: &str) -> Result<AIC, Error> {
+        query_as!(AIC, "SELECT * FROM aic_archive WHERE flow_id = $1", flow_id)
+            .fetch_one(self.db_pool)
+            .await
+    }
+}

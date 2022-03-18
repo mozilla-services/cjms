@@ -1,0 +1,8 @@
+CREATE TABLE aic_archive (
+id uuid NOT NULL UNIQUE,
+PRIMARY KEY (id),
+cj_event_value TEXT NOT NULL,
+flow_id TEXT NOT NULL UNIQUE,
+created TIMESTAMPTZ NOT NULL,
+expires TIMESTAMPTZ NOT NULL
+);

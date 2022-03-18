@@ -59,6 +59,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 // - append the aic_id and cj_event_value (if found in aic or aic_archive table)
                 sub.aic_id = Some(aic.id);
                 sub.cj_event_value = Some(aic.cj_event_value);
+                sub.aic_expires = Some(aic.expires);
 
                 // TODO - Handle this case on report
                 // - mark status do_not_report (if subscription_starttime is after aic expires)
