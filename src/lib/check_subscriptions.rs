@@ -1,3 +1,4 @@
+use serde_json::json;
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
@@ -28,17 +29,19 @@ fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError
         status: None,
         status_history: None,
     };
+    println!("Made a sub with id: {}", sub.id);
+    println!("Made a sub with flow_id: {}", sub.flow_id);
     Ok(sub)
 }
 
 pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Postgres>) {
     let subscriptions = SubscriptionModel { db_pool };
     let aics = AICModel { db_pool };
-    // Get all results from bigquery
+    // Get all results from bigquery table that stores new subscription reports
     let query = "SELECT * FROM `cjms_bigquery.cj_attribution_v1`;";
     let mut rs = bq.get_bq_results(query).await;
     while rs.next_row() {
-        // If required fields are not available log and move on.
+        // If can't deserialize e.g. required fields are not available log and move on.
         let mut sub = match make_subscription_from_bq_row(&rs) {
             Ok(sub) => sub,
             Err(e) => {
@@ -63,9 +66,13 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 // Move aic row to aic_archive table
             }
             // - append the aic_id and cj_event_value (if found in aic_archive table)
-            Err(_) => todo!(),
+            Err(e) => {
+                println!("errorring: {:?}. continuing", e);
+                continue;
+            },
         }
-        //sub.aic_id =
+        sub.status = Some("not_reported".to_string());
+        sub.status_history = Some(json!([]));
         let _created = subscriptions.create_from_sub(&sub).await;
 
         // Mark status as either:

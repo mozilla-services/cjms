@@ -129,13 +129,15 @@ async fn check_subscriptions() {
             country: Some("us - THIS IS SUB 1".to_string()),
             aic_id: Some(aic_1.id),
             cj_event_value: Some(aic_1.cj_event_value.to_string()),
-            status: None, //Some("not_reported".to_string()),
+            status: Some("not_reported".to_string()),
             status_history: None, /*Some(json!([{
                               "status": "not_reported",
                               "timestamp": ""
                           }])) */
         }
     );
+
+	// TODO - Test with a subs that should not be reported - status = do_not_report
 
     // Expect 2 new subs to be created
     // Expect aic table to no longer have the two new subs
