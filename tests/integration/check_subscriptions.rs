@@ -4,7 +4,7 @@ use std::io::Read;
 
 use lib::bigquery::client::{AccessTokenFromEnv, BQClient};
 use lib::check_subscriptions::fetch_and_process_new_subscriptions;
-use lib::models::aic::{AICModel, AIC};
+use lib::models::aic::{AICArchiveModel, AICModel, AIC};
 use lib::models::subscriptions::{Subscription, SubscriptionModel};
 use pretty_assertions::assert_eq;
 use serde::Deserialize;
@@ -81,8 +81,9 @@ async fn check_subscriptions() {
 
     let db_pool = get_db_pool().await;
     let sub_model = SubscriptionModel { db_pool: &db_pool };
-    // Setup AIC entries
     let aic_model = AICModel { db_pool: &db_pool };
+    let aic_archive_model = AICArchiveModel { db_pool: &db_pool };
+    // Setup AIC entries
     for aic in test_aics() {
         aic_model
             .create_from_aic(&aic)
@@ -118,12 +119,12 @@ async fn check_subscriptions() {
         // Test that subs have a uuid as "id" (this is used for oid for cj reporting)
         assert_eq!(Some(Version::Random), sub.id.get_version());
     }
-    // TODO Expect aic archive to have the two new subs
-    let aic_1 = aic_model
+    // Expect aic archive to have the two new subs
+    let aic_1 = aic_archive_model
         .fetch_one_by_flow_id(&sub_1.flow_id)
         .await
         .expect("Failed to fetch aic_1");
-    let aic_2 = aic_model
+    let aic_2 = aic_archive_model
         .fetch_one_by_flow_id(&sub_2.flow_id)
         .await
         .expect("Failed to fetch aic_2");

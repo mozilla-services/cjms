@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::{
     bigquery::client::{BQClient, BQError, ResultSet},
     models::{
-        aic::AICModel,
+        aic::{AICArchiveModel, AICModel},
         subscriptions::{Subscription, SubscriptionModel},
     },
 };
@@ -37,6 +37,7 @@ fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError
 pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Postgres>) {
     let subscriptions = SubscriptionModel { db_pool };
     let aics = AICModel { db_pool };
+    let aics_archive = AICArchiveModel { db_pool };
     // Get all results from bigquery table that stores new subscription reports
     let query = "SELECT * FROM `cjms_bigquery.cj_attribution_v1`;";
     let mut rs = bq.get_bq_results(query).await;
@@ -58,16 +59,28 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
             Ok(aic) => {
                 // - append the aic_id and cj_event_value (if found in aic or aic_archive table)
                 sub.aic_id = Some(aic.id);
-                sub.cj_event_value = Some(aic.cj_event_value);
+                sub.cj_event_value = Some(aic.cj_event_value.clone());
                 sub.aic_expires = Some(aic.expires);
 
                 // TODO - Handle this case on report
                 // - mark status do_not_report (if subscription_starttime is after aic expires)
                 // Add details to status_history blob
-
-                // Move aic row to aic_archive table
+                match aics_archive.create_from_aic(&aic).await {
+                    Ok(to_delete) => {
+                        // TODO - Discuss the use of initiating a panic here.
+                        // I think this is a time when it's a good idea because something very unexpected would be happening
+                        // here and it's not clear how to recover.
+                        aics.delete(&to_delete.id)
+                            .await
+                            .expect("Failed to delete aic after creating in aic_archive.");
+                    }
+                    Err(e) => {
+                        println!("Failed to create aic_archive entry: {:?}. Continuing...", e);
+                        continue;
+                    }
+                };
             }
-            // - append the aic_id and cj_event_value (if found in aic_archive table)
+            // - TODO - append the aic_id and cj_event_value (if found in aic_archive table)
             Err(e) => {
                 // TODO - maybe lets make the subscription row anyway..
                 println!(

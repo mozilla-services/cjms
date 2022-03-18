@@ -1,4 +1,4 @@
-use sqlx::{query_as, Error, PgPool};
+use sqlx::{postgres::PgQueryResult, query_as, Error, PgPool};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
@@ -121,6 +121,12 @@ impl AICModel<'_> {
     pub async fn fetch_one_by_flow_id(&self, flow_id: &str) -> Result<AIC, Error> {
         query_as!(AIC, "SELECT * FROM aic WHERE flow_id = $1", flow_id)
             .fetch_one(self.db_pool)
+            .await
+    }
+
+    pub async fn delete(&self, id: &Uuid) -> Result<PgQueryResult, Error> {
+        query_as!(AIC, "DELETE FROM aic WHERE id = $1", id)
+            .execute(self.db_pool)
             .await
     }
 }

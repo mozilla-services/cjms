@@ -1,17 +1,8 @@
-use crate::utils::{get_db_pool, random_ascii_string};
-use lib::models::aic::{AICArchiveModel, AIC};
-use time::{Duration, OffsetDateTime};
-use uuid::Uuid;
+use crate::utils::get_db_pool;
+use lib::models::aic::AICArchiveModel;
 
-fn test_aic() -> AIC {
-    AIC {
-        id: Uuid::new_v4(),
-        flow_id: random_ascii_string(),
-        cj_event_value: random_ascii_string(),
-        created: OffsetDateTime::now_utc(),
-        expires: OffsetDateTime::now_utc() + Duration::days(10),
-    }
-}
+use super::aic::test_aic;
+use uuid::Uuid;
 
 #[tokio::test]
 async fn test_aic_archive_model_fetch_one_by_ids() {

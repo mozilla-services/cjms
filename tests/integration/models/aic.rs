@@ -3,6 +3,16 @@ use lib::models::aic::{AICModel, AIC};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
+pub fn test_aic() -> AIC {
+    AIC {
+        id: Uuid::new_v4(),
+        flow_id: random_ascii_string(),
+        cj_event_value: random_ascii_string(),
+        created: OffsetDateTime::now_utc(),
+        expires: OffsetDateTime::now_utc() + Duration::days(10),
+    }
+}
+
 #[tokio::test]
 async fn test_aic_model_fetch_one_by_ids() {
     let db_pool = get_db_pool().await;
@@ -60,13 +70,7 @@ async fn test_aic_model_fetch_one_by_uuid_if_not_available() {
 async fn test_aic_model_create_by_aic() {
     let db_pool = get_db_pool().await;
     let model = AICModel { db_pool: &db_pool };
-    let aic = AIC {
-        id: Uuid::new_v4(),
-        flow_id: random_ascii_string(),
-        cj_event_value: random_ascii_string(),
-        created: OffsetDateTime::now_utc(),
-        expires: OffsetDateTime::now_utc() + Duration::days(10),
-    };
+    let aic = test_aic();
     model
         .create_from_aic(&aic)
         .await
@@ -76,4 +80,26 @@ async fn test_aic_model_create_by_aic() {
         .await
         .expect("Could not fetch from DB.");
     assert_eq!(result, aic);
+}
+
+#[tokio::test]
+async fn test_aic_model_delete() {
+    let db_pool = get_db_pool().await;
+    let model = AICModel { db_pool: &db_pool };
+    let aic = test_aic();
+    model
+        .create_from_aic(&aic)
+        .await
+        .expect("Failed to create test object.");
+    let result = model.delete(&aic.id).await.expect("Failed to delete.");
+    assert_eq!(result.rows_affected(), 1);
+    let result = model.fetch_one_by_id(&aic.id).await;
+    match result {
+        Err(sqlx::Error::RowNotFound) => {
+            println!("Success");
+        }
+        _ => {
+            panic!("This should not have happened.");
+        }
+    };
 }
