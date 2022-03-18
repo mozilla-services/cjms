@@ -26,12 +26,11 @@ fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError
         plan_amount: rs.require_i32_by_name("plan_amount")?,
         country: rs.get_string_by_name("country")?,
         aic_id: None,
+        aic_expires: None,
         cj_event_value: None,
         status: None,
         status_history: None,
     };
-    println!("Made a sub with id: {}", sub.id);
-    println!("Made a sub with flow_id: {}", sub.flow_id);
     Ok(sub)
 }
 
@@ -61,6 +60,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 sub.aic_id = Some(aic.id);
                 sub.cj_event_value = Some(aic.cj_event_value);
 
+                // TODO - Handle this case on report
                 // - mark status do_not_report (if subscription_starttime is after aic expires)
                 // Add details to status_history blob
 
@@ -68,6 +68,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
             }
             // - append the aic_id and cj_event_value (if found in aic_archive table)
             Err(e) => {
+                // TODO - maybe lets make the subscription row anyway..
                 println!(
                     "Errorr getting aic for subscription: {:?}. Continuing....",
                     e

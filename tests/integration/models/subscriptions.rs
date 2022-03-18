@@ -1,5 +1,6 @@
 use crate::utils::{random_ascii_string, random_currency_or_country, random_price, spawn_app};
 use lib::models::subscriptions::{Subscription, SubscriptionModel};
+use pretty_assertions::assert_eq;
 use serde_json::json;
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
@@ -18,6 +19,7 @@ fn make_fake_sub() -> Subscription {
         plan_amount: random_price(),
         country: Some(random_currency_or_country()),
         aic_id: Some(Uuid::new_v4()),
+        aic_expires: Some(OffsetDateTime::now_utc()),
         cj_event_value: Some(random_ascii_string()),
         status: Some(random_ascii_string()),
         status_history: Some(json!([])),

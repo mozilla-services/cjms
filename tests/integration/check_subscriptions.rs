@@ -146,6 +146,7 @@ async fn check_subscriptions() {
             plan_amount: 100,
             country: Some("us - THIS IS SUB 1".to_string()),
             aic_id: Some(aic_1.id),
+            aic_expires: Some(aic_1.expires),
             cj_event_value: Some(aic_1.cj_event_value.to_string()),
             status: Some("not_reported".to_string()),
             status_history: None, // This field isn't compared
@@ -175,6 +176,7 @@ async fn check_subscriptions() {
             plan_amount: 4794,
             country: None,
             aic_id: Some(aic_2.id),
+            aic_expires: Some(aic_2.expires),
             cj_event_value: Some(aic_2.cj_event_value),
             status: Some("not_reported".to_string()),
             status_history: None, // This field isn't compared

@@ -89,6 +89,18 @@ In this case my db_name is `cjms` and my user is `cjms` and my password is in th
 
 # Tips
 
+## VSCode Settings
+
+```
+{
+	"files.trimTrailingWhitespace": true,
+	"files.insertFinalNewline": true,
+    "rust-analyzer.diagnostics.disabled": [
+        "unresolved-macro-call"
+    ]
+}
+```
+
 ## Git hooks
 
 To save time in CI, add a pre-commit or pre-push git hook locally that runs, at least, clippy and fmt.
