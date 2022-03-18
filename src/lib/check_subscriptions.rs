@@ -1,3 +1,4 @@
+use actix_web::cookie::time::OffsetDateTime;
 use serde_json::json;
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
@@ -67,13 +68,43 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
             }
             // - append the aic_id and cj_event_value (if found in aic_archive table)
             Err(e) => {
-                println!("errorring: {:?}. continuing", e);
+                println!(
+                    "Errorr getting aic for subscription: {:?}. Continuing....",
+                    e
+                );
                 continue;
-            },
+            }
         }
         sub.status = Some("not_reported".to_string());
-        sub.status_history = Some(json!([]));
-        let _created = subscriptions.create_from_sub(&sub).await;
+        sub.status_history = Some(json!([{
+            "status": "not_reported",
+            "t": OffsetDateTime::now_utc().to_string()
+        }]));
+        let _created = match subscriptions.create_from_sub(&sub).await {
+            Ok(sub) => sub,
+            Err(e) => match e {
+                sqlx::Error::Database(e) => {
+                    // The code for duplicate key constraints e.g. duplicate flow id issues
+                    if e.code() == Some(std::borrow::Cow::Borrowed("23505")) {
+                        // ToDo add some specific logging / metrics around duplicate key issues.
+                        // This could help us see that we have an ETL issue.
+                        println!("Duplicate Key Violation");
+                    }
+                    println!(
+                        "DatabaseError error while creating subscription {:?}. Continuing...",
+                        e
+                    );
+                    continue;
+                }
+                _ => {
+                    println!(
+                        "Unexpected error while creating subscription {:?}. Continuing...",
+                        e
+                    );
+                    continue;
+                }
+            },
+        };
 
         // Mark status as either:
         // - subscription_to_report

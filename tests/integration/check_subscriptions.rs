@@ -52,9 +52,22 @@ fn fixture_bigquery_response() -> Value {
     serde_json::from_str(&data).expect("JSON was not well-formatted")
 }
 
+fn get_value_from_status_history_array(
+    status_history: &Value,
+    array_index: usize,
+    field_name: &str,
+) -> String {
+    let array = status_history.as_array().unwrap();
+    let array_entry = array[array_index].as_object().unwrap();
+    let entry_value = array_entry.get(field_name).unwrap().to_string();
+    entry_value
+}
+
 #[tokio::test]
 #[serial]
 async fn check_subscriptions() {
+    // SETUP
+
     // Setup fake bigquery with results to return
     env::set_var("BQ_ACCESS_TOKEN", "a token");
     let mock_bq = MockServer::start().await;
@@ -66,8 +79,9 @@ async fn check_subscriptions() {
         .mount(&mock_bq)
         .await;
 
-    // Setup AIC entries
     let db_pool = get_db_pool().await;
+    let sub_model = SubscriptionModel { db_pool: &db_pool };
+    // Setup AIC entries
     let aic_model = AICModel { db_pool: &db_pool };
     for aic in test_aics() {
         aic_model
@@ -76,11 +90,10 @@ async fn check_subscriptions() {
             .unwrap_or_else(|_| panic!("Failed to create aic: {:?}", &aic));
     }
 
-    // Go!
+    // GO
     fetch_and_process_new_subscriptions(bq, &db_pool).await;
 
-    // Check results
-    let sub_model = SubscriptionModel { db_pool: &db_pool };
+    // ASSERT
     let sub_1_flow_id = "531c7ddd31d17cbb608dcf9c8f40be89fe957c951cb5a2acd7052e6765efafcb";
     let sub_2_flow_id = "6d8c011f70525c1d04aaa9813f93a3cdfc7316b95cdc172c48b1d6b7a522d338";
 
@@ -92,35 +105,40 @@ async fn check_subscriptions() {
         .fetch_one_by_flow_id(sub_2_flow_id)
         .await
         .expect("Failed to get sub 2");
-
+    // Expect aic table to no longer have the two new subs
+    for flow_id in &[&sub_1.flow_id, &sub_2.flow_id] {
+        match aic_model.fetch_one_by_flow_id(flow_id).await {
+            Err(sqlx::Error::RowNotFound) => {}
+            _ => {
+                panic!("This should not have happened. aic entry for flow_id {} should have been moved out of aic entry table.", flow_id);
+            }
+        }
+    }
     for sub in &[&sub_1, &sub_2] {
-        // Test that subs have a uuid as "id".
-        // This is used for oid for cj reporting
+        // Test that subs have a uuid as "id" (this is used for oid for cj reporting)
         assert_eq!(Some(Version::Random), sub.id.get_version());
     }
-
+    // TODO Expect aic archive to have the two new subs
     let aic_1 = aic_model
         .fetch_one_by_flow_id(&sub_1.flow_id)
         .await
         .expect("Failed to fetch aic_1");
-    let _aic_2 = aic_model
+    let aic_2 = aic_model
         .fetch_one_by_flow_id(&sub_2.flow_id)
         .await
         .expect("Failed to fetch aic_2");
-    let report_timestamp = date!(2022 - 03 - 16)
-        .with_time(time!(20:59:53))
-        .assume_utc();
-    let subscription_created = date!(2022 - 03 - 16)
-        .with_time(time!(17:14:57))
-        .assume_utc();
     assert_eq!(
         sub_1,
         Subscription {
             id: sub_1.id, // We can't know this ahead of time
             flow_id: sub_1_flow_id.to_string(),
             subscription_id: "sub_1Ke0R3Kb9q6OnNsLD1OIZsxm".to_string(),
-            report_timestamp,
-            subscription_created,
+            report_timestamp: date!(2022 - 03 - 16)
+                .with_time(time!(20:59:53))
+                .assume_utc(),
+            subscription_created: date!(2022 - 03 - 16)
+                .with_time(time!(17:14:57))
+                .assume_utc(),
             fxa_uid: "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7".to_string(),
             quantity: 1,
             plan_id: "price_1J0owvKb9q6OnNsLExNhEDXm".to_string(),
@@ -130,23 +148,44 @@ async fn check_subscriptions() {
             aic_id: Some(aic_1.id),
             cj_event_value: Some(aic_1.cj_event_value.to_string()),
             status: Some("not_reported".to_string()),
-            status_history: None, /*Some(json!([{
-                              "status": "not_reported",
-                              "timestamp": ""
-                          }])) */
+            status_history: None, // This field isn't compared
         }
     );
-
-	// TODO - Test with a subs that should not be reported - status = do_not_report
-
-    // Expect 2 new subs to be created
-    // Expect aic table to no longer have the two new subs
-    // Expect aic archive to have the two new subs
+    let sub_1_status_history_0_status =
+        get_value_from_status_history_array(&sub_1.status_history.unwrap(), 0, "status");
+    assert_eq!(&sub_1_status_history_0_status, r#""not_reported""#);
+    // Sub two is the last one so all the failure cases in the test fixture should have been handled if 2 is also created.
+    // TODO: when we add logging we could test for those logs to have been created
+    assert_eq!(
+        sub_2,
+        Subscription {
+            id: sub_2.id, // We can't know this ahead of time
+            flow_id: sub_2_flow_id.to_string(),
+            subscription_id: "sub_1Ke0CHKb9q6OnNsLe2fSFt2W".to_string(),
+            report_timestamp: date!(2022 - 03 - 16)
+                .with_time(time!(20:59:53))
+                .assume_utc(),
+            subscription_created: date!(2022 - 03 - 16)
+                .with_time(time!(16:59:41))
+                .assume_utc(),
+            fxa_uid: "bc5bdcb1c00baf74c85d19413c3889d4653c9a79f5715a45389241ef6fc51ecb".to_string(),
+            quantity: 1,
+            plan_id: "price_1J0Y12Kb9q6OnNsL4SB2hhmp".to_string(),
+            plan_currency: "usd".to_string(),
+            plan_amount: 4794,
+            country: None,
+            aic_id: Some(aic_2.id),
+            cj_event_value: Some(aic_2.cj_event_value),
+            status: Some("not_reported".to_string()),
+            status_history: None, // This field isn't compared
+        }
+    );
 
     // TODO
     // - Add in a sub response with a flow id we don't have
     // - Add in a sub response with an aic id that's in the archive table
+    // - Add in a sub that does not need to be reported because
 
-    // Clean-up
+    // CLEAN UP
     env::remove_var("BQ_ACCESS_TOKEN");
 }
