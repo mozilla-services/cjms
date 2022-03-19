@@ -83,17 +83,38 @@ async fn test_aic_model_create_by_aic() {
 }
 
 #[tokio::test]
-async fn test_aic_model_delete() {
+async fn test_aic_archive_model_fetch_one_by_ids() {
     let db_pool = get_db_pool().await;
     let model = AICModel { db_pool: &db_pool };
-    let aic = test_aic();
-    model
-        .create_from_aic(&aic)
+    let created = model
+        .create_archive_from_aic(&test_aic())
         .await
         .expect("Failed to create test object.");
-    let result = model.delete(&aic.id).await.expect("Failed to delete.");
-    assert_eq!(result.rows_affected(), 1);
-    let result = model.fetch_one_by_id(&aic.id).await;
+    // id
+    let result = model
+        .fetch_one_by_id_from_archive(&created.id)
+        .await
+        .expect("Could not fetch from DB.");
+    assert_eq!(result, created);
+    // flow id
+    let result = model
+        .fetch_one_by_flow_id_from_archive(&created.flow_id)
+        .await
+        .expect("Could not fetch from DB.");
+    assert_eq!(result, created);
+}
+
+#[tokio::test]
+async fn test_aic_archive_model_fetch_one_by_uuid_if_not_available() {
+    let db_pool = get_db_pool().await;
+    let model = AICModel { db_pool: &db_pool };
+    model
+        .create_from_aic(&test_aic())
+        .await
+        .expect("Failed to create test object.");
+    let bad_id = Uuid::new_v4();
+    // id
+    let result = model.fetch_one_by_id_from_archive(&bad_id).await;
     match result {
         Err(sqlx::Error::RowNotFound) => {
             println!("Success");
@@ -102,4 +123,35 @@ async fn test_aic_model_delete() {
             panic!("This should not have happened.");
         }
     };
+    // flow id
+    let result = model.fetch_one_by_flow_id_from_archive("bad_id").await;
+    match result {
+        Err(sqlx::Error::RowNotFound) => {
+            println!("Success");
+        }
+        _ => {
+            panic!("This should not have happened.");
+        }
+    };
+}
+
+#[tokio::test]
+async fn test_aic_archive_creates_and_deletes() {
+    let db_pool = get_db_pool().await;
+    let model = AICModel { db_pool: &db_pool };
+    let aic = test_aic();
+    model
+        .create_from_aic(&aic)
+        .await
+        .expect("Failed to create test object.");
+    model
+        .archive_aic(&aic)
+        .await
+        .expect("Could not complete archive.");
+    // aic should be in archive table and not in aic table
+    model
+        .fetch_one_by_id_from_archive(&aic.id)
+        .await
+        .expect("Could not retrieve from archive table");
+    assert!(model.fetch_one_by_id(&aic.id).await.is_err());
 }

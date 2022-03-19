@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::{
     bigquery::client::{BQClient, BQError, ResultSet},
     models::{
-        aic::{AICArchiveModel, AICModel},
+        aic::AICModel,
         subscriptions::{Subscription, SubscriptionModel},
     },
 };
@@ -37,7 +37,6 @@ fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError
 pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Postgres>) {
     let subscriptions = SubscriptionModel { db_pool };
     let aics = AICModel { db_pool };
-    let aics_archive = AICArchiveModel { db_pool };
     // Get all results from bigquery table that stores new subscription reports
     let query = "SELECT * FROM `cjms_bigquery.cj_attribution_v1`;";
     let mut rs = bq.get_bq_results(query).await;
@@ -55,7 +54,6 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
             }
         };
         // TODO - NOW - append the aic_id and cj_event_value (if found in aic_archive table)
-        //            - UNIFY AIC_ARCHIVE AND AIC MODEL AND USE A UNION AND JUST CHANGE NAMES
         let get_aic_for_sub = aics.fetch_one_by_flow_id(&sub.flow_id).await;
         match get_aic_for_sub {
             Ok(aic) => {
@@ -63,18 +61,11 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 sub.cj_event_value = Some(aic.cj_event_value.clone());
                 sub.aic_expires = Some(aic.expires);
 
-                match aics_archive.create_from_aic(&aic).await {
-                    Ok(to_delete) => {
-                        // TODO - REVIEW - Discuss the use of initiating a panic here.
-                        // I think this is a time when it's a good idea because
-                        // something very unexpected would be happening
-                        // here and it's not clear how to recover.
-                        aics.delete(&to_delete.id)
-                            .await
-                            .expect("Failed to delete aic after creating in aic_archive.");
-                    }
+                match aics.archive_aic(&aic).await {
+                    Ok(_) => {}
                     Err(e) => {
-                        println!("Failed to create aic_archive entry: {:?}. Continuing...", e);
+                        // TODO - LOGGING
+                        println!("Failed to archive aic entry: {:?}. Continuing...", e);
                         continue;
                     }
                 };

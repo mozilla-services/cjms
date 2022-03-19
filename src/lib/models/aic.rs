@@ -1,4 +1,4 @@
-use sqlx::{postgres::PgQueryResult, query_as, Error, PgPool};
+use sqlx::{query, query_as, Error, PgPool};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
@@ -124,19 +124,51 @@ impl AICModel<'_> {
             .await
     }
 
-    pub async fn delete(&self, id: &Uuid) -> Result<PgQueryResult, Error> {
-        query_as!(AIC, "DELETE FROM aic WHERE id = $1", id)
-            .execute(self.db_pool)
+    async fn create_archive_delete_aic(
+        &self,
+        transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        aic: &AIC,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        query!(
+            r#"INSERT INTO aic_archive (id, cj_event_value, flow_id, created, expires)
+			VALUES ($1, $2, $3, $4, $5)
+			RETURNING *"#,
+            aic.id,
+            aic.cj_event_value,
+            aic.flow_id,
+            aic.created,
+            aic.expires
+        )
+        .fetch_one(&mut *transaction)
+        .await?;
+        query!("DELETE FROM aic WHERE id = $1", aic.id)
+            .execute(transaction)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn archive_aic(&self, aic: &AIC) -> Result<(), Box<dyn std::error::Error>> {
+        // Wrap creating archive row and deleting aic row into one transaction
+        let mut transaction = self.db_pool.begin().await?;
+        self.create_archive_delete_aic(&mut transaction, aic)
+            .await?;
+        transaction.commit().await?;
+        Ok(())
+    }
+
+    pub async fn fetch_one_by_id_from_archive(&self, id: &Uuid) -> Result<AIC, Error> {
+        query_as!(AIC, "SELECT * FROM aic_archive WHERE id = $1", id)
+            .fetch_one(self.db_pool)
             .await
     }
-}
 
-pub struct AICArchiveModel<'a> {
-    pub db_pool: &'a PgPool,
-}
+    pub async fn fetch_one_by_flow_id_from_archive(&self, flow_id: &str) -> Result<AIC, Error> {
+        query_as!(AIC, "SELECT * FROM aic_archive WHERE flow_id = $1", flow_id)
+            .fetch_one(self.db_pool)
+            .await
+    }
 
-impl AICArchiveModel<'_> {
-    pub async fn create_from_aic(&self, aic: &AIC) -> Result<AIC, Error> {
+    pub async fn create_archive_from_aic(&self, aic: &AIC) -> Result<AIC, Error> {
         query_as!(
             AIC,
             r#"INSERT INTO aic_archive (id, cj_event_value, flow_id, created, expires)
@@ -150,17 +182,5 @@ impl AICArchiveModel<'_> {
         )
         .fetch_one(self.db_pool)
         .await
-    }
-
-    pub async fn fetch_one_by_id(&self, id: &Uuid) -> Result<AIC, Error> {
-        query_as!(AIC, "SELECT * FROM aic_archive WHERE id = $1", id)
-            .fetch_one(self.db_pool)
-            .await
-    }
-
-    pub async fn fetch_one_by_flow_id(&self, flow_id: &str) -> Result<AIC, Error> {
-        query_as!(AIC, "SELECT * FROM aic_archive WHERE flow_id = $1", flow_id)
-            .fetch_one(self.db_pool)
-            .await
     }
 }
