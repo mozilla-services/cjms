@@ -137,164 +137,6 @@ pub struct TableFieldSchema {
     pub r#type: FieldType,
 }
 
-impl TableFieldSchema {
-    pub fn new(field_name: &str, field_type: FieldType) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: field_type,
-        }
-    }
-
-    pub fn integer(field_name: &str) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::Integer,
-        }
-    }
-
-    pub fn float(field_name: &str) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::Float,
-        }
-    }
-
-    pub fn bool(field_name: &str) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::Bool,
-        }
-    }
-
-    pub fn string(field_name: &str) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::String,
-        }
-    }
-
-    pub fn record(field_name: &str, fields: Vec<TableFieldSchema>) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: Some(fields),
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::Record,
-        }
-    }
-
-    pub fn bytes(field_name: &str) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::Bytes,
-        }
-    }
-
-    pub fn numeric(field_name: &str) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::Numeric,
-        }
-    }
-
-    pub fn big_numeric(field_name: &str) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::Bignumeric,
-        }
-    }
-
-    pub fn timestamp(field_name: &str) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::Timestamp,
-        }
-    }
-
-    pub fn date(field_name: &str) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::Date,
-        }
-    }
-
-    pub fn time(field_name: &str) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::Time,
-        }
-    }
-
-    pub fn date_time(field_name: &str) -> Self {
-        Self {
-            categories: None,
-            description: None,
-            fields: None,
-            mode: None,
-            name: field_name.into(),
-            policy_tags: None,
-            r#type: FieldType::Datetime,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum FieldType {
@@ -322,22 +164,6 @@ pub struct TableSchema {
     /// Describes the fields in a table.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fields: Option<Vec<TableFieldSchema>>,
-}
-
-impl TableSchema {
-    pub fn new(fields: Vec<TableFieldSchema>) -> Self {
-        Self {
-            fields: Some(fields),
-        }
-    }
-
-    pub fn fields(&self) -> &Option<Vec<TableFieldSchema>> {
-        &self.fields
-    }
-
-    pub fn field_count(&self) -> usize {
-        self.fields.as_ref().map_or(0, |fields| fields.len())
-    }
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -463,10 +289,6 @@ impl ResultSet {
         }
     }
 
-    pub fn query_response(&self) -> &QueryResponse {
-        &self.query_response
-    }
-
     /// Moves the cursor froward one row from its current position.
     /// A ResultSet cursor is initially positioned before the first row; the first call to the method next makes the
     /// first row the current row; the second call makes the second row the current row, and so on.
@@ -482,16 +304,6 @@ impl ResultSet {
     /// Total number of rows in this result set.
     pub fn row_count(&self) -> usize {
         self.row_count as usize
-    }
-
-    /// List of column names for this result set.
-    pub fn column_names(&self) -> Vec<String> {
-        self.fields.keys().cloned().collect()
-    }
-
-    /// Returns the index for a column name.
-    pub fn column_index(&self, column_name: &str) -> Option<&usize> {
-        self.fields.get(column_name)
     }
 
     pub fn get_i64(&self, col_index: usize) -> Result<Option<i64>, BQError> {
@@ -530,86 +342,12 @@ impl ResultSet {
         }
     }
 
-    pub fn get_f64(&self, col_index: usize) -> Result<Option<f64>, BQError> {
-        let json_value = self.get_json_value(col_index)?;
-        match &json_value {
-            None => Ok(None),
-            Some(json_value) => match json_value {
-                serde_json::Value::Number(value) => Ok(value.as_f64()),
-                serde_json::Value::String(value) => {
-                    let value: Result<f64, _> = value.parse();
-                    match &value {
-                        Err(_) => Err(BQError::InvalidColumnType {
-                            col_index,
-                            col_type: ResultSet::json_type(json_value),
-                            type_requested: "F64".into(),
-                        }),
-                        Ok(value) => Ok(Some(*value)),
-                    }
-                }
-                _ => Err(BQError::InvalidColumnType {
-                    col_index,
-                    col_type: ResultSet::json_type(json_value),
-                    type_requested: "F64".into(),
-                }),
-            },
-        }
-    }
-
-    pub fn get_f64_by_name(&self, col_name: &str) -> Result<Option<f64>, BQError> {
-        let col_index = self.fields.get(col_name);
-        match col_index {
-            None => Err(BQError::InvalidColumnName {
-                col_name: col_name.into(),
-            }),
-            Some(col_index) => self.get_f64(*col_index),
-        }
-    }
-
-    pub fn get_bool(&self, col_index: usize) -> Result<Option<bool>, BQError> {
-        let json_value = self.get_json_value(col_index)?;
-        match &json_value {
-            None => Ok(None),
-            Some(json_value) => match json_value {
-                serde_json::Value::Bool(value) => Ok(Some(*value)),
-                serde_json::Value::String(value) => {
-                    let value: Result<bool, _> = value.parse();
-                    match &value {
-                        Err(_) => Err(BQError::InvalidColumnType {
-                            col_index,
-                            col_type: ResultSet::json_type(json_value),
-                            type_requested: "Bool".into(),
-                        }),
-                        Ok(value) => Ok(Some(*value)),
-                    }
-                }
-                _ => Err(BQError::InvalidColumnType {
-                    col_index,
-                    col_type: ResultSet::json_type(json_value),
-                    type_requested: "Bool".into(),
-                }),
-            },
-        }
-    }
-
-    pub fn get_bool_by_name(&self, col_name: &str) -> Result<Option<bool>, BQError> {
-        let col_index = self.fields.get(col_name);
-        match col_index {
-            None => Err(BQError::InvalidColumnName {
-                col_name: col_name.into(),
-            }),
-            Some(col_index) => self.get_bool(*col_index),
-        }
-    }
-
     pub fn get_string(&self, col_index: usize) -> Result<Option<String>, BQError> {
         let json_value = self.get_json_value(col_index)?;
         match json_value {
             None => Ok(None),
             Some(json_value) => match json_value {
                 serde_json::Value::String(value) => Ok(Some(value)),
-                serde_json::Value::Number(value) => Ok(Some(value.to_string())),
-                serde_json::Value::Bool(value) => Ok(Some(value.to_string())),
                 _ => Err(BQError::InvalidColumnType {
                     col_index,
                     col_type: ResultSet::json_type(&json_value),
