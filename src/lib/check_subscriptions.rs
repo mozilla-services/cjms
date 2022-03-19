@@ -54,7 +54,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 continue;
             }
         };
-        // - TODO NOW - append the aic_id and cj_event_value (if found in aic_archive table)
+        // TODO - NOW - append the aic_id and cj_event_value (if found in aic_archive table)
         //            - UNIFY AIC_ARCHIVE AND AIC MODEL AND USE A UNION AND JUST CHANGE NAMES
         let get_aic_for_sub = aics.fetch_one_by_flow_id(&sub.flow_id).await;
         match get_aic_for_sub {
@@ -65,7 +65,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
 
                 match aics_archive.create_from_aic(&aic).await {
                     Ok(to_delete) => {
-                        // TODO - Discuss the use of initiating a panic here.
+                        // TODO - REVIEW - Discuss the use of initiating a panic here.
                         // I think this is a time when it's a good idea because
                         // something very unexpected would be happening
                         // here and it's not clear how to recover.
