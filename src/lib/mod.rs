@@ -4,6 +4,7 @@ pub mod check_subscriptions;
 pub mod cj;
 pub mod controllers;
 pub mod models;
+pub mod report_subscriptions;
 pub mod settings;
 
 #[cfg(test)]
@@ -25,6 +26,9 @@ pub mod test_utils {
             database_url: "_".to_string(),
             environment: "_".to_string(),
             gcp_project: "_".to_string(),
+            cj_cid: "_".to_string(),
+            cj_type: "_".to_string(),
+            cj_signature: "_".to_string(),
         }
     }
 }

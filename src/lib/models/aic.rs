@@ -16,8 +16,8 @@ impl PartialEq for AIC {
         self.cj_event_value == other.cj_event_value &&
         self.flow_id == other.flow_id &&
         // When timestamps go in and out of database they lose precision to milliseconds
-        self.created.millisecond() == other.created.millisecond() &&
-        self.expires.millisecond() == other.expires.millisecond()
+        self.created.unix_timestamp() == other.created.unix_timestamp() &&
+        self.expires.unix_timestamp() == other.expires.unix_timestamp()
     }
 }
 impl Eq for AIC {}

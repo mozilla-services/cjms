@@ -14,7 +14,7 @@ use time::{date, time, Format, OffsetDateTime};
 use uuid::{Uuid, Version};
 use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
-use crate::utils::get_db_pool;
+use crate::utils::{get_db_pool, get_value_from_subscription_status_history_array};
 
 #[derive(Debug, Deserialize)]
 pub struct AICSimple {
@@ -49,17 +49,6 @@ fn fixture_bigquery_response() -> Value {
     let mut data = String::new();
     file.read_to_string(&mut data).unwrap();
     serde_json::from_str(&data).expect("JSON was not well-formatted")
-}
-
-fn get_value_from_status_history_array(
-    status_history: &Value,
-    array_index: usize,
-    field_name: &str,
-) -> String {
-    let array = status_history.as_array().unwrap();
-    let array_entry = array[array_index].as_object().unwrap();
-    let entry_value = array_entry.get(field_name).unwrap().to_string();
-    entry_value
 }
 
 #[tokio::test]
@@ -154,9 +143,11 @@ async fn check_subscriptions() {
             status_history: None, // This field isn't compared
         }
     );
-    let sub_1_status_history_0_status =
-        get_value_from_status_history_array(&sub_1.status_history.unwrap(), 0, "status");
-    assert_eq!(&sub_1_status_history_0_status, r#""not_reported""#);
+    let sub_1_status_history = sub_1.status_history.unwrap();
+    assert_eq!(
+        get_value_from_subscription_status_history_array(&sub_1_status_history, 0, "status"),
+        "not_reported"
+    );
     assert_eq!(
         // Sub two is the last one so all the failure cases in the test fixture should have been handled if 2 is also created.
         // TODO - LOGGING - when we add logging we could test for those logs to have been created
