@@ -1,4 +1,4 @@
-use serde_json::Value as JsonValue;
+use serde_json::{json, Value as JsonValue};
 use sqlx::{query_as, Error, PgPool};
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -29,8 +29,8 @@ impl PartialEq for Subscription {
         self.flow_id == other.flow_id &&
         self.subscription_id == other.subscription_id &&
         // When timestamps go in and out of database they lose precision to milliseconds
-        self.report_timestamp.millisecond() == other.report_timestamp.millisecond() &&
-        self.subscription_created.millisecond() == other.subscription_created.millisecond() &&
+        self.report_timestamp.unix_timestamp() == other.report_timestamp.unix_timestamp() &&
+        self.subscription_created.unix_timestamp() == other.subscription_created.unix_timestamp() &&
         self.fxa_uid == other.fxa_uid &&
         self.quantity == other.quantity &&
         self.plan_id == other.plan_id &&
@@ -45,7 +45,7 @@ impl PartialEq for Subscription {
         ;
         let aic_expires_match = match self.aic_expires {
             Some(self_v) => match other.aic_expires {
-                Some(other_v) => self_v.millisecond() == other_v.millisecond(),
+                Some(other_v) => self_v.unix_timestamp() == other_v.unix_timestamp(),
                 None => false,
             },
             None => other.aic_expires.is_none(),
@@ -119,6 +119,50 @@ impl SubscriptionModel<'_> {
             Subscription,
             "SELECT * FROM subscriptions WHERE flow_id = $1",
             flow_id
+        )
+        .fetch_one(self.db_pool)
+        .await
+    }
+
+    pub async fn fetch_all(&self) -> Result<Vec<Subscription>, Error> {
+        query_as!(Subscription, "SELECT * FROM subscriptions")
+            .fetch_all(self.db_pool)
+            .await
+    }
+
+    pub async fn fetch_all_not_reported(&self) -> Result<Vec<Subscription>, Error> {
+        query_as!(
+            Subscription,
+            "SELECT * FROM subscriptions WHERE status = 'not_reported'"
+        )
+        .fetch_all(self.db_pool)
+        .await
+    }
+
+    pub async fn mark_sub_reported(&self, id: &Uuid) -> Result<Subscription, Error> {
+        let new_status_history = json!({
+            "status": "reported",
+            "t": OffsetDateTime::now_utc().to_string()
+        });
+        let sub = self.fetch_one_by_id(id).await?;
+        let status_history = sub.status_history.unwrap_or(json!([]));
+        // TODO - Not sure how to clean this to not be an expect.
+        // Status history should probably be optionally working
+        let mut status_history_array = status_history
+            .as_array()
+            .expect("Could not get status_history as an array.")
+            .clone();
+        status_history_array.push(new_status_history);
+        query_as!(
+            Subscription,
+            r#"UPDATE subscriptions
+            SET
+                status = 'reported',
+                status_history = $1
+            WHERE id = $2
+			RETURNING *"#,
+            json!(status_history_array),
+            id,
         )
         .fetch_one(self.db_pool)
         .await

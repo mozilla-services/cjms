@@ -1,6 +1,7 @@
 use fake::{Fake, StringFaker};
 use lib::appconfig::{connect_to_database_and_migrate, run_server};
 use lib::settings::{get_settings, Settings};
+use serde_json::Value;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Connection, Executor, PgConnection, PgPool, Pool, Postgres};
 use std::net::TcpListener;
@@ -110,4 +111,20 @@ pub async fn send_put_request(
         .send()
         .await
         .expect("Failed to PUT")
+}
+
+pub fn get_value_from_subscription_status_history_array<'a>(
+    status_history: &'a Value,
+    array_index: usize,
+    field_name: &'a str,
+) -> &'a str {
+    let array = status_history.as_array().unwrap();
+    let array_entry = array[array_index].as_object().unwrap();
+    let entry_value = array_entry.get(field_name).unwrap().as_str().unwrap();
+    entry_value
+}
+
+pub fn get_length_of_subscription_status_history_array(status_history: &Value) -> usize {
+    let array = status_history.as_array().unwrap();
+    array.len()
 }
