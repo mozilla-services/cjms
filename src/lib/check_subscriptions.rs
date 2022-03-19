@@ -53,31 +53,36 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 continue;
             }
         };
-        // TODO - NOW - append the aic_id and cj_event_value (if found in aic_archive table)
-        let get_aic_for_sub = aics.fetch_one_by_flow_id(&sub.flow_id).await;
-        match get_aic_for_sub {
-            Ok(aic) => {
-                sub.aic_id = Some(aic.id);
-                sub.cj_event_value = Some(aic.cj_event_value.clone());
-                sub.aic_expires = Some(aic.expires);
+        let aic = match aics.fetch_one_by_flow_id(&sub.flow_id).await {
+            Ok(aic) => aic,
+            Err(_) => match aics.fetch_one_by_flow_id_from_archive(&sub.flow_id).await {
+                Ok(aic) => {
+                    // TODO - LOGGING - Note that we had to pull from archive table
+                    println!("AIC was retrieved from archive table");
+                    aic
+                }
+                Err(e) => {
+                    // TODO - LOGGING
+                    println!(
+                        "Errorr getting aic for subscription: {:?}. Continuing....",
+                        e
+                    );
+                    continue;
+                }
+            },
+        };
+        sub.aic_id = Some(aic.id);
+        sub.cj_event_value = Some(aic.cj_event_value.clone());
+        sub.aic_expires = Some(aic.expires);
 
-                match aics.archive_aic(&aic).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        // TODO - LOGGING
-                        println!("Failed to archive aic entry: {:?}. Continuing...", e);
-                        continue;
-                    }
-                };
-            }
+        match aics.archive_aic(&aic).await {
+            Ok(_) => {}
             Err(e) => {
-                println!(
-                    "Errorr getting aic for subscription: {:?}. Continuing....",
-                    e
-                );
+                // TODO - LOGGING
+                println!("Failed to archive aic entry: {:?}. Continuing...", e);
                 continue;
             }
-        }
+        };
         sub.status = Some("not_reported".to_string());
         sub.status_history = Some(json!([{
             "status": "not_reported",
