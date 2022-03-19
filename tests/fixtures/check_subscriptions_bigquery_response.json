@@ -237,6 +237,40 @@
                     "v": "1.647464393672304E9"
                 },
                 {
+                    "v": "1.647450897E9"
+                },
+                {
+                    "v": "sub_not_in_aic_tables"
+                },
+                {
+                    "v": "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7"
+                },
+                {
+                    "v": "1"
+                },
+                {
+                    "v": "price_1J0owvKb9q6OnNsLExNhEDXm"
+                },
+                {
+                    "v": "usd"
+                },
+                {
+                    "v": "100"
+                },
+                {
+                    "v": "THIS IS A VALID ENTRY BUT THE FLOW ID IS NOT IN THE AIC TABLES. IT SHOULD NOT END UP IN SUBS TABLE."
+                },
+                {
+                    "v": "not-in-the-aic-tables"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "1.647464393672304E9"
+                },
+                {
                     "v": "1.647449981E9"
                 },
                 {

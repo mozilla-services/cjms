@@ -8,7 +8,7 @@ async fn main() -> std::io::Result<()> {
     let settings = get_settings();
     let bq = get_bqclient(&settings).await;
     let db = connect_to_database_and_migrate(&settings.database_url).await;
-    // TODO - LOGGING -This is a process we'll want to log and time (if possible)
+    // TODO - LOGGING - This is a process we'll want to log and time (if possible)
     println!("Starting fetch_and_process_new_subscriptions");
     fetch_and_process_new_subscriptions(bq, &db).await;
     println!("End fetch_and_process_new_subscriptions");

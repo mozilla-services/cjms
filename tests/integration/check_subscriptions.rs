@@ -185,11 +185,16 @@ async fn check_subscriptions() {
             status_history: None, // This field isn't compared
         }
     );
-
-    // TODO - NOW
-    // - Add in edge cases into fixtures:
-    // - a sub response with a flow id we don't have
-    // - a sub response with an aic id that's in the archive table
+    // Expect to NOT have certain entries from the test fixtures
+    assert!(sub_model.fetch_one_by_flow_id("nulls").await.is_err());
+    assert!(sub_model
+        .fetch_one_by_flow_id("empty strings")
+        .await
+        .is_err());
+    assert!(sub_model
+        .fetch_one_by_flow_id("not-in-the-aic-tables")
+        .await
+        .is_err());
 
     // CLEAN UP
     env::remove_var("BQ_ACCESS_TOKEN");
