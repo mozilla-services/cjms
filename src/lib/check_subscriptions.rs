@@ -74,7 +74,12 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
         sub.aic_id = Some(aic.id);
         sub.cj_event_value = Some(aic.cj_event_value.clone());
         sub.aic_expires = Some(aic.expires);
-
+        sub.status = Some("not_reported".to_string());
+        sub.status_history = Some(json!([{
+            "status": "not_reported",
+            "t": OffsetDateTime::now_utc().to_string()
+        }]));
+        // Archive the AIC
         match aics.archive_aic(&aic).await {
             Ok(_) => {}
             Err(e) => {
@@ -83,12 +88,8 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 continue;
             }
         };
-        sub.status = Some("not_reported".to_string());
-        sub.status_history = Some(json!([{
-            "status": "not_reported",
-            "t": OffsetDateTime::now_utc().to_string()
-        }]));
-        let _created = match subscriptions.create_from_sub(&sub).await {
+        // Save the new subscription entry
+        match subscriptions.create_from_sub(&sub).await {
             Ok(sub) => sub,
             Err(e) => match e {
                 sqlx::Error::Database(e) => {

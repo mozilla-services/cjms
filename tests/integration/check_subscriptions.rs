@@ -25,8 +25,8 @@ pub struct AICSimple {
     pub expires: String,
 }
 
-fn test_aics() -> Vec<AIC> {
-    let mut file = File::open("tests/fixtures/subscriptions_aic.json").unwrap();
+fn get_aics_from_json(path: &str) -> Vec<AIC> {
+    let mut file = File::open(path).unwrap();
     let mut data = String::new();
     file.read_to_string(&mut data).unwrap();
     let imported: Vec<AICSimple> =
@@ -46,7 +46,7 @@ fn test_aics() -> Vec<AIC> {
 }
 
 fn fixture_bigquery_response() -> Value {
-    let mut file = File::open("tests/fixtures/bigquery_subscriptions_response.json").unwrap();
+    let mut file = File::open("tests/fixtures/check_subscriptions_bigquery_response.json").unwrap();
     let mut data = String::new();
     file.read_to_string(&mut data).unwrap();
     serde_json::from_str(&data).expect("JSON was not well-formatted")
@@ -80,9 +80,15 @@ async fn check_subscriptions() {
         .mount(&mock_bq)
         .await;
     // Setup AIC entries
-    for aic in test_aics() {
+    for aic in get_aics_from_json("tests/fixtures/check_subscriptions_aic.json") {
         aic_model
             .create_from_aic(&aic)
+            .await
+            .unwrap_or_else(|_| panic!("Failed to create aic: {:?}", &aic));
+    }
+    for aic in get_aics_from_json("tests/fixtures/check_subscriptions_aic_archive.json") {
+        aic_model
+            .create_archive_from_aic(&aic)
             .await
             .unwrap_or_else(|_| panic!("Failed to create aic: {:?}", &aic));
     }

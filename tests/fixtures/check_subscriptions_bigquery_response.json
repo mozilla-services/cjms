@@ -203,6 +203,40 @@
                     "v": "1.647464393672304E9"
                 },
                 {
+                    "v": "1.647450897E9"
+                },
+                {
+                    "v": "sub_1Ke0R3Kb9q6"
+                },
+                {
+                    "v": "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7"
+                },
+                {
+                    "v": "1"
+                },
+                {
+                    "v": "price_1J0owvKb9q6OnNsLExNhEDXm"
+                },
+                {
+                    "v": "usd"
+                },
+                {
+                    "v": "100"
+                },
+                {
+                    "v": "THIS IS AN ENTRY WHOSE AIC IS ALREADY IN THE ARCHIVE TABLE. IT SHOULD SUCCEED"
+                },
+                {
+                    "v": "1a33a74efc6b850f51b832ef5b6290e5f4d28a1dbcffef79b485e188a867c362"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "1.647464393672304E9"
+                },
+                {
                     "v": "1.647449981E9"
                 },
                 {
