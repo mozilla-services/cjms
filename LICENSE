@@ -1,7 +1,7 @@
 Unless otherwise stated all files in this repository fall under the Mozilla Public License, listed below.
 
 Exceptions:
-* src/actions/bigquery/model.rs - Apache License, Version 2
+* src/actions/bigquery/model.rs - Mixed - MPL & Apache License, Version 2
 
 Mozilla Public License Version 2.0
 ==================================
