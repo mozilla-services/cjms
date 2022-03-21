@@ -4,7 +4,6 @@ use actix_web::{
     http,
     web::{get, post, put, resource, Data},
     App, HttpServer,
-    middleware::Logger,
 };
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
