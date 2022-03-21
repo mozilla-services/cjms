@@ -77,10 +77,13 @@ pub trait GetAccessToken {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct WorkloadIdentityAccessToken {
     pub access_token: String,
-    _expires_in: i32,
-    _token_type: String,
+    #[allow(dead_code)]
+    // The following are used for serialization in production only
+    expires_in: i32,
+    token_type: String,
 }
 
 pub struct AccessTokenFromMetadata {}
