@@ -64,7 +64,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 Err(e) => {
                     // TODO - LOGGING
                     println!(
-                        "Errorr getting aic for subscription: {:?}. Continuing....",
+                        "Error getting aic for subscription: {:?}. Continuing....",
                         e
                     );
                     continue;
