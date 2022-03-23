@@ -1,8 +1,8 @@
-use cjms::appconfig::{connect_to_database_and_migrate, run_server};
-use cjms::settings::{get_settings, Settings};
 use fake::{Fake, StringFaker};
+use lib::appconfig::{connect_to_database_and_migrate, run_server};
+use lib::settings::{get_settings, Settings};
 use sqlx::postgres::PgPoolOptions;
-use sqlx::{Connection, Executor, PgConnection, PgPool};
+use sqlx::{Connection, Executor, PgConnection, PgPool, Pool, Postgres};
 use std::net::TcpListener;
 use uuid::Uuid;
 
@@ -37,6 +37,12 @@ async fn create_test_database(database_url: &str) -> String {
     randomized_test_database_url
 }
 
+pub async fn get_db_pool() -> Pool<Postgres> {
+    let settings = get_settings();
+    let test_database_url = create_test_database(&settings.database_url).await;
+    connect_to_database_and_migrate(&test_database_url).await
+}
+
 pub async fn spawn_app() -> TestApp {
     let settings = get_settings();
     let listener =
@@ -59,6 +65,16 @@ pub fn random_ascii_string() -> String {
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@";
     let f = StringFaker::with(Vec::from(ASCII), 8..90);
     f.fake()
+}
+
+pub fn random_currency_or_country() -> String {
+    const LETTERS: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let f = StringFaker::with(Vec::from(LETTERS), 1..5);
+    f.fake()
+}
+
+pub fn random_price() -> i32 {
+    (99..7899).fake()
 }
 
 pub async fn send_get_request(app: &TestApp, path: &str) -> reqwest::Response {

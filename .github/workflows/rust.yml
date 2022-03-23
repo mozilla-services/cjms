@@ -73,6 +73,9 @@ jobs:
         key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
     - name: Lint check
       run: cargo clippy --all-targets --all-features -- -D warnings
+    - name: Check if offline migrations haven't been submitted. If this step fails run `cargo sqlx prepare -- --lib` and submit `sqlx-data.json`.
+      if: ${{ failure() }}
+      run: cargo install sqlx-cli && cargo sqlx prepare  --database-url="postgres://not_a_database" --check -- --lib
   format:
     runs-on: ubuntu-latest
     steps:

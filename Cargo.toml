@@ -13,13 +13,24 @@ path = "src/bin/web.rs"
 name = "make_version_file"
 path = "src/bin/version.rs"
 
+[[bin]]
+name = "check_subscriptions"
+path = "src/bin/check_subscriptions.rs"
+
+[lib]
+name = "lib"
+path = "src/lib/mod.rs"
+
 [dependencies]
 actix-cors = "0.6.0"
 actix-web = "4"
+async-trait = "0.1.52"
 config = { version = "0.12", default-features = false, features = ["yaml"] }
+reqwest = { version = "0.11.9", features = ["json"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
-sqlx = { version = "0.5.11", features = ["offline", "postgres", "runtime-actix-rustls", "time", "uuid"] }
+sqlx = { version = "0.5.11", features = ["offline", "postgres", "runtime-actix-rustls", "time", "uuid", "json"] }
+thiserror = "1.0.30"
 # time must be 0.2 for sqlx support
 time = { version = "0.2.27", features = ["serde"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
@@ -29,9 +40,10 @@ uuid = { version = "0.8", features = ["v4", "serde"] }
 [dev-dependencies]
 fake = "2.4.3"
 mockall = "0.11.0"
-reqwest = { version = "0.11.9", features = ["json"] }
+pretty_assertions = "1.2.0"
 serial_test = "0.6.0"
 tempfile = "3.3.0"
+wiremock = "0.5.11"
 
 [profile.dev.package.sqlx-macros]
 # improve compile time macro checking
