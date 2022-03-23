@@ -30,7 +30,7 @@ fn get_aics_from_json(path: &str) -> Vec<AIC> {
     let mut data = String::new();
     file.read_to_string(&mut data).unwrap();
     let imported: Vec<AICSimple> =
-        serde_json::from_str(&data).expect("JSON was not well-formatted");
+        serde_json::from_str(&data).expect("Invalid JSON.");
     let mut aics: Vec<AIC> = vec![];
     for aic in imported {
         let x = AIC {

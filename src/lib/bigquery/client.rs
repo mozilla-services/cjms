@@ -140,7 +140,7 @@ mod tests {
         let mut file = File::open("tests/fixtures/bigquery_generic_response.json").unwrap();
         let mut data = String::new();
         file.read_to_string(&mut data).unwrap();
-        serde_json::from_str(&data).expect("JSON was not well-formatted")
+        serde_json::from_str(&data).expect("Invalid JSON.")
     }
 
     #[test]
