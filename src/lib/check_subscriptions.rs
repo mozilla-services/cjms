@@ -45,9 +45,12 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
         let mut sub = match make_subscription_from_bq_row(&rs) {
             Ok(sub) => {
                 // TODO - LOGGING
-                println!("Successfully deserialized subscription from bq row: {}", sub.id);
+                println!(
+                    "Successfully deserialized subscription from bq row: {}",
+                    sub.id
+                );
                 sub
-            },
+            }
             Err(e) => {
                 // TODO - LOGGING - Log information and get a metric
                 println!(
@@ -62,7 +65,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 // TODO - LOGGING
                 println!("Succesfully fetched aic: {}.", aic.id);
                 aic
-            },
+            }
             Err(_) => match aics.fetch_one_by_flow_id_from_archive(&sub.flow_id).await {
                 Ok(aic) => {
                     // TODO - LOGGING - Note that we had to pull from archive table
@@ -104,7 +107,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
             Ok(sub) => {
                 // TODO - LOGGING
                 println!("Successfully created sub: {}.", sub.id);
-            },
+            }
             Err(e) => match e {
                 sqlx::Error::Database(e) => {
                     // 23505 is the code for unique constraints e.g. duplicate flow id issues
