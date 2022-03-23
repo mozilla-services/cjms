@@ -161,7 +161,7 @@ async fn test_aic_archive_does_not_delete_if_cannot_insert() {
     let db_pool = get_db_pool().await;
     let model = AICModel { db_pool: &db_pool };
     let aic = test_aic();
-    // Set a blcoking archive entry to have the same flow id as the one
+    // Set a blocking archive entry to have the same flow id as the one
     // we'll attempt to archive so the transaction should fail.
     let mut blocking_archive_entry = test_aic();
     blocking_archive_entry.flow_id = aic.flow_id.clone();
