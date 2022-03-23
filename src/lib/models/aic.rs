@@ -30,9 +30,9 @@ impl AICModel<'_> {
     pub async fn create_from_aic(&self, aic: &AIC) -> Result<AIC, Error> {
         query_as!(
             AIC,
-            r#"INSERT INTO aic (id, cj_event_value, flow_id, created, expires)
+            "INSERT INTO aic (id, cj_event_value, flow_id, created, expires)
 			VALUES ($1, $2, $3, $4, $5)
-			RETURNING *"#,
+			RETURNING *",
             aic.id,
             aic.cj_event_value,
             aic.flow_id,
@@ -49,9 +49,9 @@ impl AICModel<'_> {
         let expires = created + Duration::days(30);
         query_as!(
             AIC,
-            r#"INSERT INTO aic (id, cj_event_value, flow_id, created, expires)
+            "INSERT INTO aic (id, cj_event_value, flow_id, created, expires)
 			VALUES ($1, $2, $3, $4, $5)
-			RETURNING *"#,
+			RETURNING *",
             id,
             cj_event_value,
             flow_id,
@@ -66,10 +66,10 @@ impl AICModel<'_> {
         // A new flow_id alone, does not reset the clock on the cookie
         query_as!(
             AIC,
-            r#"UPDATE aic
+            "UPDATE aic
             SET flow_id = $1
             WHERE id = $2
-			RETURNING *"#,
+			RETURNING *",
             flow_id,
             id,
         )
@@ -88,14 +88,14 @@ impl AICModel<'_> {
         let expires = created + Duration::days(30);
         query_as!(
             AIC,
-            r#"UPDATE aic
+            "UPDATE aic
             SET
                 cj_event_value = $1,
                 flow_id = $2,
                 created = $3,
                 expires = $4
             WHERE id = $5
-			RETURNING *"#,
+			RETURNING *",
             cj_event_value,
             flow_id,
             created,
@@ -139,9 +139,9 @@ impl AICModel<'_> {
     pub async fn create_archive_from_aic(&self, aic: &AIC) -> Result<AIC, Error> {
         query_as!(
             AIC,
-            r#"INSERT INTO aic_archive (id, cj_event_value, flow_id, created, expires)
+            "INSERT INTO aic_archive (id, cj_event_value, flow_id, created, expires)
 			VALUES ($1, $2, $3, $4, $5)
-			RETURNING *"#,
+			RETURNING *",
             aic.id,
             aic.cj_event_value,
             aic.flow_id,
@@ -161,9 +161,9 @@ impl AICModel<'_> {
             .execute(&mut *transaction)
             .await?;
         query!(
-            r#"INSERT INTO aic_archive (id, cj_event_value, flow_id, created, expires)
+            "INSERT INTO aic_archive (id, cj_event_value, flow_id, created, expires)
 			VALUES ($1, $2, $3, $4, $5)
-			RETURNING *"#,
+			RETURNING *",
             aic.id,
             aic.cj_event_value,
             aic.flow_id,

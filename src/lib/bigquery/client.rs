@@ -265,7 +265,7 @@ mod tests {
         .await;
         let url = bq.query_api_url();
         let expected_path = url.trim_start_matches(&mock_google.uri());
-        let query = r#"SELECT * FROM `dataset.table`;"#;
+        let query = "SELECT * FROM `dataset.table`;";
         let response = ResponseTemplate::new(200).set_body_json(fixture_bigquery_response());
         Mock::given(method("POST"))
             .and(path(expected_path))

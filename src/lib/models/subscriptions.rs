@@ -63,7 +63,7 @@ impl SubscriptionModel<'_> {
     pub async fn create_from_sub(&self, sub: &Subscription) -> Result<Subscription, Error> {
         query_as!(
             Subscription,
-            r#"INSERT INTO subscriptions (
+            "INSERT INTO subscriptions (
                 id,
                 flow_id,
                 subscription_id,
@@ -82,7 +82,7 @@ impl SubscriptionModel<'_> {
                 status_history
              )
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-			RETURNING *"#,
+			RETURNING *",
             sub.id,
             sub.flow_id,
             sub.subscription_id,
