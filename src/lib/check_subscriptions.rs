@@ -43,7 +43,11 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
     while rs.next_row() {
         // If can't deserialize e.g. required fields are not available log and move on.
         let mut sub = match make_subscription_from_bq_row(&rs) {
-            Ok(sub) => sub,
+            Ok(sub) => {
+                // TODO - LOGGING
+                println!("Successfully deserialized subscription from bq row: {}", sub.id);
+                sub
+            },
             Err(e) => {
                 // TODO - LOGGING - Log information and get a metric
                 println!(
@@ -54,11 +58,15 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
             }
         };
         let aic = match aics.fetch_one_by_flow_id(&sub.flow_id).await {
-            Ok(aic) => aic,
+            Ok(aic) => {
+                // TODO - LOGGING
+                println!("Succesfully fetched aic: {}.", aic.id);
+                aic
+            },
             Err(_) => match aics.fetch_one_by_flow_id_from_archive(&sub.flow_id).await {
                 Ok(aic) => {
                     // TODO - LOGGING - Note that we had to pull from archive table
-                    println!("AIC was retrieved from archive table");
+                    println!("AIC {} was retrieved from archive table.", aic.id);
                     aic
                 }
                 Err(e) => {
@@ -81,7 +89,10 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
         }]));
         // Archive the AIC
         match aics.archive_aic(&aic).await {
-            Ok(_) => {}
+            Ok(_) => {
+                // TODO - LOGGING
+                println!("Successfully archived aic: {}.", aic.id);
+            }
             Err(e) => {
                 // TODO - LOGGING
                 println!("Failed to archive aic entry: {:?}. Continuing...", e);
@@ -90,7 +101,10 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
         };
         // Save the new subscription entry
         match subscriptions.create_from_sub(&sub).await {
-            Ok(sub) => sub,
+            Ok(sub) => {
+                // TODO - LOGGING
+                println!("Successfully created sub: {}.", sub.id);
+            },
             Err(e) => match e {
                 sqlx::Error::Database(e) => {
                     // 23505 is the code for unique constraints e.g. duplicate flow id issues
