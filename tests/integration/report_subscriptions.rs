@@ -163,7 +163,4 @@ async fn report_subscriptions() {
     assert_eq!(sub_2_updated.status.unwrap(), "will_not_report");
     assert_eq!(sub_3_updated.status.unwrap(), "not_reported");
     assert_eq!(sub_4_updated.status.unwrap(), "reported");
-
-    // TODO make assertions about status_history
-    // TODO - check in on rounding off subscription time to nearest hour
 }
