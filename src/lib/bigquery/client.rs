@@ -89,10 +89,11 @@ struct WorkloadIdentityAccessToken {
 pub struct AccessTokenFromMetadata {}
 #[async_trait]
 impl GetAccessToken for AccessTokenFromMetadata {
+    // GCP docs on how this works https://cloud.google.com/run/docs/securing/service-identity#fetching_identity_and_access_tokens_using_the_metadata_server
     async fn get(&self) -> String {
         let client = reqwest::Client::new();
         let resp = client
-            .get("http://metadata/computeMetadata/v1/instance/service-accounts/default/token")
+            .get("http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token")
             .header("Metadata-Flavor", "Google")
             .send()
             .await;
