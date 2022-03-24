@@ -52,8 +52,12 @@ async fn report_subscriptions() {
     sub_4.subscription_created = OffsetDateTime::now_utc() - Duration::days(5);
     sub_4.aic_expires = Some(OffsetDateTime::now_utc() + Duration::days(10));
     sub_4.country = None;
+    // Sub 5 - no aic
+    let mut sub_5 = make_fake_sub();
+    sub_5.aic_expires = None;
+    sub_5.flow_id = "5".to_string();
 
-    for sub in [&sub_1, &sub_2, &sub_3, &sub_4] {
+    for sub in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5] {
         sub_model
             .create_from_sub(sub)
             .await
@@ -61,6 +65,7 @@ async fn report_subscriptions() {
     }
 
     let mock_cj = MockServer::start().await;
+    let format_str = "%FT%H:00:00.000Z";
     when_sending_to_cj(&settings)
         .and(query_param("CJEVENT", sub_1.cj_event_value.unwrap()))
         .and(query_param("EVENTTIME", "2021-12-25T14:00:00.000Z"))
@@ -71,7 +76,7 @@ async fn report_subscriptions() {
         .and(query_param("QTY1", sub_1.quantity.to_string()))
         .and(query_param(
             "CUST_COUNTRY",
-            get_iso_code_3_from_iso_code_2(sub_1.country.as_ref().unwrap()),
+            get_iso_code_3_from_iso_code_2(sub_3.country.as_ref().unwrap()),
         ))
         .respond_with(ResponseTemplate::new(200))
         .up_to_n_times(1)
@@ -82,7 +87,7 @@ async fn report_subscriptions() {
         .and(query_param("CJEVENT", sub_3.cj_event_value.unwrap()))
         .and(query_param(
             "EVENTTIME",
-            sub_3.subscription_created.format("%FT%H:00:00.000Z"),
+            sub_3.subscription_created.format(format_str),
         ))
         .and(query_param("OID", sub_3.id.to_string()))
         .and(query_param("CURRENCY", sub_3.plan_currency))
@@ -91,7 +96,7 @@ async fn report_subscriptions() {
         .and(query_param("QTY1", format!("{}", sub_3.quantity)))
         .and(query_param(
             "CUST_COUNTRY",
-            get_iso_code_3_from_iso_code_2(sub_2.country.as_ref().unwrap()),
+            get_iso_code_3_from_iso_code_2(sub_3.country.as_ref().unwrap()),
         ))
         .respond_with(ResponseTemplate::new(500))
         .up_to_n_times(1)
@@ -102,7 +107,7 @@ async fn report_subscriptions() {
         .and(query_param("CJEVENT", sub_4.cj_event_value.unwrap()))
         .and(query_param(
             "EVENTTIME",
-            sub_4.subscription_created.format("%FT%H:00:00Z"),
+            sub_4.subscription_created.format(format_str),
         ))
         .and(query_param("OID", sub_4.id.to_string()))
         .and(query_param("CURRENCY", sub_4.plan_currency))
@@ -133,7 +138,6 @@ async fn report_subscriptions() {
         .fetch_one_by_id(&sub_2.id)
         .await
         .expect("Could not get sub");
-    let sub_2_updated_history = sub_2_updated.get_status_history();
     let sub_3_updated = sub_model
         .fetch_one_by_id(&sub_3.id)
         .await
@@ -144,6 +148,10 @@ async fn report_subscriptions() {
         .await
         .expect("Could not get sub");
     let sub_4_updated_history = sub_4_updated.get_status_history();
+    let sub_5_updated = sub_model
+        .fetch_one_by_id(&sub_5.id)
+        .await
+        .expect("Could not get sub");
 
     assert_eq!(
         sub_1_updated.status.as_ref().unwrap(),
@@ -171,18 +179,21 @@ async fn report_subscriptions() {
         }
     );
 
-    assert_eq!(
-        sub_2_updated.status.as_ref().unwrap(),
-        &Status::WillNotReport.to_string()
-    );
-    assert_eq!(sub_2_updated_history.entries.len(), 2);
-    assert_eq!(
-        sub_2_updated_history.entries[1],
-        StatusHistoryEntry {
-            status: Status::WillNotReport,
-            t: now
-        }
-    );
+    for will_not_report_sub in [&sub_2_updated, &sub_5_updated] {
+        assert_eq!(
+            will_not_report_sub.status.as_ref().unwrap(),
+            &Status::WillNotReport.to_string()
+        );
+        let updated_history = will_not_report_sub.get_status_history();
+        assert_eq!(updated_history.entries.len(), 2);
+        assert_eq!(
+            updated_history.entries[1],
+            StatusHistoryEntry {
+                status: Status::WillNotReport,
+                t: now
+            }
+        );
+    }
 
     assert_eq!(
         sub_4_updated.status.as_ref().unwrap(),
