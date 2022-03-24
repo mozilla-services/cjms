@@ -1,6 +1,9 @@
 use sqlx::{Pool, Postgres};
 
-use crate::{cj::client::CJS2SClient, models::subscriptions::SubscriptionModel};
+use crate::{
+    cj::client::CJS2SClient,
+    models::subscriptions::{Status, SubscriptionModel},
+};
 
 pub async fn report_subscriptions_to_cj(db_pool: &Pool<Postgres>, cj_client: CJS2SClient) {
     let subscriptions = SubscriptionModel { db_pool };
@@ -10,8 +13,12 @@ pub async fn report_subscriptions_to_cj(db_pool: &Pool<Postgres>, cj_client: CJS
         match cj_client.report_subscription(&sub).await {
             Ok(r) => {
                 if r.status() == 200 {
-                    match subscriptions.mark_sub_reported(&sub.id).await {
+                    match subscriptions
+                        .update_sub_status(&sub.id, Status::Reported)
+                        .await
+                    {
                         Ok(_) => {
+                            // TODO - LOGGING
                             println!("Success for sub: {}", sub.flow_id);
                         }
                         Err(e) => {

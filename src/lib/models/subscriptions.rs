@@ -1,7 +1,26 @@
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value as JsonValue};
 use sqlx::{query_as, Error, PgPool};
+use strum_macros::Display as EnumToString;
 use time::OffsetDateTime;
 use uuid::Uuid;
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, EnumToString)]
+pub enum Status {
+    NotReported,
+    Reported,
+    WillNotReport,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct StatusHistoryEntry {
+    pub t: OffsetDateTime,
+    pub status: Status,
+}
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct StatusHistory {
+    pub entries: Vec<StatusHistoryEntry>,
+}
 
 #[derive(Debug)]
 pub struct Subscription {
@@ -20,6 +39,7 @@ pub struct Subscription {
     pub aic_id: Option<Uuid>,
     pub aic_expires: Option<OffsetDateTime>,
     pub cj_event_value: Option<String>,
+    // Note we use string and json to save in database for simplicity
     pub status: Option<String>,
     pub status_history: Option<JsonValue>,
 }
@@ -41,7 +61,7 @@ impl PartialEq for Subscription {
         self.cj_event_value == other.cj_event_value &&
         self.status == other.status
         // Compare manually if needed
-        //self.status_history == other.status_history
+        // self.status_history == other.status_history
         ;
         let aic_expires_match = match self.aic_expires {
             Some(self_v) => match other.aic_expires {
@@ -54,6 +74,37 @@ impl PartialEq for Subscription {
     }
 }
 impl Eq for Subscription {}
+
+impl Subscription {
+    pub fn get_status_history(&self) -> StatusHistory {
+        let status_history_value = match self.status_history.clone() {
+            Some(v) => v,
+            None => json!({"entries": []}),
+        };
+        let status_history: StatusHistory = match serde_json::from_value(status_history_value) {
+            Ok(v) => v,
+            Err(e) => {
+                // TODO - LOGGING
+                println!(
+                    "Error deserializing status_history: {:?} {}",
+                    self.status_history, e
+                );
+                StatusHistory { entries: vec![] }
+            }
+        };
+        status_history
+    }
+
+    pub fn update_status(&mut self, new_status: Status) {
+        let mut status_history = self.get_status_history();
+        self.status = Some(new_status.to_string());
+        status_history.entries.push(StatusHistoryEntry {
+            status: new_status,
+            t: OffsetDateTime::now_utc(),
+        });
+        self.status_history = Some(json!(status_history));
+    }
+}
 
 pub struct SubscriptionModel<'a> {
     pub db_pool: &'a PgPool,
@@ -133,35 +184,29 @@ impl SubscriptionModel<'_> {
     pub async fn fetch_all_not_reported(&self) -> Result<Vec<Subscription>, Error> {
         query_as!(
             Subscription,
-            "SELECT * FROM subscriptions WHERE status = 'not_reported'"
+            "SELECT * FROM subscriptions WHERE status = 'NotReported'"
         )
         .fetch_all(self.db_pool)
         .await
     }
 
-    pub async fn mark_sub_reported(&self, id: &Uuid) -> Result<Subscription, Error> {
-        let new_status_history = json!({
-            "status": "reported",
-            "t": OffsetDateTime::now_utc().to_string()
-        });
-        let sub = self.fetch_one_by_id(id).await?;
-        let status_history = sub.status_history.unwrap_or(json!([]));
-        // TODO - Not sure how to clean this to not be an expect.
-        // Status history should probably be optionally working
-        let mut status_history_array = status_history
-            .as_array()
-            .expect("Could not get status_history as an array.")
-            .clone();
-        status_history_array.push(new_status_history);
+    pub async fn update_sub_status(
+        &self,
+        id: &Uuid,
+        new_status: Status,
+    ) -> Result<Subscription, Error> {
+        let mut sub = self.fetch_one_by_id(id).await?;
+        sub.update_status(new_status);
         query_as!(
             Subscription,
             r#"UPDATE subscriptions
             SET
-                status = 'reported',
-                status_history = $1
-            WHERE id = $2
+                status = $1,
+                status_history = $2
+            WHERE id = $3
 			RETURNING *"#,
-            json!(status_history_array),
+            sub.status,
+            sub.status_history,
             id,
         )
         .fetch_one(self.db_pool)

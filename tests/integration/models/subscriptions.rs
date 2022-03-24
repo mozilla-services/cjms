@@ -1,12 +1,8 @@
-use crate::utils::{
-    get_length_of_subscription_status_history_array,
-    get_value_from_subscription_status_history_array, random_ascii_string,
-    random_currency_or_country, random_price, spawn_app,
-};
-use lib::models::subscriptions::{Subscription, SubscriptionModel};
+use crate::utils::{random_ascii_string, random_currency_or_country, random_price, spawn_app};
+use lib::models::subscriptions::{Status, StatusHistory, Subscription, SubscriptionModel};
 use pretty_assertions::assert_eq;
 use serde_json::json;
-use time::{Duration, OffsetDateTime, PrimitiveDateTime};
+use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
 pub fn make_fake_sub() -> Subscription {
@@ -25,8 +21,8 @@ pub fn make_fake_sub() -> Subscription {
         aic_id: Some(Uuid::new_v4()),
         aic_expires: Some(OffsetDateTime::now_utc()),
         cj_event_value: Some(random_ascii_string()),
-        status: Some(random_ascii_string()),
-        status_history: Some(json!([])),
+        status: Some(Status::NotReported.to_string()),
+        status_history: Some(json!(StatusHistory { entries: vec![] })),
     }
 }
 
@@ -108,13 +104,15 @@ async fn test_subscription_model_get_all_not_reported() {
         db_pool: &app.db_connection(),
     };
     let mut sub_1 = make_fake_sub();
-    sub_1.status = Some("not_reported".to_string());
+    sub_1.update_status(Status::NotReported);
     save_sub(&model, &sub_1).await;
     let mut sub_2 = make_fake_sub();
-    sub_2.status = Some("a status".to_string());
+    // Note there's nothing stopping us from saving a non-enum value to the field.
+    // But my efforts to work around this have so far proved gross.
+    sub_2.status = Some("a bad status".to_string());
     save_sub(&model, &sub_2).await;
-    let mut sub_3 = make_fake_sub();
-    sub_3.status = Some("not_reported".to_string());
+    let sub_3 = make_fake_sub();
+    sub_1.update_status(Status::NotReported);
     save_sub(&model, &sub_3).await;
     let all = model.fetch_all().await.unwrap();
     assert_eq!(all.len(), 3);
@@ -128,40 +126,45 @@ async fn test_subscription_model_get_all_not_reported() {
 }
 
 #[tokio::test]
-async fn test_subscription_model_mark_reported() {
+async fn test_subscription_update_sub_status() {
     let app = spawn_app().await;
     let model = SubscriptionModel {
         db_pool: &app.db_connection(),
     };
     let mut sub = make_fake_sub();
-    sub.status = Some("not_reported".to_string());
+    sub.update_status(Status::NotReported);
     save_sub(&model, &sub).await;
-    assert_eq!(
-        get_length_of_subscription_status_history_array(&sub.status_history.unwrap()),
-        0
-    );
+    assert_eq!(sub.get_status_history().entries.len(), 1);
     model
-        .mark_sub_reported(&sub.id)
+        .update_sub_status(&sub.id, Status::WillNotReport)
         .await
         .expect("Should not fail.");
     let result = model.fetch_one_by_id(&sub.id).await.unwrap();
-    assert_eq!(result.status, Some("reported".to_string()));
-    let result_status_history = result.status_history.unwrap();
+    assert_eq!(result.status, Some(Status::WillNotReport.to_string()));
+    let result_status_history = result.get_status_history();
+    assert_eq!(result_status_history.entries.len(), 2);
     assert_eq!(
-        get_length_of_subscription_status_history_array(&result_status_history),
-        1
+        result_status_history.entries[1].status,
+        Status::WillNotReport
     );
-    let status_in_status_history =
-        get_value_from_subscription_status_history_array(&result_status_history, 0, "status");
-    assert_eq!(status_in_status_history, "reported");
-    let status_time_string =
-        get_value_from_subscription_status_history_array(&result_status_history, 0, "t");
-    let t_in_status_history = PrimitiveDateTime::parse(status_time_string, "%Y-%m-%d %T.%N +0")
-        .unwrap()
-        .assume_utc();
     // This won't pass if the test is slower than a second to process
     assert_eq!(
-        t_in_status_history.unix_timestamp(),
+        result_status_history.entries[1].t.unix_timestamp(),
+        OffsetDateTime::now_utc().unix_timestamp()
+    );
+    // Go again after a delay updating to Reported
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    model
+        .update_sub_status(&sub.id, Status::Reported)
+        .await
+        .expect("Should not fail.");
+    let result = model.fetch_one_by_id(&sub.id).await.unwrap();
+    assert_eq!(result.status, Some(Status::Reported.to_string()));
+    let result_status_history = result.get_status_history();
+    assert_eq!(result_status_history.entries.len(), 3);
+    assert_eq!(result_status_history.entries[2].status, Status::Reported);
+    assert_eq!(
+        result_status_history.entries[2].t.unix_timestamp(),
         OffsetDateTime::now_utc().unix_timestamp()
     );
 }

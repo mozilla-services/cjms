@@ -1,13 +1,12 @@
-use actix_web::cookie::time::OffsetDateTime;
-use serde_json::json;
 use sqlx::{Pool, Postgres};
+
 use uuid::Uuid;
 
 use crate::{
     bigquery::client::{BQClient, BQError, ResultSet},
     models::{
         aic::AICModel,
-        subscriptions::{Subscription, SubscriptionModel},
+        subscriptions::{Status, Subscription, SubscriptionModel},
     },
 };
 
@@ -85,11 +84,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
         sub.aic_id = Some(aic.id);
         sub.cj_event_value = Some(aic.cj_event_value.clone());
         sub.aic_expires = Some(aic.expires);
-        sub.status = Some("not_reported".to_string());
-        sub.status_history = Some(json!([{
-            "status": "not_reported",
-            "t": OffsetDateTime::now_utc().to_string()
-        }]));
+        sub.update_status(Status::NotReported);
         // Archive the AIC
         match aics.archive_aic(&aic).await {
             Ok(_) => {

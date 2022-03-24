@@ -5,7 +5,7 @@ use std::io::Read;
 use lib::bigquery::client::{AccessTokenFromEnv, BQClient};
 use lib::check_subscriptions::fetch_and_process_new_subscriptions;
 use lib::models::aic::{AICModel, AIC};
-use lib::models::subscriptions::{Subscription, SubscriptionModel};
+use lib::models::subscriptions::{Status, Subscription, SubscriptionModel};
 use pretty_assertions::assert_eq;
 use serde::Deserialize;
 use serde_json::Value;
@@ -14,7 +14,7 @@ use time::{date, time, Format, OffsetDateTime};
 use uuid::{Uuid, Version};
 use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
-use crate::utils::{get_db_pool, get_value_from_subscription_status_history_array};
+use crate::utils::get_db_pool;
 
 #[derive(Debug, Deserialize)]
 pub struct AICSimple {
@@ -139,15 +139,12 @@ async fn check_subscriptions() {
             aic_id: Some(aic_1.id),
             aic_expires: Some(aic_1.expires),
             cj_event_value: Some(aic_1.cj_event_value.to_string()),
-            status: Some("not_reported".to_string()),
+            status: Some(Status::NotReported.to_string()),
             status_history: None, // This field isn't compared
         }
     );
-    let sub_1_status_history = sub_1.status_history.unwrap();
-    assert_eq!(
-        get_value_from_subscription_status_history_array(&sub_1_status_history, 0, "status"),
-        "not_reported"
-    );
+    let sub_1_status_history = sub_1.get_status_history();
+    assert_eq!(sub_1_status_history.entries[0].status, Status::NotReported);
     assert_eq!(
         // Sub two is the last one so all the failure cases in the test fixture should have been handled if 2 is also created.
         // TODO - LOGGING - when we add logging we could test for those logs to have been created
@@ -171,7 +168,7 @@ async fn check_subscriptions() {
             aic_id: Some(aic_2.id),
             aic_expires: Some(aic_2.expires),
             cj_event_value: Some(aic_2.cj_event_value),
-            status: Some("not_reported".to_string()),
+            status: Some(Status::NotReported.to_string()),
             status_history: None, // This field isn't compared
         }
     );
