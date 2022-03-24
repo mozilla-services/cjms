@@ -389,7 +389,7 @@
     },
     "query": "SELECT * FROM aic_archive WHERE id = $1"
   },
-  "7e30857bf8ad6114de9374d88caf94a23974a1904cdd18e95532c57ca53bd531": {
+  "91a8f7715d3c9f86252e1e47158ac0e7926a38cf7a6fadb445d26d3f9717fdde": {
     "describe": {
       "columns": [
         {
@@ -495,7 +495,7 @@
         "Left": []
       }
     },
-    "query": "SELECT * FROM subscriptions WHERE status = 'not_reported'"
+    "query": "SELECT * FROM subscriptions WHERE status = 'NotReported'"
   },
   "9e303b2b6ebf017cf77da7164b42650a7af1eaba834da57617da7310af2b5ab9": {
     "describe": {
@@ -763,6 +763,118 @@
     },
     "query": "SELECT * FROM subscriptions WHERE id = $1"
   },
+  "b8681a793dd9645e4e5711286cfc27a569af13ea2597f58cd982ef04a318991a": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "flow_id",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "subscription_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "report_timestamp",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "subscription_created",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "fxa_uid",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "quantity",
+          "ordinal": 6,
+          "type_info": "Int4"
+        },
+        {
+          "name": "plan_id",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "plan_currency",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "plan_amount",
+          "ordinal": 9,
+          "type_info": "Int4"
+        },
+        {
+          "name": "country",
+          "ordinal": 10,
+          "type_info": "Text"
+        },
+        {
+          "name": "aic_id",
+          "ordinal": 11,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "aic_expires",
+          "ordinal": 12,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "cj_event_value",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "status",
+          "ordinal": 14,
+          "type_info": "Text"
+        },
+        {
+          "name": "status_history",
+          "ordinal": 15,
+          "type_info": "Json"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Json",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "UPDATE subscriptions\n            SET\n                status = $1,\n                status_history = $2\n            WHERE id = $3\n\t\t\tRETURNING *"
+  },
   "c705eede93655cf085d9d78d82287fb39cbffc54ed579db822a5d45c6a473e20": {
     "describe": {
       "columns": [
@@ -979,116 +1091,5 @@
       }
     },
     "query": "INSERT INTO subscriptions (\n                id,\n                flow_id,\n                subscription_id,\n                report_timestamp,\n                subscription_created,\n                fxa_uid,\n                quantity,\n                plan_id,\n                plan_currency,\n                plan_amount,\n                country,\n                aic_id,\n                aic_expires,\n                cj_event_value,\n                status,\n                status_history\n             )\n\t\t\tVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)\n\t\t\tRETURNING *"
-  },
-  "f73c405b39f67cbb36155a0204c39f9339959f223de8b82caed97c87f79458af": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "flow_id",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "subscription_id",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "report_timestamp",
-          "ordinal": 3,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "subscription_created",
-          "ordinal": 4,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "fxa_uid",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "quantity",
-          "ordinal": 6,
-          "type_info": "Int4"
-        },
-        {
-          "name": "plan_id",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "plan_currency",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "plan_amount",
-          "ordinal": 9,
-          "type_info": "Int4"
-        },
-        {
-          "name": "country",
-          "ordinal": 10,
-          "type_info": "Text"
-        },
-        {
-          "name": "aic_id",
-          "ordinal": 11,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "aic_expires",
-          "ordinal": 12,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "cj_event_value",
-          "ordinal": 13,
-          "type_info": "Text"
-        },
-        {
-          "name": "status",
-          "ordinal": 14,
-          "type_info": "Text"
-        },
-        {
-          "name": "status_history",
-          "ordinal": 15,
-          "type_info": "Json"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Json",
-          "Uuid"
-        ]
-      }
-    },
-    "query": "UPDATE subscriptions\n            SET\n                status = 'reported',\n                status_history = $1\n            WHERE id = $2\n\t\t\tRETURNING *"
   }
 }
