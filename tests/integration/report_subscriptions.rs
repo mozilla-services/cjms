@@ -133,7 +133,6 @@ async fn report_subscriptions() {
         .fetch_one_by_id(&sub_1.id)
         .await
         .expect("Could not get sub");
-    let sub_1_updated_history = sub_1_updated.get_status_history();
     let sub_2_updated = sub_model
         .fetch_one_by_id(&sub_2.id)
         .await
@@ -142,34 +141,36 @@ async fn report_subscriptions() {
         .fetch_one_by_id(&sub_3.id)
         .await
         .expect("Could not get sub");
-    let sub_3_updated_history = sub_3_updated.get_status_history();
     let sub_4_updated = sub_model
         .fetch_one_by_id(&sub_4.id)
         .await
         .expect("Could not get sub");
-    let sub_4_updated_history = sub_4_updated.get_status_history();
     let sub_5_updated = sub_model
         .fetch_one_by_id(&sub_5.id)
         .await
         .expect("Could not get sub");
 
-    assert_eq!(
-        sub_1_updated.status.as_ref().unwrap(),
-        &Status::Reported.to_string()
-    );
-    assert_eq!(sub_1_updated_history.entries.len(), 2);
-    assert_eq!(
-        sub_1_updated_history.entries[1],
-        StatusHistoryEntry {
-            status: Status::Reported,
-            t: now
-        }
-    );
+    for report_sub in [&sub_1_updated, &sub_4_updated] {
+        assert_eq!(
+            report_sub.status.as_ref().unwrap(),
+            &Status::Reported.to_string()
+        );
+        let updated_history = report_sub.get_status_history();
+        assert_eq!(updated_history.entries.len(), 2);
+        assert_eq!(
+            updated_history.entries[1],
+            StatusHistoryEntry {
+                status: Status::Reported,
+                t: now
+            }
+        );
+    }
 
     assert_eq!(
         sub_3_updated.status.as_ref().unwrap(),
         &Status::NotReported.to_string()
     );
+    let sub_3_updated_history = sub_3_updated.get_status_history();
     assert_eq!(sub_3_updated_history.entries.len(), 2);
     assert_eq!(
         sub_3_updated_history.entries[1],
@@ -194,17 +195,4 @@ async fn report_subscriptions() {
             }
         );
     }
-
-    assert_eq!(
-        sub_4_updated.status.as_ref().unwrap(),
-        &Status::Reported.to_string()
-    );
-    assert_eq!(sub_4_updated_history.entries.len(), 2);
-    assert_eq!(
-        sub_4_updated_history.entries[1],
-        StatusHistoryEntry {
-            status: Status::Reported,
-            t: now
-        }
-    );
 }

@@ -5,12 +5,17 @@ use crate::{
     models::subscriptions::{Status, SubscriptionModel},
 };
 
+// TODO - LOGGING
+// Need logging through out all these possible match conditions. Marking each println with the tag seemed redundant.
+
 pub async fn report_subscriptions_to_cj(db_pool: &Pool<Postgres>, cj_client: CJS2SClient) {
     let subscriptions = SubscriptionModel { db_pool };
-    // TODO - no unwrap
-    let not_reported_subscriptions = subscriptions.fetch_all_not_reported().await.unwrap();
+    // Intentional panic. Cannot continue if we can't retrieve subs.
+    let not_reported_subscriptions = subscriptions
+        .fetch_all_not_reported()
+        .await
+        .expect("Could not retrieve subscriptions from DB.");
     for sub in not_reported_subscriptions {
-        println!("Working on sub: {}", &sub.flow_id);
         let next_status = match sub.aic_expires {
             Some(aic_expires) => {
                 if aic_expires < sub.subscription_created {
@@ -24,7 +29,6 @@ pub async fn report_subscriptions_to_cj(db_pool: &Pool<Postgres>, cj_client: CJS
                 }
             }
             None => {
-                // TODO - LOGGING
                 println!(
                     "Sub {} does not have an aic expires. Will not report.",
                     &sub.id
@@ -38,10 +42,9 @@ pub async fn report_subscriptions_to_cj(db_pool: &Pool<Postgres>, cj_client: CJS
                 .await
             {
                 Ok(_) => {
-                    // TODO - LOGGING
+                    println!("Successfully marked as WillNotReport.");
                 }
                 Err(e) => {
-                    // TODO - LOGGING
                     println!(
                         "Could not mark subscription {} as WillNotReport. {}",
                         &sub.id, e
@@ -51,7 +54,7 @@ pub async fn report_subscriptions_to_cj(db_pool: &Pool<Postgres>, cj_client: CJS
             continue;
         }
 
-        match cj_client.report_subscription(&sub).await {
+        let mark_not_reported = match cj_client.report_subscription(&sub).await {
             Ok(r) => {
                 if r.status() == 200 {
                     match subscriptions
@@ -59,44 +62,46 @@ pub async fn report_subscriptions_to_cj(db_pool: &Pool<Postgres>, cj_client: CJS
                         .await
                     {
                         Ok(_) => {
-                            // TODO - LOGGING
-                            // TODO - change to id
                             println!("200 Success for sub: {}", &sub.id);
                         }
                         Err(e) => {
-                            // TODO - LOGGING
                             println!(
                                 "Could not mark subscription {} as reported. But it has been. {}",
                                 &sub.id, e
                             );
                         }
                     };
+                    false
                 } else {
-                    // TODO - LOGGING
-                    // TODO - change to id
-                    println!("Not 200 Success for sub: {}", &sub.flow_id);
-                    match subscriptions
-                        .update_sub_status(&sub.id, Status::NotReported)
-                        .await
-                    {
-                        Ok(_) => {
-                            // TODO - LOGGING
-                            println!("CJ did not return a 200 for sub: {}", &sub.id);
-                        }
-                        Err(e) => {
-                            // TODO - LOGGING
-                            println!(
-                                "Could not mark subscription {} as not_reported. {}",
-                                &sub.id, e
-                            );
-                        }
-                    }
+                    println!(
+                        "Not 200 Success for sub: {}. Marking Not Reported.",
+                        &sub.id
+                    );
+                    true
                 }
             }
             Err(e) => {
-                // TODO - LOGGING
-                println!("R {}", e);
-                // mark not reported
+                println!(
+                    "Report_subscription errored. Marking sub {} not reported. {}",
+                    &sub.id, e
+                );
+                true
+            }
+        };
+        if mark_not_reported {
+            match subscriptions
+                .update_sub_status(&sub.id, Status::NotReported)
+                .await
+            {
+                Ok(_) => {
+                    println!("Successfully marked as NotReported.");
+                }
+                Err(e) => {
+                    println!(
+                        "Could not mark subscription {} as not_reported. {}",
+                        &sub.id, e
+                    );
+                }
             }
         }
     }
