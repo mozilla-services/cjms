@@ -1,6 +1,6 @@
 use lib::{
     cj::{client::CJS2SClient, country_codes::get_iso_code_3_from_iso_code_2},
-    models::subscriptions::{Status, SubscriptionModel},
+    models::subscriptions::{Status, StatusHistoryEntry, SubscriptionModel},
     report_subscriptions::report_subscriptions_to_cj,
     settings::{get_settings, Settings},
 };
@@ -118,6 +118,8 @@ async fn report_subscriptions() {
     let mock_cj_client = CJS2SClient::new(&settings, Some(&mock_cj.uri()));
 
     // GO
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    let now = OffsetDateTime::now_utc();
     report_subscriptions_to_cj(&db_pool, mock_cj_client).await;
 
     // ASSERT
@@ -126,40 +128,72 @@ async fn report_subscriptions() {
         .fetch_one_by_id(&sub_1.id)
         .await
         .expect("Could not get sub");
+    let sub_1_updated_history = sub_1_updated.get_status_history();
     let sub_2_updated = sub_model
         .fetch_one_by_id(&sub_2.id)
         .await
         .expect("Could not get sub");
+    let sub_2_updated_history = sub_2_updated.get_status_history();
     let sub_3_updated = sub_model
         .fetch_one_by_id(&sub_3.id)
         .await
         .expect("Could not get sub");
+    let sub_3_updated_history = sub_3_updated.get_status_history();
     let sub_4_updated = sub_model
         .fetch_one_by_id(&sub_4.id)
         .await
         .expect("Could not get sub");
+    let sub_4_updated_history = sub_4_updated.get_status_history();
 
     assert_eq!(
         sub_1_updated.status.as_ref().unwrap(),
         &Status::Reported.to_string()
     );
-    assert_eq!(sub_1_updated.get_status_history().entries.len(), 2);
+    assert_eq!(sub_1_updated_history.entries.len(), 2);
+    assert_eq!(
+        sub_1_updated_history.entries[1],
+        StatusHistoryEntry {
+            status: Status::Reported,
+            t: now
+        }
+    );
 
     assert_eq!(
         sub_3_updated.status.as_ref().unwrap(),
         &Status::NotReported.to_string()
     );
-    assert_eq!(sub_3_updated.get_status_history().entries.len(), 2);
+    assert_eq!(sub_3_updated_history.entries.len(), 2);
+    assert_eq!(
+        sub_3_updated_history.entries[1],
+        StatusHistoryEntry {
+            status: Status::NotReported,
+            t: now
+        }
+    );
 
     assert_eq!(
         sub_2_updated.status.as_ref().unwrap(),
         &Status::WillNotReport.to_string()
     );
-    assert_eq!(sub_2_updated.get_status_history().entries.len(), 2);
+    assert_eq!(sub_2_updated_history.entries.len(), 2);
+    assert_eq!(
+        sub_2_updated_history.entries[1],
+        StatusHistoryEntry {
+            status: Status::WillNotReport,
+            t: now
+        }
+    );
 
     assert_eq!(
         sub_4_updated.status.as_ref().unwrap(),
         &Status::Reported.to_string()
     );
-    assert_eq!(sub_4_updated.get_status_history().entries.len(), 2);
+    assert_eq!(sub_4_updated_history.entries.len(), 2);
+    assert_eq!(
+        sub_4_updated_history.entries[1],
+        StatusHistoryEntry {
+            status: Status::Reported,
+            t: now
+        }
+    );
 }

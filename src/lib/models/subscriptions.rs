@@ -12,11 +12,18 @@ pub enum Status {
     WillNotReport,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StatusHistoryEntry {
     pub t: OffsetDateTime,
     pub status: Status,
 }
+impl PartialEq for StatusHistoryEntry {
+    fn eq(&self, other: &Self) -> bool {
+        self.status == other.status && self.t.unix_timestamp() == other.t.unix_timestamp()
+    }
+}
+impl Eq for StatusHistoryEntry {}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StatusHistory {
     pub entries: Vec<StatusHistoryEntry>,
