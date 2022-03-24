@@ -1,0 +1,70 @@
+{
+    "kind": "bigquery#queryResponse",
+    "schema": {
+        "fields": [
+            {
+                "name": "refund_id",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "subscription_id",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "amount",
+                "type": "INTEGER",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "created",
+                "type": "TIMESTAMP",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "reason",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "status",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            }
+        ]
+    },
+    "jobReference": {
+        "projectId": "moz-fx-cjms-nonprod-9a36",
+        "jobId": "job_OTrudlt4Vv5DVOsXWiTsp7y_Snns",
+        "location": "US"
+    },
+    "totalRows": "1",
+    "rows": [
+        {
+            "f": [
+                {
+                    "v": "re_3KftCmKb9q6OnNsL0oIyzN1U"
+                },
+                {
+                    "v": "sub_1KftCmKb9q6OnNsLJWrLnxyl"
+                },
+                {
+                    "v": "5988"
+                },
+                {
+                    "v": "1.64790089E9"
+                },
+                {
+                    "v": "requested_by_customer"
+                },
+                {
+                    "v": "succeeded"
+                }
+            ]
+        }
+    ],
+    "totalBytesProcessed": "109",
+    "jobComplete": true,
+    "cacheHit": false
+}
