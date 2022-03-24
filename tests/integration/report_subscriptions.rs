@@ -151,7 +151,7 @@ async fn report_subscriptions() {
         .expect("Could not get sub");
 
     for report_sub in [&sub_1_updated, &sub_4_updated] {
-        println!("Testing sub: {}", report_sub.flow_id);
+        println!("Testing sub: {}", report_sub.id);
         assert_eq!(
             report_sub.status.as_ref().unwrap(),
             &Status::Reported.to_string()
@@ -182,7 +182,7 @@ async fn report_subscriptions() {
     );
 
     for will_not_report_sub in [&sub_2_updated, &sub_5_updated] {
-        println!("Testing sub: {}", will_not_report_sub.flow_id);
+        println!("Testing sub: {}", will_not_report_sub.id);
         assert_eq!(
             will_not_report_sub.status.as_ref().unwrap(),
             &Status::WillNotReport.to_string()
