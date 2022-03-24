@@ -1,4 +1,7 @@
-use crate::utils::{random_ascii_string, random_currency_or_country, random_price, spawn_app};
+use crate::utils::{
+    random_ascii_string, random_currency_or_country, random_price, random_simple_ascii_string,
+    spawn_app,
+};
 use lib::models::subscriptions::{Status, Subscription, SubscriptionModel};
 use pretty_assertions::assert_eq;
 use time::{Duration, OffsetDateTime};
@@ -7,13 +10,13 @@ use uuid::Uuid;
 pub fn make_fake_sub() -> Subscription {
     let mut sub = Subscription {
         id: Uuid::new_v4(),
-        flow_id: random_ascii_string(),
-        subscription_id: random_ascii_string(),
+        flow_id: random_simple_ascii_string(),
+        subscription_id: random_simple_ascii_string(),
         report_timestamp: OffsetDateTime::now_utc(),
         subscription_created: OffsetDateTime::now_utc() - Duration::hours(35),
         fxa_uid: random_ascii_string(),
         quantity: 1,
-        plan_id: random_ascii_string(),
+        plan_id: random_simple_ascii_string(),
         plan_currency: random_currency_or_country(),
         plan_amount: random_price(),
         country: Some(random_currency_or_country()),
