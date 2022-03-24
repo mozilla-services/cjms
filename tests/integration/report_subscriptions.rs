@@ -33,26 +33,22 @@ async fn report_subscriptions() {
     // Sub 1 - should be reported
     let mut sub_1 = make_fake_sub();
     sub_1.flow_id = "1".to_string();
-    sub_1.update_status(Status::NotReported);
     sub_1.subscription_created =
         OffsetDateTime::parse("2021-12-25 14:22:33 +0000", "%F %T %z").unwrap();
     sub_1.aic_expires = Some(OffsetDateTime::now_utc() + Duration::days(10));
     // Sub 2 - should be "will_not_report" (because aic_expires before subscription created)
     let mut sub_2 = make_fake_sub();
     sub_2.flow_id = "2".to_string();
-    sub_1.update_status(Status::NotReported);
     sub_2.subscription_created = OffsetDateTime::now_utc() - Duration::days(1);
     sub_2.aic_expires = Some(OffsetDateTime::now_utc() - Duration::days(3));
     // Sub 3 - should be reported but will fail because mock cj fails
     let mut sub_3 = make_fake_sub();
     sub_3.flow_id = "3".to_string();
-    sub_1.update_status(Status::NotReported);
     sub_3.subscription_created = OffsetDateTime::now_utc() - Duration::days(5);
     sub_3.aic_expires = Some(OffsetDateTime::now_utc() + Duration::days(10));
     // Sub 4 - should be reported (no country)
     let mut sub_4 = make_fake_sub();
     sub_4.flow_id = "4".to_string();
-    sub_1.update_status(Status::NotReported);
     sub_4.subscription_created = OffsetDateTime::now_utc() - Duration::days(5);
     sub_4.aic_expires = Some(OffsetDateTime::now_utc() + Duration::days(10));
     sub_4.country = None;
@@ -143,14 +139,27 @@ async fn report_subscriptions() {
         .await
         .expect("Could not get sub");
 
-    assert_eq!(sub_1_updated.status.unwrap(), Status::Reported.to_string());
     assert_eq!(
-        sub_2_updated.status.unwrap(),
-        Status::WillNotReport.to_string()
+        sub_1_updated.status.as_ref().unwrap(),
+        &Status::Reported.to_string()
     );
+    assert_eq!(sub_1_updated.get_status_history().entries.len(), 2);
+
     assert_eq!(
-        sub_3_updated.status.unwrap(),
-        Status::NotReported.to_string()
+        sub_3_updated.status.as_ref().unwrap(),
+        &Status::NotReported.to_string()
     );
-    assert_eq!(sub_4_updated.status.unwrap(), Status::Reported.to_string());
+    assert_eq!(sub_3_updated.get_status_history().entries.len(), 2);
+
+    assert_eq!(
+        sub_2_updated.status.as_ref().unwrap(),
+        &Status::WillNotReport.to_string()
+    );
+    assert_eq!(sub_2_updated.get_status_history().entries.len(), 2);
+
+    assert_eq!(
+        sub_4_updated.status.as_ref().unwrap(),
+        &Status::Reported.to_string()
+    );
+    assert_eq!(sub_4_updated.get_status_history().entries.len(), 2);
 }

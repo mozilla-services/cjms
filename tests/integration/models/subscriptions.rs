@@ -1,12 +1,11 @@
 use crate::utils::{random_ascii_string, random_currency_or_country, random_price, spawn_app};
-use lib::models::subscriptions::{Status, StatusHistory, Subscription, SubscriptionModel};
+use lib::models::subscriptions::{Status, Subscription, SubscriptionModel};
 use pretty_assertions::assert_eq;
-use serde_json::json;
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
 pub fn make_fake_sub() -> Subscription {
-    Subscription {
+    let mut sub = Subscription {
         id: Uuid::new_v4(),
         flow_id: random_ascii_string(),
         subscription_id: random_ascii_string(),
@@ -21,9 +20,11 @@ pub fn make_fake_sub() -> Subscription {
         aic_id: Some(Uuid::new_v4()),
         aic_expires: Some(OffsetDateTime::now_utc()),
         cj_event_value: Some(random_ascii_string()),
-        status: Some(Status::NotReported.to_string()),
-        status_history: Some(json!(StatusHistory { entries: vec![] })),
-    }
+        status: None,
+        status_history: None,
+    };
+    sub.update_status(Status::NotReported);
+    sub
 }
 
 pub async fn save_sub(model: &SubscriptionModel<'_>, sub: &Subscription) {
@@ -103,17 +104,18 @@ async fn test_subscription_model_get_all_not_reported() {
     let model = SubscriptionModel {
         db_pool: &app.db_connection(),
     };
-    let mut sub_1 = make_fake_sub();
-    sub_1.update_status(Status::NotReported);
+    let sub_1 = make_fake_sub();
     save_sub(&model, &sub_1).await;
+
     let mut sub_2 = make_fake_sub();
     // Note there's nothing stopping us from saving a non-enum value to the field.
     // But my efforts to work around this have so far proved gross.
     sub_2.status = Some("a bad status".to_string());
     save_sub(&model, &sub_2).await;
+
     let sub_3 = make_fake_sub();
-    sub_1.update_status(Status::NotReported);
     save_sub(&model, &sub_3).await;
+
     let all = model.fetch_all().await.unwrap();
     assert_eq!(all.len(), 3);
     let result = model
@@ -131,8 +133,7 @@ async fn test_subscription_update_sub_status() {
     let model = SubscriptionModel {
         db_pool: &app.db_connection(),
     };
-    let mut sub = make_fake_sub();
-    sub.update_status(Status::NotReported);
+    let sub = make_fake_sub();
     save_sub(&model, &sub).await;
     assert_eq!(sub.get_status_history().entries.len(), 1);
     model
