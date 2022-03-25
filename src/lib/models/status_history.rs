@@ -44,8 +44,10 @@ impl StatusHistory {
 }
 
 pub trait UpdateStatus {
+    fn get_status_t(&self) -> Option<OffsetDateTime>;
     fn get_raw_status(&self) -> Option<String>;
     fn get_raw_status_history(&self) -> Option<JsonValue>;
+    fn set_status_t(&mut self, v: Option<OffsetDateTime>);
     fn set_raw_status(&mut self, v: Option<String>);
     fn set_raw_status_history(&mut self, v: Option<JsonValue>);
 
@@ -63,6 +65,8 @@ pub trait UpdateStatus {
     }
 
     fn update_status(&mut self, new_status: Status) {
+        let t = OffsetDateTime::now_utc();
+        self.set_status_t(Some(t));
         self.set_raw_status(Some(new_status.to_string()));
         let mut status_history = match self.get_status_history() {
             Some(v) => v,
@@ -70,7 +74,7 @@ pub trait UpdateStatus {
         };
         status_history.entries.push(StatusHistoryEntry {
             status: new_status,
-            t: OffsetDateTime::now_utc(),
+            t,
         });
         self.set_raw_status_history(Some(json!(status_history)));
     }

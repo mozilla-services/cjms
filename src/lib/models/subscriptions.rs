@@ -43,6 +43,7 @@ pub struct Subscription {
     pub cj_event_value: Option<String>,
     // Note we use string and json to save in database for simplicity
     status: Option<String>,
+    status_t: Option<OffsetDateTime>,
     status_history: Option<JsonValue>,
 }
 impl PartialEq for Subscription {
@@ -93,6 +94,14 @@ impl UpdateStatus for Subscription {
     fn set_raw_status_history(&mut self, v: Option<JsonValue>) {
         self.status_history = v;
     }
+
+    fn get_status_t(&self) -> Option<OffsetDateTime> {
+        self.status_t
+    }
+
+    fn set_status_t(&mut self, v: Option<OffsetDateTime>) {
+        self.status_t = v;
+    }
 }
 
 impl Subscription {
@@ -113,6 +122,7 @@ impl Subscription {
             aic_expires: partial_sub.aic_expires,
             cj_event_value: partial_sub.cj_event_value,
             status: None,
+            status_t: None,
             status_history: None,
         };
         sub.update_status(Status::NotReported);
