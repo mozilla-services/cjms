@@ -6,30 +6,28 @@ use crate::{
     bigquery::client::{BQClient, BQError, ResultSet},
     models::{
         aic::AICModel,
-        subscriptions::{Status, Subscription, SubscriptionModel},
+        subscriptions::{Subscription, SubscriptionModel},
     },
 };
 
 // Throw an error if required fields are not available
 fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError> {
-    let sub = Subscription {
-        id: Uuid::new_v4(),
-        flow_id: rs.require_string_by_name("flow_id")?,
-        subscription_id: rs.require_string_by_name("subscription_id")?,
-        report_timestamp: rs.require_offsetdatetime_by_name("report_timestamp")?,
-        subscription_created: rs.require_offsetdatetime_by_name("subscription_created")?,
-        fxa_uid: rs.require_string_by_name("fxa_uid")?,
-        quantity: rs.require_i32_by_name("quantity")?,
-        plan_id: rs.require_string_by_name("plan_id")?,
-        plan_currency: rs.require_string_by_name("plan_currency")?,
-        plan_amount: rs.require_i32_by_name("plan_amount")?,
-        country: rs.get_string_by_name("country")?,
-        aic_id: None,
-        aic_expires: None,
-        cj_event_value: None,
-        status: None,
-        status_history: None,
-    };
+    let sub = Subscription::new(
+        Uuid::new_v4(),
+        rs.require_string_by_name("flow_id")?,
+        rs.require_string_by_name("subscription_id")?,
+        rs.require_offsetdatetime_by_name("report_timestamp")?,
+        rs.require_offsetdatetime_by_name("subscription_created")?,
+        rs.require_string_by_name("fxa_uid")?,
+        rs.require_i32_by_name("quantity")?,
+        rs.require_string_by_name("plan_id")?,
+        rs.require_string_by_name("plan_currency")?,
+        rs.require_i32_by_name("plan_amount")?,
+        rs.get_string_by_name("country")?,
+        None,
+        None,
+        None,
+    );
     Ok(sub)
 }
 
@@ -84,7 +82,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
         sub.aic_id = Some(aic.id);
         sub.cj_event_value = Some(aic.cj_event_value.clone());
         sub.aic_expires = Some(aic.expires);
-        sub.update_status(Status::NotReported);
+
         // Archive the AIC
         match aics.archive_aic(&aic).await {
             Ok(_) => {

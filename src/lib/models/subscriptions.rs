@@ -1,33 +1,9 @@
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value as JsonValue};
+use serde_json::Value as JsonValue;
 use sqlx::{query_as, Error, PgPool};
-use strum_macros::Display as EnumToString;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, EnumToString)]
-pub enum Status {
-    NotReported,
-    Reported,
-    WillNotReport,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct StatusHistoryEntry {
-    pub t: OffsetDateTime,
-    pub status: Status,
-}
-impl PartialEq for StatusHistoryEntry {
-    fn eq(&self, other: &Self) -> bool {
-        self.status == other.status && self.t.unix_timestamp() == other.t.unix_timestamp()
-    }
-}
-impl Eq for StatusHistoryEntry {}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct StatusHistory {
-    pub entries: Vec<StatusHistoryEntry>,
-}
+use crate::models::status_history::{Status, UpdateStatus};
 
 #[derive(Debug)]
 pub struct Subscription {
@@ -47,8 +23,8 @@ pub struct Subscription {
     pub aic_expires: Option<OffsetDateTime>,
     pub cj_event_value: Option<String>,
     // Note we use string and json to save in database for simplicity
-    pub status: Option<String>,
-    pub status_history: Option<JsonValue>,
+    status: Option<String>,
+    status_history: Option<JsonValue>,
 }
 impl PartialEq for Subscription {
     fn eq(&self, other: &Self) -> bool {
@@ -82,34 +58,62 @@ impl PartialEq for Subscription {
 }
 impl Eq for Subscription {}
 
-impl Subscription {
-    pub fn get_status_history(&self) -> StatusHistory {
-        let status_history_value = match self.status_history.clone() {
-            Some(v) => v,
-            None => json!({"entries": []}),
-        };
-        let status_history: StatusHistory = match serde_json::from_value(status_history_value) {
-            Ok(v) => v,
-            Err(e) => {
-                // TODO - LOGGING
-                println!(
-                    "Error deserializing status_history: {:?} {}",
-                    self.status_history, e
-                );
-                StatusHistory { entries: vec![] }
-            }
-        };
-        status_history
+impl UpdateStatus for Subscription {
+    fn get_raw_status(&self) -> Option<String> {
+        self.status.clone()
     }
 
-    pub fn update_status(&mut self, new_status: Status) {
-        let mut status_history = self.get_status_history();
-        self.status = Some(new_status.to_string());
-        status_history.entries.push(StatusHistoryEntry {
-            status: new_status,
-            t: OffsetDateTime::now_utc(),
-        });
-        self.status_history = Some(json!(status_history));
+    fn get_raw_status_history(&self) -> Option<JsonValue> {
+        self.status_history.clone()
+    }
+
+    fn set_raw_status(&mut self, v: Option<String>) {
+        self.status = v;
+    }
+
+    fn set_raw_status_history(&mut self, v: Option<JsonValue>) {
+        self.status_history = v;
+    }
+}
+
+impl Subscription {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        id: Uuid,
+        flow_id: String,
+        subscription_id: String,
+        report_timestamp: OffsetDateTime,
+        subscription_created: OffsetDateTime,
+        fxa_uid: String,
+        quantity: i32,
+        plan_id: String,
+        plan_currency: String,
+        plan_amount: i32,
+        country: Option<String>,
+        aic_id: Option<Uuid>,
+        aic_expires: Option<OffsetDateTime>,
+        cj_event_value: Option<String>,
+    ) -> Self {
+        let mut sub = Subscription {
+            id,
+            flow_id,
+            subscription_id,
+            report_timestamp,
+            subscription_created,
+            fxa_uid,
+            quantity,
+            plan_id,
+            plan_currency,
+            plan_amount,
+            country,
+            aic_id,
+            aic_expires,
+            cj_event_value,
+            status: None,
+            status_history: None,
+        };
+        sub.update_status(Status::NotReported);
+        sub
     }
 }
 

@@ -1,6 +1,9 @@
 use lib::{
     cj::{client::CJS2SClient, country_codes::get_iso_code_3_from_iso_code_2},
-    models::subscriptions::{Status, StatusHistoryEntry, SubscriptionModel},
+    models::{
+        status_history::{Status, StatusHistoryEntry, UpdateStatus},
+        subscriptions::SubscriptionModel,
+    },
     report_subscriptions::report_subscriptions_to_cj,
     settings::{get_settings, Settings},
 };
@@ -11,7 +14,7 @@ use wiremock::{
     Mock, MockBuilder, MockServer, ResponseTemplate,
 };
 
-use crate::{models::subscriptions::make_fake_sub, utils::get_db_pool};
+use crate::{models::subscriptions::make_fake_sub, utils::get_test_db_pool};
 
 fn when_sending_to_cj(settings: &Settings) -> MockBuilder {
     Mock::given(path("/"))
@@ -27,7 +30,7 @@ async fn report_subscriptions() {
     // SETUP
 
     let settings = get_settings();
-    let db_pool = get_db_pool().await;
+    let db_pool = get_test_db_pool().await;
     let sub_model = SubscriptionModel { db_pool: &db_pool };
 
     // Sub 1 - should be reported
@@ -152,11 +155,8 @@ async fn report_subscriptions() {
 
     for report_sub in [&sub_1_updated, &sub_4_updated] {
         println!("Testing sub: {}", report_sub.id);
-        assert_eq!(
-            report_sub.status.as_ref().unwrap(),
-            &Status::Reported.to_string()
-        );
-        let updated_history = report_sub.get_status_history();
+        assert_eq!(report_sub.get_status().unwrap(), Status::Reported);
+        let updated_history = report_sub.get_status_history().unwrap();
         assert_eq!(updated_history.entries.len(), 2);
         assert_eq!(
             updated_history.entries[1],
@@ -167,11 +167,8 @@ async fn report_subscriptions() {
         );
     }
 
-    assert_eq!(
-        sub_3_updated.status.as_ref().unwrap(),
-        &Status::NotReported.to_string()
-    );
-    let sub_3_updated_history = sub_3_updated.get_status_history();
+    assert_eq!(sub_3_updated.get_status().unwrap(), Status::NotReported);
+    let sub_3_updated_history = sub_3_updated.get_status_history().unwrap();
     assert_eq!(sub_3_updated_history.entries.len(), 2);
     assert_eq!(
         sub_3_updated_history.entries[1],
@@ -184,10 +181,10 @@ async fn report_subscriptions() {
     for will_not_report_sub in [&sub_2_updated, &sub_5_updated] {
         println!("Testing sub: {}", will_not_report_sub.id);
         assert_eq!(
-            will_not_report_sub.status.as_ref().unwrap(),
-            &Status::WillNotReport.to_string()
+            will_not_report_sub.get_status().unwrap(),
+            Status::WillNotReport
         );
-        let updated_history = will_not_report_sub.get_status_history();
+        let updated_history = will_not_report_sub.get_status_history().unwrap();
         assert_eq!(updated_history.entries.len(), 2);
         assert_eq!(
             updated_history.entries[1],

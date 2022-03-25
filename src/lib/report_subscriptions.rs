@@ -2,7 +2,7 @@ use sqlx::{Pool, Postgres};
 
 use crate::{
     cj::client::CJS2SClient,
-    models::subscriptions::{Status, SubscriptionModel},
+    models::{status_history::Status, subscriptions::SubscriptionModel},
 };
 
 // TODO - LOGGING

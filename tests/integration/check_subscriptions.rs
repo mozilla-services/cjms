@@ -5,7 +5,8 @@ use std::io::Read;
 use lib::bigquery::client::{AccessTokenFromEnv, BQClient};
 use lib::check_subscriptions::fetch_and_process_new_subscriptions;
 use lib::models::aic::{AICModel, AIC};
-use lib::models::subscriptions::{Status, Subscription, SubscriptionModel};
+use lib::models::status_history::{Status, UpdateStatus};
+use lib::models::subscriptions::{Subscription, SubscriptionModel};
 use pretty_assertions::assert_eq;
 use serde::Deserialize;
 use serde_json::Value;
@@ -14,7 +15,7 @@ use time::{date, time, Format, OffsetDateTime};
 use uuid::{Uuid, Version};
 use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
-use crate::utils::get_db_pool;
+use crate::utils::get_test_db_pool;
 
 #[derive(Debug, Deserialize)]
 pub struct AICSimple {
@@ -55,7 +56,7 @@ fn fixture_bigquery_response() -> Value {
 #[serial]
 async fn check_subscriptions() {
     // SETUP
-    let db_pool = get_db_pool().await;
+    let db_pool = get_test_db_pool().await;
     let sub_model = SubscriptionModel { db_pool: &db_pool };
     let aic_model = AICModel { db_pool: &db_pool };
     // Setup fake bigquery with results to return
@@ -120,57 +121,53 @@ async fn check_subscriptions() {
         .expect("Failed to fetch aic_2");
     assert_eq!(
         sub_1,
-        Subscription {
-            id: sub_1.id, // We can't know this ahead of time
-            flow_id: sub_1_flow_id.to_string(),
-            subscription_id: "sub_1Ke0R3Kb9q6OnNsLD1OIZsxm".to_string(),
-            report_timestamp: date!(2022 - 03 - 16)
+        Subscription::new(
+            sub_1.id, // We can't know this ahead of time
+            sub_1_flow_id.to_string(),
+            "sub_1Ke0R3Kb9q6OnNsLD1OIZsxm".to_string(),
+            date!(2022 - 03 - 16)
                 .with_time(time!(20:59:53))
                 .assume_utc(),
-            subscription_created: date!(2022 - 03 - 16)
+            date!(2022 - 03 - 16)
                 .with_time(time!(17:14:57))
                 .assume_utc(),
-            fxa_uid: "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7".to_string(),
-            quantity: 1,
-            plan_id: "price_1J0owvKb9q6OnNsLExNhEDXm".to_string(),
-            plan_currency: "usd".to_string(),
-            plan_amount: 100,
-            country: Some("us - THIS IS SUB 1".to_string()),
-            aic_id: Some(aic_1.id),
-            aic_expires: Some(aic_1.expires),
-            cj_event_value: Some(aic_1.cj_event_value.to_string()),
-            status: Some(Status::NotReported.to_string()),
-            status_history: None, // This field isn't compared
-        }
+            "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7".to_string(),
+            1,
+            "price_1J0owvKb9q6OnNsLExNhEDXm".to_string(),
+            "usd".to_string(),
+            100,
+            Some("us - THIS IS SUB 1".to_string()),
+            Some(aic_1.id),
+            Some(aic_1.expires),
+            Some(aic_1.cj_event_value.to_string()),
+        )
     );
-    let sub_1_status_history = sub_1.get_status_history();
+    let sub_1_status_history = sub_1.get_status_history().unwrap();
     assert_eq!(sub_1_status_history.entries[0].status, Status::NotReported);
     assert_eq!(
         // Sub two is the last one so all the failure cases in the test fixture should have been handled if 2 is also created.
         // TODO - LOGGING - when we add logging we could test for those logs to have been created
         sub_2,
-        Subscription {
-            id: sub_2.id, // We can't know this ahead of time
-            flow_id: sub_2_flow_id.to_string(),
-            subscription_id: "sub_1Ke0CHKb9q6OnNsLe2fSFt2W".to_string(),
-            report_timestamp: date!(2022 - 03 - 16)
+        Subscription::new(
+            sub_2.id, // We can't know this ahead of time
+            sub_2_flow_id.to_string(),
+            "sub_1Ke0CHKb9q6OnNsLe2fSFt2W".to_string(),
+            date!(2022 - 03 - 16)
                 .with_time(time!(20:59:53))
                 .assume_utc(),
-            subscription_created: date!(2022 - 03 - 16)
+            date!(2022 - 03 - 16)
                 .with_time(time!(16:59:41))
                 .assume_utc(),
-            fxa_uid: "bc5bdcb1c00baf74c85d19413c3889d4653c9a79f5715a45389241ef6fc51ecb".to_string(),
-            quantity: 1,
-            plan_id: "price_1J0Y12Kb9q6OnNsL4SB2hhmp".to_string(),
-            plan_currency: "usd".to_string(),
-            plan_amount: 4794,
-            country: None,
-            aic_id: Some(aic_2.id),
-            aic_expires: Some(aic_2.expires),
-            cj_event_value: Some(aic_2.cj_event_value),
-            status: Some(Status::NotReported.to_string()),
-            status_history: None, // This field isn't compared
-        }
+            "bc5bdcb1c00baf74c85d19413c3889d4653c9a79f5715a45389241ef6fc51ecb".to_string(),
+            1,
+            "price_1J0Y12Kb9q6OnNsL4SB2hhmp".to_string(),
+            "usd".to_string(),
+            4794,
+            None,
+            Some(aic_2.id),
+            Some(aic_2.expires),
+            Some(aic_2.cj_event_value),
+        )
     );
     // Expect to NOT have certain entries from the test fixtures
     assert!(sub_model.fetch_one_by_flow_id("nulls").await.is_err());

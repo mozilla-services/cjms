@@ -38,7 +38,7 @@ async fn create_test_database(database_url: &str) -> String {
     randomized_test_database_url
 }
 
-pub async fn get_db_pool() -> Pool<Postgres> {
+pub async fn get_test_db_pool() -> Pool<Postgres> {
     let settings = get_settings();
     let test_database_url = create_test_database(&settings.database_url).await;
     connect_to_database_and_migrate(&test_database_url).await
