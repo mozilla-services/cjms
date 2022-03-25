@@ -168,6 +168,11 @@
           "name": "status_history",
           "ordinal": 15,
           "type_info": "Json"
+        },
+        {
+          "name": "status_t",
+          "ordinal": 16,
+          "type_info": "Timestamptz"
         }
       ],
       "nullable": [
@@ -181,6 +186,7 @@
         false,
         false,
         false,
+        true,
         true,
         true,
         true,
@@ -471,6 +477,11 @@
           "name": "status_history",
           "ordinal": 15,
           "type_info": "Json"
+        },
+        {
+          "name": "status_t",
+          "ordinal": 16,
+          "type_info": "Timestamptz"
         }
       ],
       "nullable": [
@@ -484,6 +495,7 @@
         false,
         false,
         false,
+        true,
         true,
         true,
         true,
@@ -627,6 +639,11 @@
           "name": "status_history",
           "ordinal": 15,
           "type_info": "Json"
+        },
+        {
+          "name": "status_t",
+          "ordinal": 16,
+          "type_info": "Timestamptz"
         }
       ],
       "nullable": [
@@ -640,6 +657,7 @@
         false,
         false,
         false,
+        true,
         true,
         true,
         true,
@@ -735,6 +753,11 @@
           "name": "status_history",
           "ordinal": 15,
           "type_info": "Json"
+        },
+        {
+          "name": "status_t",
+          "ordinal": 16,
+          "type_info": "Timestamptz"
         }
       ],
       "nullable": [
@@ -748,6 +771,7 @@
         false,
         false,
         false,
+        true,
         true,
         true,
         true,
@@ -845,6 +869,11 @@
           "name": "status_history",
           "ordinal": 15,
           "type_info": "Json"
+        },
+        {
+          "name": "status_t",
+          "ordinal": 16,
+          "type_info": "Timestamptz"
         }
       ],
       "nullable": [
@@ -858,6 +887,7 @@
         false,
         false,
         false,
+        true,
         true,
         true,
         true,
@@ -1049,6 +1079,11 @@
           "name": "status_history",
           "ordinal": 15,
           "type_info": "Json"
+        },
+        {
+          "name": "status_t",
+          "ordinal": 16,
+          "type_info": "Timestamptz"
         }
       ],
       "nullable": [
@@ -1062,6 +1097,7 @@
         false,
         false,
         false,
+        true,
         true,
         true,
         true,
