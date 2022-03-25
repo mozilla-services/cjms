@@ -1,6 +1,6 @@
 use lib::{
     appconfig::connect_to_database_and_migrate, cj::client::CJS2SClient,
-    report_subscriptions::report_subscriptions_to_cj, settings::get_settings,
+    jobs::report_subscriptions::report_subscriptions_to_cj, settings::get_settings,
 };
 
 #[actix_web::main]

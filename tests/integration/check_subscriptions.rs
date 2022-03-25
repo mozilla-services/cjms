@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::Read;
 
 use lib::bigquery::client::{AccessTokenFromEnv, BQClient};
-use lib::check_subscriptions::fetch_and_process_new_subscriptions;
+use lib::jobs::check_subscriptions::fetch_and_process_new_subscriptions;
 use lib::models::aic::{AICModel, AIC};
 use lib::models::status_history::{Status, UpdateStatus};
 use lib::models::subscriptions::{PartialSubscription, Subscription, SubscriptionModel};

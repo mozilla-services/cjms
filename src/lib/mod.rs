@@ -1,10 +1,9 @@
 pub mod appconfig;
 pub mod bigquery;
-pub mod check_subscriptions;
 pub mod cj;
 pub mod controllers;
+pub mod jobs;
 pub mod models;
-pub mod report_subscriptions;
 pub mod settings;
 
 #[cfg(test)]

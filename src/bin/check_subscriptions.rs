@@ -1,6 +1,6 @@
 use lib::{
     appconfig::connect_to_database_and_migrate, bigquery::client::get_bqclient,
-    check_subscriptions::fetch_and_process_new_subscriptions, settings::get_settings,
+    jobs::check_subscriptions::fetch_and_process_new_subscriptions, settings::get_settings,
 };
 
 #[actix_web::main]
