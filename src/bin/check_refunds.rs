@@ -1,6 +1,6 @@
 use lib::{
     appconfig::connect_to_database_and_migrate, bigquery::client::get_bqclient,
-    check_refunds::fetch_and_process_refunds, settings::get_settings,
+    jobs::check_refunds::fetch_and_process_refunds, settings::get_settings,
 };
 
 #[actix_web::main]
