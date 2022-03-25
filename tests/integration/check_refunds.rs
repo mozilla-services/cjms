@@ -3,14 +3,14 @@ use std::fs::File;
 use std::io::Read;
 
 use lib::bigquery::client::{AccessTokenFromEnv, BQClient};
-use lib::check_refunds::fetch_and_process_refunds;
+use lib::jobs::check_refunds::fetch_and_process_refunds;
 //use pretty_assertions::assert_eq;
 
 use serde_json::Value;
 use serial_test::serial;
 use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
-use crate::utils::get_db_pool;
+use crate::utils::get_test_db_pool;
 
 fn fixture_bigquery_response() -> Value {
     let mut file = File::open("tests/fixtures/check_refunds_bigquery_response.json").unwrap();
@@ -23,7 +23,7 @@ fn fixture_bigquery_response() -> Value {
 #[serial]
 async fn check_refunds() {
     // SETUP
-    let db_pool = get_db_pool().await;
+    let db_pool = get_test_db_pool().await;
 
     // Setup fake bigquery with results to return
     env::set_var("BQ_ACCESS_TOKEN", "a token");

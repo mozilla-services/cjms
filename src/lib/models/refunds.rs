@@ -1,4 +1,4 @@
-use serde_json::{json, Value as JsonValue};
+use serde_json::Value as JsonValue;
 use sqlx::{query_as, Error, PgPool};
 use time::OffsetDateTime;
 use uuid::Uuid;
