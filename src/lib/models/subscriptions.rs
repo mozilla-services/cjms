@@ -5,6 +5,25 @@ use uuid::Uuid;
 
 use crate::models::status_history::{Status, UpdateStatus};
 
+// All the public fields of Subscription for clean construction
+pub struct PartialSubscription {
+    pub id: Uuid,
+    pub flow_id: String,
+    pub subscription_id: String,
+    pub report_timestamp: OffsetDateTime,
+    pub subscription_created: OffsetDateTime,
+    // Note this is a hash
+    pub fxa_uid: String,
+    pub quantity: i32,
+    pub plan_id: String,
+    pub plan_currency: String,
+    pub plan_amount: i32,
+    pub country: Option<String>,
+    pub aic_id: Option<Uuid>,
+    pub aic_expires: Option<OffsetDateTime>,
+    pub cj_event_value: Option<String>,
+}
+
 #[derive(Debug)]
 pub struct Subscription {
     pub id: Uuid,
@@ -77,38 +96,22 @@ impl UpdateStatus for Subscription {
 }
 
 impl Subscription {
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        id: Uuid,
-        flow_id: String,
-        subscription_id: String,
-        report_timestamp: OffsetDateTime,
-        subscription_created: OffsetDateTime,
-        fxa_uid: String,
-        quantity: i32,
-        plan_id: String,
-        plan_currency: String,
-        plan_amount: i32,
-        country: Option<String>,
-        aic_id: Option<Uuid>,
-        aic_expires: Option<OffsetDateTime>,
-        cj_event_value: Option<String>,
-    ) -> Self {
+    pub fn new(partial_sub: PartialSubscription) -> Self {
         let mut sub = Subscription {
-            id,
-            flow_id,
-            subscription_id,
-            report_timestamp,
-            subscription_created,
-            fxa_uid,
-            quantity,
-            plan_id,
-            plan_currency,
-            plan_amount,
-            country,
-            aic_id,
-            aic_expires,
-            cj_event_value,
+            id: partial_sub.id,
+            flow_id: partial_sub.flow_id,
+            subscription_id: partial_sub.subscription_id,
+            report_timestamp: partial_sub.report_timestamp,
+            subscription_created: partial_sub.subscription_created,
+            fxa_uid: partial_sub.fxa_uid,
+            quantity: partial_sub.quantity,
+            plan_id: partial_sub.plan_id,
+            plan_currency: partial_sub.plan_currency,
+            plan_amount: partial_sub.plan_amount,
+            country: partial_sub.country,
+            aic_id: partial_sub.aic_id,
+            aic_expires: partial_sub.aic_expires,
+            cj_event_value: partial_sub.cj_event_value,
             status: None,
             status_history: None,
         };

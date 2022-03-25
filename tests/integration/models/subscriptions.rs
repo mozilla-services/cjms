@@ -4,29 +4,29 @@ use crate::utils::{
 };
 use lib::models::{
     status_history::{Status, UpdateStatus},
-    subscriptions::{Subscription, SubscriptionModel},
+    subscriptions::{PartialSubscription, Subscription, SubscriptionModel},
 };
 use pretty_assertions::assert_eq;
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
 pub fn make_fake_sub() -> Subscription {
-    Subscription::new(
-        Uuid::new_v4(),
-        random_simple_ascii_string(),
-        random_simple_ascii_string(),
-        OffsetDateTime::now_utc(),
-        OffsetDateTime::now_utc() - Duration::hours(35),
-        random_ascii_string(),
-        1,
-        random_simple_ascii_string(),
-        random_currency_or_country(),
-        random_price(),
-        Some(random_currency_or_country()),
-        Some(Uuid::new_v4()),
-        Some(OffsetDateTime::now_utc()),
-        Some(random_ascii_string()),
-    )
+    Subscription::new(PartialSubscription {
+        id: Uuid::new_v4(),
+        flow_id: random_simple_ascii_string(),
+        subscription_id: random_simple_ascii_string(),
+        report_timestamp: OffsetDateTime::now_utc(),
+        subscription_created: OffsetDateTime::now_utc() - Duration::hours(35),
+        fxa_uid: random_ascii_string(),
+        quantity: 1,
+        plan_id: random_simple_ascii_string(),
+        plan_currency: random_currency_or_country(),
+        plan_amount: random_price(),
+        country: Some(random_currency_or_country()),
+        aic_id: Some(Uuid::new_v4()),
+        aic_expires: Some(OffsetDateTime::now_utc()),
+        cj_event_value: Some(random_ascii_string()),
+    })
 }
 
 pub async fn save_sub(model: &SubscriptionModel<'_>, sub: &Subscription) {

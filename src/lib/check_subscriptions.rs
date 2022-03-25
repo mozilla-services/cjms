@@ -6,28 +6,28 @@ use crate::{
     bigquery::client::{BQClient, BQError, ResultSet},
     models::{
         aic::AICModel,
-        subscriptions::{Subscription, SubscriptionModel},
+        subscriptions::{PartialSubscription, Subscription, SubscriptionModel},
     },
 };
 
 // Throw an error if required fields are not available
 fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError> {
-    let sub = Subscription::new(
-        Uuid::new_v4(),
-        rs.require_string_by_name("flow_id")?,
-        rs.require_string_by_name("subscription_id")?,
-        rs.require_offsetdatetime_by_name("report_timestamp")?,
-        rs.require_offsetdatetime_by_name("subscription_created")?,
-        rs.require_string_by_name("fxa_uid")?,
-        rs.require_i32_by_name("quantity")?,
-        rs.require_string_by_name("plan_id")?,
-        rs.require_string_by_name("plan_currency")?,
-        rs.require_i32_by_name("plan_amount")?,
-        rs.get_string_by_name("country")?,
-        None,
-        None,
-        None,
-    );
+    let sub = Subscription::new(PartialSubscription {
+        id: Uuid::new_v4(),
+        flow_id: rs.require_string_by_name("flow_id")?,
+        subscription_id: rs.require_string_by_name("subscription_id")?,
+        report_timestamp: rs.require_offsetdatetime_by_name("report_timestamp")?,
+        subscription_created: rs.require_offsetdatetime_by_name("subscription_created")?,
+        fxa_uid: rs.require_string_by_name("fxa_uid")?,
+        quantity: rs.require_i32_by_name("quantity")?,
+        plan_id: rs.require_string_by_name("plan_id")?,
+        plan_currency: rs.require_string_by_name("plan_currency")?,
+        plan_amount: rs.require_i32_by_name("plan_amount")?,
+        country: rs.get_string_by_name("country")?,
+        aic_id: None,
+        aic_expires: None,
+        cj_event_value: None,
+    });
     Ok(sub)
 }
 
