@@ -1,3 +1,3 @@
 mod aic;
-mod refunds;
+pub mod refunds;
 pub mod subscriptions;

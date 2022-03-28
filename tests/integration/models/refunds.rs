@@ -30,8 +30,21 @@ async fn test_refund_model_create_from_refund_struct() {
     let r = make_fake_refund();
     save_refund(&model, &r).await;
     let result = model
-        .fetch_one_by_id(&r.id)
+        .fetch_one_by_refund_id(&r.refund_id)
         .await
         .expect("Could not fetch from DB.");
     assert_eq!(result, r);
+}
+
+#[tokio::test]
+async fn test_refund_model_fetch_one_by_refund_id() {
+    let db_pool = get_test_db_pool().await;
+    let model = RefundModel { db_pool: &db_pool };
+    let r = make_fake_refund();
+    save_refund(&model, &r).await;
+    let result = model
+        .fetch_one_by_refund_id(&r.refund_id)
+        .await
+        .expect("Could not fetch from DB.");
+    assert_eq!(r, result);
 }

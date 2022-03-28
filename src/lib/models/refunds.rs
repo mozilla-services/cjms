@@ -126,8 +126,8 @@ impl RefundModel<'_> {
         .await
     }
 
-    pub async fn fetch_one_by_id(&self, id: &Uuid) -> Result<Refund, Error> {
-        query_as!(Refund, "SELECT * FROM refunds WHERE id = $1", id)
+    pub async fn fetch_one_by_refund_id(&self, refund_id: &str) -> Result<Refund, Error> {
+        query_as!(Refund, "SELECT * FROM refunds WHERE refund_id = $1", refund_id)
             .fetch_one(self.db_pool)
             .await
     }
