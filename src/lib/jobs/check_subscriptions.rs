@@ -1,19 +1,18 @@
-use actix_web::cookie::time::OffsetDateTime;
-use serde_json::json;
 use sqlx::{Pool, Postgres};
+
 use uuid::Uuid;
 
 use crate::{
     bigquery::client::{BQClient, BQError, ResultSet},
     models::{
         aic::AICModel,
-        subscriptions::{Subscription, SubscriptionModel},
+        subscriptions::{PartialSubscription, Subscription, SubscriptionModel},
     },
 };
 
 // Throw an error if required fields are not available
 fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError> {
-    let sub = Subscription {
+    let sub = Subscription::new(PartialSubscription {
         id: Uuid::new_v4(),
         flow_id: rs.require_string_by_name("flow_id")?,
         subscription_id: rs.require_string_by_name("subscription_id")?,
@@ -28,9 +27,7 @@ fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError
         aic_id: None,
         aic_expires: None,
         cj_event_value: None,
-        status: None,
-        status_history: None,
-    };
+    });
     Ok(sub)
 }
 
@@ -85,11 +82,7 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
         sub.aic_id = Some(aic.id);
         sub.cj_event_value = Some(aic.cj_event_value.clone());
         sub.aic_expires = Some(aic.expires);
-        sub.status = Some("not_reported".to_string());
-        sub.status_history = Some(json!([{
-            "status": "not_reported",
-            "t": OffsetDateTime::now_utc().to_string()
-        }]));
+
         // Archive the AIC
         match aics.archive_aic(&aic).await {
             Ok(_) => {

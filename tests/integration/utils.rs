@@ -1,6 +1,7 @@
 use fake::{Fake, StringFaker};
 use lib::appconfig::{connect_to_database_and_migrate, run_server};
 use lib::settings::{get_settings, Settings};
+
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Connection, Executor, PgConnection, PgPool, Pool, Postgres};
 use std::net::TcpListener;
@@ -37,7 +38,7 @@ async fn create_test_database(database_url: &str) -> String {
     randomized_test_database_url
 }
 
-pub async fn get_db_pool() -> Pool<Postgres> {
+pub async fn get_test_db_pool() -> Pool<Postgres> {
     let settings = get_settings();
     let test_database_url = create_test_database(&settings.database_url).await;
     connect_to_database_and_migrate(&test_database_url).await
@@ -63,6 +64,12 @@ pub async fn spawn_app() -> TestApp {
 pub fn random_ascii_string() -> String {
     const ASCII: &str =
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@";
+    let f = StringFaker::with(Vec::from(ASCII), 8..90);
+    f.fake()
+}
+
+pub fn random_simple_ascii_string() -> String {
+    const ASCII: &str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ._-";
     let f = StringFaker::with(Vec::from(ASCII), 8..90);
     f.fake()
 }

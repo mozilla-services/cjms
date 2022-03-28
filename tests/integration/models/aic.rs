@@ -1,4 +1,4 @@
-use crate::utils::{get_db_pool, random_ascii_string};
+use crate::utils::{get_test_db_pool, random_ascii_string};
 use lib::models::aic::{AICModel, AIC};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
@@ -15,7 +15,7 @@ pub fn test_aic() -> AIC {
 
 #[tokio::test]
 async fn test_aic_model_fetch_one_by_ids() {
-    let db_pool = get_db_pool().await;
+    let db_pool = get_test_db_pool().await;
     let model = AICModel { db_pool: &db_pool };
     let created = model
         .create(&random_ascii_string(), &random_ascii_string())
@@ -37,7 +37,7 @@ async fn test_aic_model_fetch_one_by_ids() {
 
 #[tokio::test]
 async fn test_aic_model_fetch_one_by_uuid_if_not_available() {
-    let db_pool = get_db_pool().await;
+    let db_pool = get_test_db_pool().await;
     let model = AICModel { db_pool: &db_pool };
     model
         .create(&random_ascii_string(), &random_ascii_string())
@@ -68,7 +68,7 @@ async fn test_aic_model_fetch_one_by_uuid_if_not_available() {
 
 #[tokio::test]
 async fn test_aic_model_create_by_aic() {
-    let db_pool = get_db_pool().await;
+    let db_pool = get_test_db_pool().await;
     let model = AICModel { db_pool: &db_pool };
     let aic = test_aic();
     model
@@ -84,7 +84,7 @@ async fn test_aic_model_create_by_aic() {
 
 #[tokio::test]
 async fn test_aic_archive_model_fetch_one_by_ids() {
-    let db_pool = get_db_pool().await;
+    let db_pool = get_test_db_pool().await;
     let model = AICModel { db_pool: &db_pool };
     let created = model
         .create_archive_from_aic(&test_aic())
@@ -106,7 +106,7 @@ async fn test_aic_archive_model_fetch_one_by_ids() {
 
 #[tokio::test]
 async fn test_aic_archive_model_fetch_one_by_uuid_if_not_available() {
-    let db_pool = get_db_pool().await;
+    let db_pool = get_test_db_pool().await;
     let model = AICModel { db_pool: &db_pool };
     model
         .create_from_aic(&test_aic())
@@ -137,7 +137,7 @@ async fn test_aic_archive_model_fetch_one_by_uuid_if_not_available() {
 
 #[tokio::test]
 async fn test_aic_archive_creates_and_deletes() {
-    let db_pool = get_db_pool().await;
+    let db_pool = get_test_db_pool().await;
     let model = AICModel { db_pool: &db_pool };
     let aic = test_aic();
     model
@@ -158,7 +158,7 @@ async fn test_aic_archive_creates_and_deletes() {
 
 #[tokio::test]
 async fn test_aic_archive_does_not_delete_if_cannot_insert() {
-    let db_pool = get_db_pool().await;
+    let db_pool = get_test_db_pool().await;
     let model = AICModel { db_pool: &db_pool };
     let aic = test_aic();
     // Set a blocking archive entry to have the same flow id as the one

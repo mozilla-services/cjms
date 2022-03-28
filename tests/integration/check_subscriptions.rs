@@ -3,9 +3,10 @@ use std::fs::File;
 use std::io::Read;
 
 use lib::bigquery::client::{AccessTokenFromEnv, BQClient};
-use lib::check_subscriptions::fetch_and_process_new_subscriptions;
+use lib::jobs::check_subscriptions::fetch_and_process_new_subscriptions;
 use lib::models::aic::{AICModel, AIC};
-use lib::models::subscriptions::{Subscription, SubscriptionModel};
+use lib::models::status_history::{Status, UpdateStatus};
+use lib::models::subscriptions::{PartialSubscription, Subscription, SubscriptionModel};
 use pretty_assertions::assert_eq;
 use serde::Deserialize;
 use serde_json::Value;
@@ -14,7 +15,7 @@ use time::{date, time, Format, OffsetDateTime};
 use uuid::{Uuid, Version};
 use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
-use crate::utils::get_db_pool;
+use crate::utils::get_test_db_pool;
 
 #[derive(Debug, Deserialize)]
 pub struct AICSimple {
@@ -51,22 +52,11 @@ fn fixture_bigquery_response() -> Value {
     serde_json::from_str(&data).expect("JSON was not well-formatted")
 }
 
-fn get_value_from_status_history_array(
-    status_history: &Value,
-    array_index: usize,
-    field_name: &str,
-) -> String {
-    let array = status_history.as_array().unwrap();
-    let array_entry = array[array_index].as_object().unwrap();
-    let entry_value = array_entry.get(field_name).unwrap().to_string();
-    entry_value
-}
-
 #[tokio::test]
 #[serial]
 async fn check_subscriptions() {
     // SETUP
-    let db_pool = get_db_pool().await;
+    let db_pool = get_test_db_pool().await;
     let sub_model = SubscriptionModel { db_pool: &db_pool };
     let aic_model = AICModel { db_pool: &db_pool };
     // Setup fake bigquery with results to return
@@ -131,7 +121,7 @@ async fn check_subscriptions() {
         .expect("Failed to fetch aic_2");
     assert_eq!(
         sub_1,
-        Subscription {
+        Subscription::new(PartialSubscription {
             id: sub_1.id, // We can't know this ahead of time
             flow_id: sub_1_flow_id.to_string(),
             subscription_id: "sub_1Ke0R3Kb9q6OnNsLD1OIZsxm".to_string(),
@@ -150,18 +140,15 @@ async fn check_subscriptions() {
             aic_id: Some(aic_1.id),
             aic_expires: Some(aic_1.expires),
             cj_event_value: Some(aic_1.cj_event_value.to_string()),
-            status: Some("not_reported".to_string()),
-            status_history: None, // This field isn't compared
-        }
+        })
     );
-    let sub_1_status_history_0_status =
-        get_value_from_status_history_array(&sub_1.status_history.unwrap(), 0, "status");
-    assert_eq!(&sub_1_status_history_0_status, r#""not_reported""#);
+    let sub_1_status_history = sub_1.get_status_history().unwrap();
+    assert_eq!(sub_1_status_history.entries[0].status, Status::NotReported);
     assert_eq!(
         // Sub two is the last one so all the failure cases in the test fixture should have been handled if 2 is also created.
         // TODO - LOGGING - when we add logging we could test for those logs to have been created
         sub_2,
-        Subscription {
+        Subscription::new(PartialSubscription {
             id: sub_2.id, // We can't know this ahead of time
             flow_id: sub_2_flow_id.to_string(),
             subscription_id: "sub_1Ke0CHKb9q6OnNsLe2fSFt2W".to_string(),
@@ -180,9 +167,7 @@ async fn check_subscriptions() {
             aic_id: Some(aic_2.id),
             aic_expires: Some(aic_2.expires),
             cj_event_value: Some(aic_2.cj_event_value),
-            status: Some("not_reported".to_string()),
-            status_history: None, // This field isn't compared
-        }
+        })
     );
     // Expect to NOT have certain entries from the test fixtures
     assert!(sub_model.fetch_one_by_flow_id("nulls").await.is_err());

@@ -99,11 +99,19 @@ impl GetAccessToken for AccessTokenFromMetadata {
             .await;
         match resp {
             Ok(r) => {
-                let content: WorkloadIdentityAccessToken = r
-                    .json()
-                    .await
-                    .expect("Couldn't deserialize metadata for pod.");
-                content.access_token
+                if r.status() == 200 {
+                    let content: WorkloadIdentityAccessToken = r
+                        .json()
+                        .await
+                        .expect("Couldn't deserialize metadata for pod");
+                    content.access_token
+                } else {
+                    let body = r
+                        .text()
+                        .await
+                        .unwrap_or_else(|_| String::from("Failed to get body text."));
+                    panic!("Couldn't get metadata for pod. {:?}", body);
+                }
             }
             Err(e) => {
                 panic!("Couldn't get metadata for pod. {:?}", e);

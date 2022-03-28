@@ -1,2 +1,2 @@
 mod aic;
-mod subscriptions;
+pub mod subscriptions;
