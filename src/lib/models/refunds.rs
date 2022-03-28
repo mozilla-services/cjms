@@ -132,3 +132,29 @@ impl RefundModel<'_> {
             .await
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::test_utils::random_simple_ascii_string;
+
+    #[test]
+    fn test_new_sets_not_reported_status_and_history() {
+        let new = Refund::new(PartialRefund {
+            id: Uuid::new_v4(),
+            refund_id: random_simple_ascii_string(),
+            subscription_id: random_simple_ascii_string(),
+            refund_created: OffsetDateTime::now_utc(),
+            refund_amount: 1,
+            refund_status: None,
+            refund_reason: None,
+        });
+        let now = OffsetDateTime::now_utc();
+        assert_eq!(new.get_status().unwrap(), Status::NotReported);
+        assert_eq!(new.get_status_t().unwrap().unix_timestamp(), now.unix_timestamp());
+        let status_history = new.get_status_history().unwrap();
+        assert_eq!(status_history.entries.len(), 1);
+        assert_eq!(status_history.entries[0].status, Status::NotReported);
+        assert_eq!(status_history.entries[0].t.unix_timestamp(), now.unix_timestamp());
+    }
+}
