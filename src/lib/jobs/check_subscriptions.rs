@@ -10,7 +10,6 @@ use crate::{
     },
 };
 
-// Throw an error if required fields are not available
 fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError> {
     let sub = Subscription::new(PartialSubscription {
         id: Uuid::new_v4(),
