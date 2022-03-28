@@ -127,9 +127,13 @@ impl RefundModel<'_> {
     }
 
     pub async fn fetch_one_by_refund_id(&self, refund_id: &str) -> Result<Refund, Error> {
-        query_as!(Refund, "SELECT * FROM refunds WHERE refund_id = $1", refund_id)
-            .fetch_one(self.db_pool)
-            .await
+        query_as!(
+            Refund,
+            "SELECT * FROM refunds WHERE refund_id = $1",
+            refund_id
+        )
+        .fetch_one(self.db_pool)
+        .await
     }
 }
 
@@ -151,10 +155,16 @@ mod test {
         });
         let now = OffsetDateTime::now_utc();
         assert_eq!(new.get_status().unwrap(), Status::NotReported);
-        assert_eq!(new.get_status_t().unwrap().unix_timestamp(), now.unix_timestamp());
+        assert_eq!(
+            new.get_status_t().unwrap().unix_timestamp(),
+            now.unix_timestamp()
+        );
         let status_history = new.get_status_history().unwrap();
         assert_eq!(status_history.entries.len(), 1);
         assert_eq!(status_history.entries[0].status, Status::NotReported);
-        assert_eq!(status_history.entries[0].t.unix_timestamp(), now.unix_timestamp());
+        assert_eq!(
+            status_history.entries[0].t.unix_timestamp(),
+            now.unix_timestamp()
+        );
     }
 }

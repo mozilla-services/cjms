@@ -250,7 +250,7 @@ mod test {
             flow_id: random_simple_ascii_string(),
             subscription_id: random_simple_ascii_string(),
             report_timestamp: OffsetDateTime::now_utc(),
-            subscription_created: OffsetDateTime::now_utc(  ),
+            subscription_created: OffsetDateTime::now_utc(),
             fxa_uid: random_simple_ascii_string(),
             quantity: 1,
             plan_id: random_simple_ascii_string(),
@@ -263,10 +263,16 @@ mod test {
         });
         let now = OffsetDateTime::now_utc();
         assert_eq!(new.get_status().unwrap(), Status::NotReported);
-        assert_eq!(new.get_status_t().unwrap().unix_timestamp(), now.unix_timestamp());
+        assert_eq!(
+            new.get_status_t().unwrap().unix_timestamp(),
+            now.unix_timestamp()
+        );
         let status_history = new.get_status_history().unwrap();
         assert_eq!(status_history.entries.len(), 1);
         assert_eq!(status_history.entries[0].status, Status::NotReported);
-        assert_eq!(status_history.entries[0].t.unix_timestamp(), now.unix_timestamp());
+        assert_eq!(
+            status_history.entries[0].t.unix_timestamp(),
+            now.unix_timestamp()
+        );
     }
 }

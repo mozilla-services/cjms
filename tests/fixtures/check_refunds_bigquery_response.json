@@ -39,7 +39,7 @@
         "jobId": "job_OTrudlt4Vv5DVOsXWiTsp7y_Snns",
         "location": "US"
     },
-    "totalRows": "1",
+    "totalRows": "3",
     "rows": [
         {
             "f": [
@@ -59,7 +59,51 @@
                     "v": "requested_by_customer"
                 },
                 {
+                    "v": "pending"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "re_3KftCmKb9q6OnNsL0oIyzN1U_1"
+                },
+                {
+                    "v": "NOT IN THE SUBSCRIPTION TABLE"
+                },
+                {
+                    "v": "5988"
+                },
+                {
+                    "v": "1.64790089E9"
+                },
+                {
+                    "v": "requested_by_customer"
+                },
+                {
                     "v": "succeeded"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "re_4mKb9q6OnNsL0oasdf39480"
+                },
+                {
+                    "v": "this_one_is_already_in_refunds_table"
+                },
+                {
+                    "v": "5988"
+                },
+                {
+                    "v": "1.64790089E9"
+                },
+                {
+                    "v": "fraudulent"
+                },
+                {
+                    "v": "failed"
                 }
             ]
         }
