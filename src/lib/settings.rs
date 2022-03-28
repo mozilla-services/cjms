@@ -1,6 +1,8 @@
 use config::{Config, Environment, File, FileFormat};
 use std::fs;
 
+// TODO testing
+
 #[derive(serde::Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct Settings {
     // Server host and port to run on
@@ -11,6 +13,10 @@ pub struct Settings {
     pub environment: String,
     // The minimum log level that will be written to the log output
     pub log_level: String,
+    pub gcp_project: String,
+    pub cj_cid: String,
+    pub cj_type: String,
+    pub cj_signature: String,
 }
 
 impl Settings {
@@ -56,12 +62,30 @@ pub fn get_settings() -> Settings {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod test_settings {
     use super::*;
+    use pretty_assertions::assert_eq;
     use serial_test::serial;
     use std::env;
     use std::io::Write;
     use tempfile::NamedTempFile;
+
+    pub fn get_test_settings(gcp_project: &str) -> Settings {
+        let mut file = NamedTempFile::new().unwrap();
+        writeln!(file, "host: 127.1.2.3").unwrap();
+        writeln!(file, "port: 2222").unwrap();
+        writeln!(file, "database_url: postgres....").unwrap();
+        writeln!(file, "environment: prod").unwrap();
+        writeln!(file, "gcp_project: {}", gcp_project).unwrap();
+        writeln!(file, "cj_cid: cid").unwrap();
+        writeln!(file, "cj_type: type").unwrap();
+        writeln!(file, "cj_signature: signature").unwrap();
+        let path = file.into_temp_path();
+        let path_str = format!("{}", path.display());
+        let mut mock = MockHasFile::new();
+        mock.expect_file().return_const(path_str);
+        _get_settings(mock)
+    }
 
     // Existing environment variables may mess with these tests
 
@@ -105,6 +129,10 @@ mod tests {
             "postgres://user:password@127.0.0.1:5432/test",
         );
         env::set_var("ENVIRONMENT", "test");
+        env::set_var("GCP_PROJECT", "a--te-st-pr0j");
+        env::set_var("CJ_CID", "test cj cid");
+        env::set_var("CJ_TYPE", "test cj type");
+        env::set_var("CJ_SIGNATURE", "test cj signature");
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const(String::new());
         let actual = _get_settings(mock);
@@ -113,31 +141,34 @@ mod tests {
             port: "2222".to_string(),
             database_url: "postgres://user:password@127.0.0.1:5432/test".to_string(),
             environment: "test".to_string(),
+            gcp_project: "a--te-st-pr0j".to_string(),
+            cj_cid: "test cj cid".to_string(),
+            cj_type: "test cj type".to_string(),
+            cj_signature: "test cj signature".to_string(),
         };
         assert_eq!(expected, actual);
         env::remove_var("HOST");
         env::remove_var("PORT");
         env::remove_var("DATABASE_URL");
         env::remove_var("ENVIRONMENT");
+        env::remove_var("GCP_PROJECT");
+        env::remove_var("CJ_CID");
+        env::remove_var("CJ_TYPE");
+        env::remove_var("CJ_SIGNATURE");
     }
 
     #[test]
     fn passing_a_file_and_server_address() {
-        let mut file = NamedTempFile::new().unwrap();
-        writeln!(file, "host: 127.1.2.3").unwrap();
-        writeln!(file, "port: 2222").unwrap();
-        writeln!(file, "database_url: postgres....").unwrap();
-        writeln!(file, "environment: prod").unwrap();
-        let path = file.into_temp_path();
-        let path_str = format!("{}", path.display());
-        let mut mock = MockHasFile::new();
-        mock.expect_file().return_const(path_str);
-        let settings = _get_settings(mock);
+        let settings = get_test_settings("a-gcp-Pr0j3ct");
         let expected = Settings {
             host: "127.1.2.3".to_string(),
             port: "2222".to_string(),
             database_url: "postgres....".to_string(),
             environment: "prod".to_string(),
+            gcp_project: "a-gcp-Pr0j3ct".to_string(),
+            cj_cid: "cid".to_string(),
+            cj_type: "type".to_string(),
+            cj_signature: "signature".to_string(),
         };
         assert_eq!(expected, settings);
         assert_eq!("127.1.2.3:2222", settings.server_address());

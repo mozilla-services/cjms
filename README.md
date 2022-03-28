@@ -26,6 +26,16 @@ Micro-service supporting VPN activities
 - Unknown aicID - 404
 - All other errors - 500
 
+# Settings
+
+The required settings are listed in `settings.yaml.example`. There may be other local setting needs  (see "Auto-magic behavior based on environment" below).
+
+* host: the host the web service runs on
+* port: the port the web service runs on
+* database_url: the database url for connecting to postgres database
+* environment: the environment (see "Auto-magic behavior based on envrionment" below)
+* gcp_project: the gcp project where the big query data lives that the check_subscriptions binary pulls from
+
 # Development pre-requisites
 #### Rust
 
@@ -65,6 +75,14 @@ Then run the server:
 
 If configuring with environment variables, all variables, listed in settings.yaml.example must be available.
 
+## Auto-magic behavior based on environment
+
+Valid values for environment are: local | dev | stage | prod.
+
+* If using local, you must have BQ_ACCESS_TOKEN set in your environment when running bins that access big query.
+* CORS changes based on environment (see appconfig)
+
+
 # Run tests
 
 `cargo test`
@@ -81,6 +99,18 @@ for db in `psql -U cjms -c '\l' | grep cjms_test_ | cut -d '|' -f 1`; do psql -U
 In this case my db_name is `cjms` and my user is `cjms` and my password is in the environment variables `export PGPASSWORD=<>`.
 
 # Tips
+
+## VSCode Settings
+
+```
+{
+	"files.trimTrailingWhitespace": true,
+	"files.insertFinalNewline": true,
+    "rust-analyzer.diagnostics.disabled": [
+        "unresolved-macro-call"
+    ]
+}
+```
 
 ## Git hooks
 

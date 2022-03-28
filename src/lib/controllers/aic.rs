@@ -67,7 +67,7 @@ pub async fn update(
         db_pool: pool.as_ref(),
     };
     let aic_id = path.into_inner();
-    let existing = aic.fetch_one_by_id(aic_id).await;
+    let existing = aic.fetch_one_by_id(&aic_id).await;
     let updated = match existing {
         Ok(existing) => {
             if existing.cj_event_value == data.cj_id || data.cj_id == empty_cj_id() {

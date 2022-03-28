@@ -36,7 +36,7 @@ pub async fn version() -> Result<HttpResponse, Error> {
 }
 
 #[cfg(test)]
-mod tests {
+mod test_controllers_custodial {
     use super::*;
 
     use actix_web::body::to_bytes;

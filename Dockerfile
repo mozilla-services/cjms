@@ -12,5 +12,7 @@ RUN cat version.yaml
 # https://github.com/GoogleContainerTools/distroless/blob/main/README.md#debug-images
 FROM gcr.io/distroless/cc
 COPY --from=build /app/target/release/web /
+COPY --from=build /app/target/release/check_subscriptions /
+COPY --from=build /app/target/release/report_subscriptions /
 COPY --from=build /app/version.yaml /
 CMD ["./web"]
