@@ -135,7 +135,33 @@ async fn check_subscriptions() {
     let sub_1_status_history = sub_1.get_status_history().unwrap();
     assert_eq!(sub_1_status_history.entries[0].status, Status::NotReported);
     assert_eq!(
-        // Sub two is the last one so all the failure cases in the test fixture should have been handled if 2 is also created.
+        sub_2,
+        Subscription::new(PartialSubscription {
+            id: sub_2.id, // We can't know this ahead of time
+            flow_id: sub_archived_flow_id.to_string(),
+            subscription_id: "sub_1Ke0R3Kb9q6".to_string(),
+            report_timestamp: date!(2022 - 03 - 16)
+                .with_time(time!(20:59:53))
+                .assume_utc(),
+            subscription_created: date!(2022 - 03 - 16)
+                .with_time(time!(17:14:57))
+                .assume_utc(),
+            fxa_uid: "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7".to_string(),
+            quantity: 1,
+            plan_id: "price_1J0owvKb9q6OnNsLExNhEDXm".to_string(),
+            plan_currency: "usd".to_string(),
+            plan_amount: 100,
+            country: Some(
+                "THIS IS AN ENTRY WHOSE AIC IS ALREADY IN THE ARCHIVE TABLE. IT SHOULD SUCCEED"
+                    .to_string()
+            ),
+            aic_id: Some(pre_archived.id),
+            aic_expires: Some(pre_archived.expires),
+            cj_event_value: Some(pre_archived.cj_event_value),
+        })
+    );
+    assert_eq!(
+        // Sub three is the last one so all the failure cases in the test fixture should have been handled if 2 is also created.
         // TODO - LOGGING - when we add logging we could test for those logs to have been created
         sub_3,
         Subscription::new(PartialSubscription {
