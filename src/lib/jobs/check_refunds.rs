@@ -9,7 +9,6 @@ use crate::{
     },
 };
 
-// Throw an error if required fields are not available
 fn make_refund_from_bq_row(rs: &ResultSet) -> Result<Refund, BQError> {
     let refund = Refund::new(PartialRefund {
         id: Uuid::new_v4(),
