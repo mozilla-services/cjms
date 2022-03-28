@@ -41,7 +41,7 @@ pub struct Subscription {
     pub aic_id: Option<Uuid>,
     pub aic_expires: Option<OffsetDateTime>,
     pub cj_event_value: Option<String>,
-    // Note we use string and json to save in database for simplicity
+    // Note we use strings and json, not enums, in the database for simplicity
     status: Option<String>,
     status_t: Option<OffsetDateTime>,
     status_history: Option<JsonValue>,
