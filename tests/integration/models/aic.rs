@@ -3,7 +3,7 @@ use lib::models::aic::{AICModel, AIC};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
-fn make_fake_aic() -> AIC {
+pub fn make_fake_aic() -> AIC {
     AIC {
         id: Uuid::new_v4(),
         flow_id: random_ascii_string(),
