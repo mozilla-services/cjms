@@ -37,7 +37,7 @@ pub async fn save_sub(model: &SubscriptionModel<'_>, sub: &Subscription) {
 }
 
 #[tokio::test]
-async fn test_subscription_model_create_from_subscription_struct() {
+async fn test_subscription_model_create_from_subscription() {
     let db_pool = get_test_db_pool().await;
     let model = SubscriptionModel { db_pool: &db_pool };
     let sub = make_fake_sub();
