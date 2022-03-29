@@ -26,7 +26,7 @@ Micro-service supporting VPN activities
 - Unknown aicID - 404
 - All other errors - 500
 
-# Settings
+## Settings
 
 The required settings are listed in `settings.yaml.example`. There may be other local setting needs  (see "Auto-magic behavior based on environment" below).
 
@@ -36,8 +36,9 @@ The required settings are listed in `settings.yaml.example`. There may be other 
 * environment: the environment (see "Auto-magic behavior based on envrionment" below)
 * gcp_project: the gcp project where the big query data lives that the check_subscriptions binary pulls from
 
-# Development pre-requisites
-#### Rust
+## Development pre-requisites
+
+### Rust
 
 https://www.rust-lang.org/tools/install
 
@@ -50,7 +51,8 @@ Many optional utilities are useful when developing cjms and can be installed wit
 * cargo-udeps (requires nightly compiler toolchain)
 
 I have found the VSCode extension `rust-analyzer` to give me the richest experience while developing.
-#### Postgres
+
+### Postgres
 
 https://www.postgresql.org/docs/14/index.html
 
@@ -62,7 +64,7 @@ https://www.postgresql.org/docs/14/index.html
 
 When adding migrations, create reversible migrations using `sqlx migrate add -r <name>`.
 
-# Run server
+## Run server
 
 You can configure cjms and tests either with environment variables or a settings file.
 
@@ -75,7 +77,7 @@ Then run the server:
 
 If configuring with environment variables, all variables, listed in settings.yaml.example must be available.
 
-## Auto-magic behavior based on environment
+### Auto-magic behavior based on environment
 
 Valid values for environment are: local | dev | stage | prod.
 
@@ -83,7 +85,7 @@ Valid values for environment are: local | dev | stage | prod.
 * CORS changes based on environment (see appconfig)
 
 
-# Run tests
+## Run tests
 
 `cargo test`
 
@@ -98,9 +100,9 @@ for db in `psql -U cjms -c '\l' | grep cjms_test_ | cut -d '|' -f 1`; do psql -U
 
 In this case my db_name is `cjms` and my user is `cjms` and my password is in the environment variables `export PGPASSWORD=<>`.
 
-# Tips
+## Tips
 
-## VSCode Settings
+### VSCode Settings
 
 ```
 {
@@ -112,7 +114,7 @@ In this case my db_name is `cjms` and my user is `cjms` and my password is in th
 }
 ```
 
-## Git hooks
+### Git hooks
 
 To save time in CI, add a pre-commit or pre-push git hook locally that runs, at least, clippy and fmt.
 
@@ -134,7 +136,7 @@ exit 0
 
 Note: I've found the cargo sqlx prepare check to not work as expected for me and always suggest that a new prepare is needed :(
 
-## Working with sqlx
+### Working with sqlx
 
 In general, be mindful of the difference between compile time checks and running the app.
 
@@ -144,7 +146,7 @@ sqlx does compile time checks. For these to work one of two things has to be tru
 
 sqlx does some implicit things looking for the DATABASE_URL in your environment, which includes looking for a `.env` file. If things aren't working as expected make sure you don't have a rogue `.env` file or environment variables.
 
-### Writing new queries
+#### Writing new queries
 
 It took me a long time to figure out the mechanics of working with sqlx. Here's the key points:
 * We want to use the macro functions like `query_as!` so that we get compile time checks as we're developing.
@@ -197,7 +199,7 @@ error: failed to find data for query UPDATE aic
    = note: this error originates in the macro `$crate::sqlx_macros::expand_query` (in Nightly builds, run with -Z macro-backtrace for more info)
 ```
 
-### Version compatibility
+#### Version compatibility
 
 One thing that took me a while to figure out was I was using sqlx features like "time" or "uuid" but I was
 getting error messages like `expected struct sqlx::types::time::OffsetDateTime, found struct time::OffsetDateTime`.
@@ -207,7 +209,7 @@ magically compatible.
 In both cases the reason was because the versions of `time` and `uuid` that I had installed were ahead of what sqlx
 currently supports. This meant that the, I think, trait implementations for them to interoperate weren't present.
 
-# Deployment
+## Deployment
 
 Service is deployed using docker containers.
 
@@ -221,13 +223,13 @@ To run, set environment variables (can be done with a file) and forward ports e.
 
 `docker run -e HOST=0.0.0.0 -e PORT=8484 -p 8484:8484 cjms:latest`
 
-## Version numbers
+### Version numbers
 
-### Pre 1.0
+#### Pre 1.0
 
 Version numbers will increment 0.1, 0.2 etc as pre-releases as we work towards launch.
 
-### 1.0+
+#### 1.0+
 
 Version numbering will follow the guardian schema:
 - version numbers will increase v1.1, v1.2 etc
@@ -235,7 +237,7 @@ Version numbering will follow the guardian schema:
 - release candidates will have a "b" suffix e.g. ahead of v1.1 release we will push
   v1.1.b1, v1.1.b2 to staging for QA to review
 
-### 2.0+
+#### 2.0+
 
 A major version bump from 1.x to 2.x would happen in the case of a breaking change to APIs
 we provide.

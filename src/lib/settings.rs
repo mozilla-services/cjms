@@ -1,8 +1,6 @@
 use config::{Config, Environment, File, FileFormat};
 use std::fs;
 
-// TODO testing
-
 #[derive(serde::Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct Settings {
     // Server host and port to run on
@@ -76,6 +74,7 @@ pub mod test_settings {
         writeln!(file, "port: 2222").unwrap();
         writeln!(file, "database_url: postgres....").unwrap();
         writeln!(file, "environment: prod").unwrap();
+        writeln!(file, "log_level: info").unwrap();
         writeln!(file, "gcp_project: {}", gcp_project).unwrap();
         writeln!(file, "cj_cid: cid").unwrap();
         writeln!(file, "cj_type: type").unwrap();
@@ -129,6 +128,7 @@ pub mod test_settings {
             "postgres://user:password@127.0.0.1:5432/test",
         );
         env::set_var("ENVIRONMENT", "test");
+        env::set_var("LOG_LEVEL", "info");
         env::set_var("GCP_PROJECT", "a--te-st-pr0j");
         env::set_var("CJ_CID", "test cj cid");
         env::set_var("CJ_TYPE", "test cj type");
@@ -141,6 +141,7 @@ pub mod test_settings {
             port: "2222".to_string(),
             database_url: "postgres://user:password@127.0.0.1:5432/test".to_string(),
             environment: "test".to_string(),
+            log_level: "info".to_string(),
             gcp_project: "a--te-st-pr0j".to_string(),
             cj_cid: "test cj cid".to_string(),
             cj_type: "test cj type".to_string(),
@@ -165,6 +166,7 @@ pub mod test_settings {
             port: "2222".to_string(),
             database_url: "postgres....".to_string(),
             environment: "prod".to_string(),
+            log_level: "info".to_string(),
             gcp_project: "a-gcp-Pr0j3ct".to_string(),
             cj_cid: "cid".to_string(),
             cj_type: "type".to_string(),

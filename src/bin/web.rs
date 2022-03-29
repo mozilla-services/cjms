@@ -9,7 +9,11 @@ use std::net::TcpListener;
 async fn main() -> std::io::Result<()> {
     let settings = get_settings();
 
-    let subscriber = get_subscriber("cjms".into(), settings.log_level.clone(), std::io::stdout);
+    let subscriber = get_subscriber(
+        "cjms".to_string(),
+        settings.log_level.clone(),
+        std::io::stdout,
+    );
     init_subscriber(subscriber);
 
     let addr = settings.server_address();
