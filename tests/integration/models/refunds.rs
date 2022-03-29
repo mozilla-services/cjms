@@ -84,7 +84,10 @@ async fn test_refund_model_update_refund_updates_the_status_to_not_reported() {
         .await
         .expect("Could not fetch from DB.");
     assert_eq!(result.get_status().unwrap(), Status::NotReported);
-    assert_eq!(result.get_status_t().unwrap().unix_timestamp(), now.unix_timestamp());
+    assert_eq!(
+        result.get_status_t().unwrap().unix_timestamp(),
+        now.unix_timestamp()
+    );
     assert_eq!(
         result.get_status_history().unwrap().entries[1]
             .t
