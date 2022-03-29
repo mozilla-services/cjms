@@ -20,14 +20,22 @@ pub fn run_server(
         let cors = get_cors(settings.clone());
         App::new()
             .wrap(cors)
+            // Custodial
             .service(resource("/").route(get().to(controllers::custodial::index)))
             .service(resource("/__heartbeat__").route(get().to(controllers::custodial::heartbeat)))
             .service(
                 resource("/__lbheartbeat__").route(get().to(controllers::custodial::heartbeat)),
             )
             .service(resource("/__version__").route(get().to(controllers::custodial::version)))
+            // AIC
             .service(resource("/aic").route(post().to(controllers::aic::create)))
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
+            // Corrections
+            .service(resource("/corrections").route(get().to(controllers::corrections::list)))
+            .service(
+                resource("/corrections/{correction_batch_id}")
+                    .route(get().to(controllers::corrections::detail)),
+            )
             .app_data(db_pool.clone())
     })
     .listen(listener)?
