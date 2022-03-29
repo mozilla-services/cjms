@@ -1,7 +1,7 @@
 use fake::{Fake, StringFaker};
 use lib::appconfig::{connect_to_database_and_migrate, run_server};
 use lib::settings::{get_settings, Settings};
-use lib::telemetry::{get_subscriber, init_subscriber};
+use lib::telemetry::init_tracing;
 use once_cell::sync::Lazy;
 
 use sqlx::postgres::PgPoolOptions;
@@ -11,15 +11,10 @@ use uuid::Uuid;
 
 // TODO doc this
 static TRACING: Lazy<()> = Lazy::new(|| {
-    let default_filter_level = "info".to_string();
-    let subscriber_name = "test".to_string();
-
     if std::env::var("TEST_LOG").is_ok() {
-        let subscriber = get_subscriber(subscriber_name, default_filter_level, std::io::stdout);
-        init_subscriber(subscriber);
+        init_tracing("cjms", "info", std::io::stdout);
     } else {
-        let subscriber = get_subscriber(subscriber_name, default_filter_level, std::io::sink);
-        init_subscriber(subscriber);
+        init_tracing("cjms", "info", std::io::sink);
     };
 });
 

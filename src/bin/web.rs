@@ -1,7 +1,7 @@
 use lib::{
     appconfig::{connect_to_database_and_migrate, run_server},
     settings::get_settings,
-    telemetry::{get_subscriber, init_subscriber},
+    telemetry::init_tracing,
 };
 use std::net::TcpListener;
 
@@ -9,12 +9,7 @@ use std::net::TcpListener;
 async fn main() -> std::io::Result<()> {
     let settings = get_settings();
 
-    let subscriber = get_subscriber(
-        "cjms".to_string(),
-        settings.log_level.clone(),
-        std::io::stdout,
-    );
-    init_subscriber(subscriber);
+    init_tracing("cjms-web", &settings.log_level, std::io::stdout);
 
     let addr = settings.server_address();
     let db_pool = connect_to_database_and_migrate(&settings.database_url).await;

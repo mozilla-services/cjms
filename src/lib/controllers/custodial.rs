@@ -8,7 +8,9 @@ use serde::{Deserialize, Serialize};
  * Any small helpers that are for general maintenance purposes
  */
 
+#[tracing::instrument(name = "Did the hello world")]
 pub async fn index() -> Result<HttpResponse, Error> {
+    tracing::info!("Hello!");
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
 

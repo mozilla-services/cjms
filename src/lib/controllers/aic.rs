@@ -6,8 +6,6 @@ use uuid::Uuid;
 
 use crate::models::aic::AICModel;
 
-// TODO figure out how import sorting works in Rust
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AICResponse {
     pub aic_id: Uuid,
@@ -30,9 +28,7 @@ fn empty_cj_id() -> String {
 #[tracing::instrument(
     name = "Adding a test request-level span with some data",
     skip(data, pool),
-    fields(
-        some_fake_data = "abc123"
-    )
+    fields(some_fake_data = "abc123")
 )]
 pub async fn create(data: web::Json<AICRequest>, pool: web::Data<PgPool>) -> HttpResponse {
     // TODO remove these
@@ -81,7 +77,7 @@ pub async fn update(
         }
         Err(e) => match e {
             sqlx::Error::RowNotFound => return HttpResponse::NotFound().finish(),
-            _ => return HttpResponse::InternalServerError().finish()
+            _ => return HttpResponse::InternalServerError().finish(),
         },
     };
 
