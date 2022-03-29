@@ -15,6 +15,10 @@ pub async fn report_subscriptions_to_cj(db_pool: &Pool<Postgres>, cj_client: CJS
         .fetch_all_not_reported()
         .await
         .expect("Could not retrieve subscriptions from DB.");
+    println!(
+        "Found {} subscriptions to report.",
+        not_reported_subscriptions.len()
+    );
     for sub in not_reported_subscriptions {
         let next_status = match sub.aic_expires {
             Some(aic_expires) => {
