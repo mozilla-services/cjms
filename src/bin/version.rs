@@ -1,9 +1,12 @@
-use lib::controllers::custodial::VERSION_FILE;
+use lib::{controllers::custodial::VERSION_FILE, settings::get_settings, telemetry::init_tracing};
 use std::process::Command;
 use std::str;
 use std::{env, fs};
 
 fn main() -> std::io::Result<()> {
+    let settings = get_settings();
+    init_tracing("cjms-version", &settings.log_level, std::io::stdout);
+
     let (sha, tag) = match env::var("CI") {
         Ok(_) => {
             // If we're in CI use local variables
