@@ -24,33 +24,19 @@ fn empty_cj_id() -> String {
     "empty_cj_id".to_string()
 }
 
-// TODO how to log the data argument automatically?
-#[tracing::instrument(
-    name = "Adding a test request-level span with some data",
-    skip(data, pool),
-    fields(some_fake_data = "abc123")
-)]
 pub async fn create(data: web::Json<AICRequest>, pool: web::Data<PgPool>) -> HttpResponse {
-    // TODO remove these
-    tracing::info!("Test info");
-    tracing::error!("Test error");
-
     let aic = AICModel {
         db_pool: pool.as_ref(),
     };
     match aic.create(&data.cj_id, &data.flow_id).await {
         Ok(created) => {
-            tracing::info!("Successfully created new record");
             let response = AICResponse {
                 aic_id: created.id,
                 expires: created.expires,
             };
             HttpResponse::Created().json(response)
         }
-        Err(e) => {
-            tracing::error!("Failed to create new record: {:?}", e);
-            HttpResponse::InternalServerError().finish()
-        }
+        Err(_) => HttpResponse::InternalServerError().finish(),
     }
 }
 

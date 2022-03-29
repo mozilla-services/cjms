@@ -9,15 +9,6 @@ use sqlx::{Connection, Executor, PgConnection, PgPool, Pool, Postgres};
 use std::net::TcpListener;
 use uuid::Uuid;
 
-// TODO doc this
-static TRACING: Lazy<()> = Lazy::new(|| {
-    if std::env::var("TEST_LOG").is_ok() {
-        init_tracing("cjms", "info", std::io::stdout);
-    } else {
-        init_tracing("cjms", "info", std::io::sink);
-    };
-});
-
 pub struct TestApp {
     pub settings: Settings,
 }
@@ -54,6 +45,17 @@ pub async fn get_test_db_pool() -> Pool<Postgres> {
     let test_database_url = create_test_database(&settings.database_url).await;
     connect_to_database_and_migrate(&test_database_url).await
 }
+
+/// Enables log output on stdout if the TEST_LOG environment variable is set.
+/// Wrapped in an invocation of `Lazy` to ensure that tracing is only
+/// instantiated once, not on each test.
+static TRACING: Lazy<()> = Lazy::new(|| {
+    if std::env::var("TEST_LOG").is_ok() {
+        init_tracing("cjms", "info", std::io::stdout);
+    } else {
+        init_tracing("cjms", "info", std::io::sink);
+    };
+});
 
 pub async fn spawn_app() -> TestApp {
     Lazy::force(&TRACING);

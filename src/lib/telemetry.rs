@@ -4,7 +4,7 @@ use tracing_log::LogTracer;
 use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 
-// TODO doc
+/// Creates a tracing subscriber and sets it as the global default.
 pub fn init_tracing<Sink>(service_name: &str, log_level: &str, sink: Sink)
 where
     Sink: for<'a> MakeWriter + Send + Sync + 'static,

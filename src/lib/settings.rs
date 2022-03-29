@@ -9,7 +9,6 @@ pub struct Settings {
     pub database_url: String,
     // What environment - dev, stage, prod
     pub environment: String,
-    // The minimum log level that will be written to the log output
     pub log_level: String,
     pub gcp_project: String,
     pub cj_cid: String,

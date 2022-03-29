@@ -7,7 +7,7 @@ use actix_web::{
 };
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
-use tracing_actix_web::TracingLogger;
+use tracing_actix_web_mozlog::MozLog;
 
 use crate::{controllers, settings::Settings};
 
@@ -19,8 +19,9 @@ pub fn run_server(
     let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
         let cors = get_cors(settings.clone());
+        let moz_log = MozLog::default();
         App::new()
-            .wrap(TracingLogger::default())
+            .wrap(moz_log.clone())
             .wrap(cors)
             .service(resource("/").route(get().to(controllers::custodial::index)))
             .service(resource("/__heartbeat__").route(get().to(controllers::custodial::heartbeat)))
