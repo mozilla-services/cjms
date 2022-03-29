@@ -161,9 +161,10 @@ impl SubscriptionModel<'_> {
                 aic_expires,
                 cj_event_value,
                 status,
+                status_t,
                 status_history
              )
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 			RETURNING *",
             sub.id,
             sub.flow_id,
@@ -180,6 +181,7 @@ impl SubscriptionModel<'_> {
             sub.aic_expires,
             sub.cj_event_value,
             sub.status,
+            sub.status_t,
             sub.status_history,
         )
         .fetch_one(self.db_pool)
@@ -246,10 +248,12 @@ impl SubscriptionModel<'_> {
             r#"UPDATE subscriptions
             SET
                 status = $1,
-                status_history = $2
-            WHERE id = $3
+                status_t = $2,
+                status_history = $3
+            WHERE id = $4
 			RETURNING *"#,
             sub.status,
+            sub.status_t,
             sub.status_history,
             id,
         )
