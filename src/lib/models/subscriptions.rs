@@ -73,7 +73,14 @@ impl PartialEq for Subscription {
             },
             None => other.aic_expires.is_none(),
         };
-        aic_expires_match && simple_match
+        let status_t_match = match self.status_t {
+            Some(self_v) => match other.status_t {
+                Some(other_v) => self_v.unix_timestamp() == other_v.unix_timestamp(),
+                None => false,
+            },
+            None => other.status_t.is_none(),
+        };
+        status_t_match && aic_expires_match && simple_match
     }
 }
 impl Eq for Subscription {}
