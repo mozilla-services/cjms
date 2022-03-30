@@ -1,0 +1,158 @@
+{
+    "kind": "bigquery#queryResponse",
+    "schema": {
+        "fields": [
+            {
+                "name": "refund_id",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "subscription_id",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "amount",
+                "type": "INTEGER",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "created",
+                "type": "TIMESTAMP",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "reason",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "status",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            }
+        ]
+    },
+    "jobReference": {
+        "projectId": "moz-fx-cjms-nonprod-9a36",
+        "jobId": "job_OTrudlt4Vv5DVOsXWiTsp7y_Snns",
+        "location": "US"
+    },
+    "totalRows": "3",
+    "rows": [
+        {
+            "f": [
+                {
+                    "v": "re_3KftCmKb9q6OnNsL0oIyzN1U"
+                },
+                {
+                    "v": "sub_1KftCmKb9q6OnNsLJWrLnxyl"
+                },
+                {
+                    "v": "5988"
+                },
+                {
+                    "v": "1.64790089E9"
+                },
+                {
+                    "v": "requested_by_customer"
+                },
+                {
+                    "v": "pending"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "re_3KftCmKb9q6OnNsL0oIyzN1U_1"
+                },
+                {
+                    "v": "NOT IN THE SUBSCRIPTION TABLE"
+                },
+                {
+                    "v": "5988"
+                },
+                {
+                    "v": "1.64790089E9"
+                },
+                {
+                    "v": "requested_by_customer"
+                },
+                {
+                    "v": "succeeded"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "re_4mKb9q6OnNsL0oasdf39480"
+                },
+                {
+                    "v": "this_one_is_already_in_refunds_table"
+                },
+                {
+                    "v": "5988"
+                },
+                {
+                    "v": "1.64790089E9"
+                },
+                {
+                    "v": "fraudulent"
+                },
+                {
+                    "v": "failed"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "re_optional_fields"
+                },
+                {
+                    "v": "sub_optional_fields"
+                },
+                {
+                    "v": "5988"
+                },
+                {
+                    "v": "1.64790089E9"
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": null
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "re_bad_data_missing_timestamp"
+                },
+                {
+                    "v": "sub_bad_data"
+                },
+                {
+                    "v": "5988"
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": null
+                }
+            ]
+        }
+    ],
+    "totalBytesProcessed": "109",
+    "jobComplete": true,
+    "cacheHit": false
+}

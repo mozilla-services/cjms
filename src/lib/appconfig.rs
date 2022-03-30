@@ -21,7 +21,7 @@ pub fn run_server(
         let cors = get_cors(settings.clone());
         let moz_log = MozLog::default();
         App::new()
-            .wrap(moz_log.clone())
+            .wrap(moz_log)
             .wrap(cors)
             .service(resource("/").route(get().to(controllers::custodial::index)))
             .service(resource("/__heartbeat__").route(get().to(controllers::custodial::heartbeat)))

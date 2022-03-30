@@ -199,6 +199,19 @@ impl SubscriptionModel<'_> {
         .await
     }
 
+    pub async fn fetch_one_by_subscription_id(
+        &self,
+        subscription_id: &str,
+    ) -> Result<Subscription, Error> {
+        query_as!(
+            Subscription,
+            "SELECT * FROM subscriptions WHERE subscription_id = $1",
+            subscription_id
+        )
+        .fetch_one(self.db_pool)
+        .await
+    }
+
     pub async fn fetch_all(&self) -> Result<Vec<Subscription>, Error> {
         query_as!(Subscription, "SELECT * FROM subscriptions")
             .fetch_all(self.db_pool)
@@ -235,5 +248,44 @@ impl SubscriptionModel<'_> {
         )
         .fetch_one(self.db_pool)
         .await
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::test_utils::random_simple_ascii_string;
+
+    #[test]
+    fn test_new_sets_not_reported_status_and_history() {
+        let new = Subscription::new(PartialSubscription {
+            id: Uuid::new_v4(),
+            flow_id: random_simple_ascii_string(),
+            subscription_id: random_simple_ascii_string(),
+            report_timestamp: OffsetDateTime::now_utc(),
+            subscription_created: OffsetDateTime::now_utc(),
+            fxa_uid: random_simple_ascii_string(),
+            quantity: 1,
+            plan_id: random_simple_ascii_string(),
+            plan_currency: random_simple_ascii_string(),
+            plan_amount: 1,
+            country: None,
+            aic_id: None,
+            aic_expires: None,
+            cj_event_value: None,
+        });
+        let now = OffsetDateTime::now_utc();
+        assert_eq!(new.get_status().unwrap(), Status::NotReported);
+        assert_eq!(
+            new.get_status_t().unwrap().unix_timestamp(),
+            now.unix_timestamp()
+        );
+        let status_history = new.get_status_history().unwrap();
+        assert_eq!(status_history.entries.len(), 1);
+        assert_eq!(status_history.entries[0].status, Status::NotReported);
+        assert_eq!(
+            status_history.entries[0].t.unix_timestamp(),
+            now.unix_timestamp()
+        );
     }
 }

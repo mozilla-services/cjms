@@ -10,7 +10,6 @@ use crate::{
     },
 };
 
-// Throw an error if required fields are not available
 fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError> {
     let sub = Subscription::new(PartialSubscription {
         id: Uuid::new_v4(),
@@ -57,17 +56,17 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
                 continue;
             }
         };
-        let aic = match aics.fetch_one_by_flow_id(&sub.flow_id).await {
+        let (aic, aic_found_in_archive) = match aics.fetch_one_by_flow_id(&sub.flow_id).await {
             Ok(aic) => {
                 // TODO - LOGGING
                 println!("Succesfully fetched aic: {}.", aic.id);
-                aic
+                (aic, false)
             }
             Err(_) => match aics.fetch_one_by_flow_id_from_archive(&sub.flow_id).await {
                 Ok(aic) => {
                     // TODO - LOGGING - Note that we had to pull from archive table
                     println!("AIC {} was retrieved from archive table.", aic.id);
-                    aic
+                    (aic, true)
                 }
                 Err(e) => {
                     // TODO - LOGGING
@@ -84,17 +83,19 @@ pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Po
         sub.aic_expires = Some(aic.expires);
 
         // Archive the AIC
-        match aics.archive_aic(&aic).await {
-            Ok(_) => {
-                // TODO - LOGGING
-                println!("Successfully archived aic: {}.", aic.id);
-            }
-            Err(e) => {
-                // TODO - LOGGING
-                println!("Failed to archive aic entry: {:?}. Continuing...", e);
-                continue;
-            }
-        };
+        if !aic_found_in_archive {
+            match aics.archive_aic(&aic).await {
+                Ok(_) => {
+                    // TODO - LOGGING
+                    println!("Successfully archived aic: {}.", aic.id);
+                }
+                Err(e) => {
+                    // TODO - LOGGING
+                    println!("Failed to archive aic entry: {:?}. Continuing...", e);
+                    continue;
+                }
+            };
+        }
         // Save the new subscription entry
         match subscriptions.create_from_sub(&sub).await {
             Ok(sub) => {
