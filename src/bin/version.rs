@@ -6,7 +6,11 @@ use std::{env, fs};
 fn main() -> std::io::Result<()> {
     let settings = get_settings();
     init_tracing("cjms-version", &settings.log_level, std::io::stdout);
+    write_version_file();
+    Ok(())
+}
 
+fn write_version_file() -> std::io::Result<()> {
     let (sha, tag) = match env::var("CI") {
         Ok(_) => {
             // If we're in CI use local variables
@@ -56,7 +60,7 @@ mod test_bin_version {
     #[serial]
     fn test_writes_a_new_file_that_has_source() {
         fs::remove_file(VERSION_FILE).ok();
-        main().expect("Couldn't run version binary.");
+        write_version_file().expect("Couldn't run version binary.");
         let file_stream = fs::read(VERSION_FILE).expect("Couldn't read version file");
         let version_file = str::from_utf8(&file_stream).expect("Couldn't read from version file.");
         let source = env!("CARGO_PKG_REPOSITORY");
@@ -77,7 +81,7 @@ mod test_bin_version {
         env::set_var("GITHUB_REF_NAME", "ref_name_123");
         env::set_var("CI", "true");
         fs::remove_file(VERSION_FILE).ok();
-        main().expect("Couldn't run version binary.");
+        write_version_file().expect("Couldn't run version binary.");
         let file_stream = fs::read(VERSION_FILE).expect("Couldn't read version file");
         let version_file = str::from_utf8(&file_stream).expect("Couldn't read from version file.");
         let error_msg = format!("Got version file contents: \n{}", version_file);
