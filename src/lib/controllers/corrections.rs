@@ -1,11 +1,11 @@
 use actix_web::{web, HttpResponse};
 use sqlx::PgPool;
-use uuid::Uuid;
 
 pub async fn list(_pool: web::Data<PgPool>) -> HttpResponse {
-    HttpResponse::Forbidden().finish()
+    HttpResponse::Ok().finish()
 }
 
-pub async fn detail(_path: web::Path<Uuid>, _pool: web::Data<PgPool>) -> HttpResponse {
-    HttpResponse::Forbidden().finish()
+pub async fn detail(path: web::Path<String>, _pool: web::Data<PgPool>) -> HttpResponse {
+    println!("The path is: {}", path);
+    HttpResponse::Ok().finish()
 }

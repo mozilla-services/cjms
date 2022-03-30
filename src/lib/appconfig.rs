@@ -1,14 +1,33 @@
 use actix_cors::Cors;
 use actix_web::{
-    dev::Server,
+    dev::{Server, ServiceRequest},
+    error::ErrorUnauthorized,
     http,
     web::{get, post, put, resource, Data},
-    App, HttpServer,
+    App, Error, HttpServer,
 };
+use actix_web_httpauth::extractors::basic::BasicAuth;
+use actix_web_httpauth::middleware::HttpAuthentication;
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
 
 use crate::{controllers, settings::Settings};
+
+async fn basic_auth_middleware(
+    req: ServiceRequest,
+    credentials: BasicAuth,
+) -> Result<ServiceRequest, Error> {
+    let password = match credentials.password() {
+        Some(password) => password,
+        None => return Err(ErrorUnauthorized("Password missing.")),
+    };
+    // TODO - this can't be hardcoded
+    if password.eq("hardcoded password") {
+        Ok(req)
+    } else {
+        Err(ErrorUnauthorized("Incorrect password."))
+    }
+}
 
 pub fn run_server(
     settings: Settings,
@@ -18,6 +37,7 @@ pub fn run_server(
     let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
         let cors = get_cors(settings.clone());
+        let auth = HttpAuthentication::basic(basic_auth_middleware);
         App::new()
             .wrap(cors)
             // Custodial
@@ -31,10 +51,15 @@ pub fn run_server(
             .service(resource("/aic").route(post().to(controllers::aic::create)))
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
             // Corrections
-            .service(resource("/corrections").route(get().to(controllers::corrections::list)))
+            .service(
+                resource("/corrections")
+                    .route(get().to(controllers::corrections::list))
+                    .wrap(auth.clone()),
+            )
             .service(
                 resource("/corrections/{correction_batch_id}")
-                    .route(get().to(controllers::corrections::detail)),
+                    .route(get().to(controllers::corrections::detail))
+                    .wrap(auth),
             )
             .app_data(db_pool.clone())
     })
