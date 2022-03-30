@@ -1,4 +1,10 @@
 [advisories]
 ignore = [
-    "RUSTSEC-2020-0159", # `chrono` localtime_r segfault
+    # See https://github.com/chronotope/chrono/issues/499
+    # The underlying library uses system calls that are not threadsafe,
+    # creating the possibility of a segfault. However, this issue is unsolved
+    # and affects many important libraries and the Rust stdlib itself.
+    # It is worth noting that rustsec, the repository containing cargo-audit,
+    # itself ignores this vulnerability.
+    "RUSTSEC-2020-0159",
 ]
