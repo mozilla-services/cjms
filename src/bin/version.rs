@@ -6,8 +6,7 @@ use std::{env, fs};
 fn main() -> std::io::Result<()> {
     let settings = get_settings();
     init_tracing("cjms-version", &settings.log_level, std::io::stdout);
-    write_version_file();
-    Ok(())
+    write_version_file()
 }
 
 fn write_version_file() -> std::io::Result<()> {
@@ -48,6 +47,7 @@ fn write_version_file() -> std::io::Result<()> {
         format!("source: {}\ncommit: {}\nversion: {}\n", source, sha, tag),
     )
     .expect("Failed to write file.");
+
     Ok(())
 }
 
