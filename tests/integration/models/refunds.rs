@@ -74,6 +74,7 @@ async fn test_refund_model_update_refund_updates_the_status_to_not_reported() {
     // This has no effect. It helps us verify that the update_refund function is setting the latest
     // status to NotReported.
     r_update.update_status(Status::WillNotReport);
+    let now = OffsetDateTime::now_utc();
     model
         .update_refund(&mut r_update)
         .await
@@ -84,9 +85,13 @@ async fn test_refund_model_update_refund_updates_the_status_to_not_reported() {
         .expect("Could not fetch from DB.");
     assert_eq!(result.get_status().unwrap(), Status::NotReported);
     assert_eq!(
+        result.get_status_t().unwrap().unix_timestamp(),
+        now.unix_timestamp()
+    );
+    assert_eq!(
         result.get_status_history().unwrap().entries[1]
             .t
             .unix_timestamp(),
-        OffsetDateTime::now_utc().unix_timestamp()
+        now.unix_timestamp()
     );
 }
