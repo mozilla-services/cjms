@@ -26,9 +26,9 @@ pub mod test_utils {
             cj_type: "_".to_string(),
             database_url: "_".to_string(),
             environment: "_".to_string(),
-            log_level: "_".to_string(),
             gcp_project: "_".to_string(),
             host: "_".to_string(),
+            log_level: "_".to_string(),
             port: "_".to_string(),
         }
     }

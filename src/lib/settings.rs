@@ -8,9 +8,9 @@ pub struct Settings {
     pub cj_type: String,
     pub database_url: String,
     pub environment: String,
-    pub log_level: String,
     pub gcp_project: String,
     pub host: String, // server host to run on
+    pub log_level: String,
     pub port: String, // server port to run on
 }
 
@@ -72,9 +72,9 @@ pub mod test_settings {
         writeln!(file, "cj_type: type").unwrap();
         writeln!(file, "database_url: postgres....").unwrap();
         writeln!(file, "environment: prod").unwrap();
-        writeln!(file, "log_level: info").unwrap();
         writeln!(file, "gcp_project: {}", gcp_project).unwrap();
         writeln!(file, "host: 127.1.2.3").unwrap();
+        writeln!(file, "log_level: info").unwrap();
         writeln!(file, "port: 2222").unwrap();
         let path = file.into_temp_path();
         let path_str = format!("{}", path.display());
@@ -126,23 +126,23 @@ pub mod test_settings {
             "postgres://user:password@127.0.0.1:5432/test",
         );
         env::set_var("ENVIRONMENT", "test");
-        env::set_var("LOG_LEVEL", "info");
         env::set_var("GCP_PROJECT", "a--te-st-pr0j");
         env::set_var("HOST", "111.2.3.6");
+        env::set_var("LOG_LEVEL", "info");
         env::set_var("PORT", "2222");
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const(String::new());
         let actual = _get_settings(mock);
         let expected = Settings {
-            host: "111.2.3.6".to_string(),
-            port: "2222".to_string(),
+            cj_cid: "test cj cid".to_string(),
+            cj_signature: "test cj signature".to_string(),
+            cj_type: "test cj type".to_string(),
             database_url: "postgres://user:password@127.0.0.1:5432/test".to_string(),
             environment: "test".to_string(),
-            log_level: "info".to_string(),
             gcp_project: "a--te-st-pr0j".to_string(),
-            cj_cid: "test cj cid".to_string(),
-            cj_type: "test cj type".to_string(),
-            cj_signature: "test cj signature".to_string(),
+            host: "111.2.3.6".to_string(),
+            log_level: "info".to_string(),
+            port: "2222".to_string(),
         };
         assert_eq!(expected, actual);
         env::remove_var("CJ_CID");
@@ -152,6 +152,7 @@ pub mod test_settings {
         env::remove_var("ENVIRONMENT");
         env::remove_var("GCP_PROJECT");
         env::remove_var("HOST");
+        env::remove_var("LOG_LEVEL");
         env::remove_var("PORT");
     }
 

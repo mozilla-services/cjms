@@ -1,9 +1,9 @@
-host: 127.0.0.1
-port: 8000
+cj_cid: cj_cid
+cj_signature: cj_signature
+cj_type: cj_type
 database_url: "postgres://db_user:db_password@localhost:5432/cjms"
 environment: local
-log_level: info
 gcp_project: proj
-cj_cid: cj_cid
-cj_type: cj_type
-cj_signature: cj_signature
+host: 127.0.0.1
+log_level: info
+port: 8000
