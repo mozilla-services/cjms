@@ -134,15 +134,15 @@ pub mod test_settings {
         mock.expect_file().return_const(String::new());
         let actual = _get_settings(mock);
         let expected = Settings {
-            host: "111.2.3.6".to_string(),
-            port: "2222".to_string(),
-            database_url: "postgres://user:password@127.0.0.1:5432/test".to_string(),
-            environment: "test".to_string(),
-            gcp_project: "a--te-st-pr0j".to_string(),
+            authentication: "auth pass".to_string(),
             cj_cid: "test cj cid".to_string(),
             cj_type: "test cj type".to_string(),
             cj_signature: "test cj signature".to_string(),
-            authentication: "auth pass".to_string(),
+            database_url: "postgres://user:password@127.0.0.1:5432/test".to_string(),
+            environment: "test".to_string(),
+            gcp_project: "a--te-st-pr0j".to_string(),
+            host: "111.2.3.6".to_string(),
+            port: "2222".to_string(),
         };
         assert_eq!(expected, actual);
         env::remove_var("AUTHENTICATION");
