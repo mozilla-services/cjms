@@ -29,12 +29,11 @@ async fn test_corrections_get_requires_basic_auth() {
         assert_eq!(r.status(), 401,);
         assert_eq!(r.text().await.unwrap(), "Incorrect password.");
         // Correct auth
-        // TODO - make this not a hardcoded password
         let r = client
             .get(&path)
             .basic_auth(
                 "any user (we don't only check user)",
-                Some("hardcoded password"),
+                Some(&app.settings.authentication),
             )
             .send()
             .await

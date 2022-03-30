@@ -17,12 +17,13 @@ async fn basic_auth_middleware(
     req: ServiceRequest,
     credentials: BasicAuth,
 ) -> Result<ServiceRequest, Error> {
+    // Intentional expect. Can't go on without them.
+    let settings = req.app_data::<Settings>().expect("Missing settings");
     let password = match credentials.password() {
         Some(password) => password,
         None => return Err(ErrorUnauthorized("Password missing.")),
     };
-    // TODO - this can't be hardcoded
-    if password.eq("hardcoded password") {
+    if password.eq(&settings.authentication) {
         Ok(req)
     } else {
         Err(ErrorUnauthorized("Incorrect password."))
@@ -54,12 +55,14 @@ pub fn run_server(
             .service(
                 resource("/corrections")
                     .route(get().to(controllers::corrections::list))
-                    .wrap(auth.clone()),
+                    .wrap(auth.clone())
+                    .app_data(settings.clone())
             )
             .service(
                 resource("/corrections/{correction_batch_id}")
                     .route(get().to(controllers::corrections::detail))
-                    .wrap(auth),
+                    .wrap(auth)
+                    .app_data(settings.clone())
             )
             .app_data(db_pool.clone())
     })
