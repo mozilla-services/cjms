@@ -7,3 +7,4 @@ gcp_project: proj
 cj_cid: cj_cid
 cj_type: cj_type
 cj_signature: cj_signature
+sentry_dsn: somevalue

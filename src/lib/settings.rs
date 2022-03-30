@@ -14,6 +14,7 @@ pub struct Settings {
     pub cj_cid: String,
     pub cj_type: String,
     pub cj_signature: String,
+    pub sentry_dsn: String,
 }
 
 impl Settings {
@@ -78,6 +79,7 @@ pub mod test_settings {
         writeln!(file, "cj_cid: cid").unwrap();
         writeln!(file, "cj_type: type").unwrap();
         writeln!(file, "cj_signature: signature").unwrap();
+        writeln!(file, "sentry_dsn: somevalue").unwrap();
         let path = file.into_temp_path();
         let path_str = format!("{}", path.display());
         let mut mock = MockHasFile::new();
@@ -132,6 +134,7 @@ pub mod test_settings {
         env::set_var("CJ_CID", "test cj cid");
         env::set_var("CJ_TYPE", "test cj type");
         env::set_var("CJ_SIGNATURE", "test cj signature");
+        env::set_var("SENTRY_DSN", "somevalue");
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const(String::new());
         let actual = _get_settings(mock);
@@ -145,6 +148,7 @@ pub mod test_settings {
             cj_cid: "test cj cid".to_string(),
             cj_type: "test cj type".to_string(),
             cj_signature: "test cj signature".to_string(),
+            sentry_dsn: "somevalue".to_string(),
         };
         assert_eq!(expected, actual);
         env::remove_var("HOST");
@@ -155,6 +159,7 @@ pub mod test_settings {
         env::remove_var("CJ_CID");
         env::remove_var("CJ_TYPE");
         env::remove_var("CJ_SIGNATURE");
+        env::remove_var("SENTRY_DSN");
     }
 
     #[test]
@@ -170,6 +175,7 @@ pub mod test_settings {
             cj_cid: "cid".to_string(),
             cj_type: "type".to_string(),
             cj_signature: "signature".to_string(),
+            sentry_dsn: "somevalue".to_string(),
         };
         assert_eq!(expected, settings);
         assert_eq!("127.1.2.3:2222", settings.server_address());

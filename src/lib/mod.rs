@@ -30,6 +30,7 @@ pub mod test_utils {
             cj_cid: "_".to_string(),
             cj_type: "_".to_string(),
             cj_signature: "_".to_string(),
+            sentry_dsn: "_".to_string(),
         }
     }
 }
