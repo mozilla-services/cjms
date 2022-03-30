@@ -20,14 +20,14 @@ pub mod test_utils {
 
     pub fn empty_settings() -> Settings {
         Settings {
-            host: "_".to_string(),
-            port: "_".to_string(),
+            cj_cid: "_".to_string(),
+            cj_signature: "_".to_string(),
+            cj_type: "_".to_string(),
             database_url: "_".to_string(),
             environment: "_".to_string(),
             gcp_project: "_".to_string(),
-            cj_cid: "_".to_string(),
-            cj_type: "_".to_string(),
-            cj_signature: "_".to_string(),
+            host: "_".to_string(),
+            port: "_".to_string(),
         }
     }
 }
