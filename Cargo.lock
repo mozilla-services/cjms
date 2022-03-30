@@ -427,7 +427,6 @@ dependencies = [
  "config",
  "fake",
  "mockall",
- "once_cell",
  "pretty_assertions",
  "reqwest",
  "serde",

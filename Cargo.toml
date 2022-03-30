@@ -55,7 +55,6 @@ uuid = { version = "0.8", features = ["v4", "serde"] }
 [dev-dependencies]
 fake = "2.4.3"
 mockall = "0.11.0"
-once_cell = "1"
 pretty_assertions = "1.2.0"
 serial_test = "0.6.0"
 tempfile = "3.3.0"
