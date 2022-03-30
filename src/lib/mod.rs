@@ -20,6 +20,7 @@ pub mod test_utils {
 
     pub fn empty_settings() -> Settings {
         Settings {
+            authentication: "_".to_string(),
             cj_cid: "_".to_string(),
             cj_signature: "_".to_string(),
             cj_type: "_".to_string(),

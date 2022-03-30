@@ -16,7 +16,7 @@ async fn test_corrections_get_requires_basic_auth() {
         let client = reqwest::Client::new();
         let r = client
             .get(&path)
-            .basic_auth("corrections", app.settings.cj_auth)
+            .basic_auth("corrections", Some(&app.settings.authentication))
             .send()
             .await
             .expect("Failed to GET");

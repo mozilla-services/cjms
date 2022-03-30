@@ -35,6 +35,10 @@ The required settings are listed in `settings.yaml.example`. There may be other 
 * database_url: the database url for connecting to postgres database
 * environment: the environment (see "Auto-magic behavior based on envrionment" below)
 * gcp_project: the gcp project where the big query data lives that the check_subscriptions binary pulls from
+* cj_cid: For CJ S2S configuration
+* cj_type: For CJ S2S configuration
+* cj_signature: For CJ S2S configuration
+* authentication: Password for Basic Auth for the corrections pages
 
 # Development pre-requisites
 #### Rust
