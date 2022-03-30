@@ -3,17 +3,15 @@ use std::fs;
 
 #[derive(serde::Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct Settings {
-    // Server host and port to run on
-    pub host: String,
-    pub port: String,
+    pub cj_cid: String,
+    pub cj_signature: String,
+    pub cj_type: String,
     pub database_url: String,
-    // What environment - dev, stage, prod
     pub environment: String,
     pub log_level: String,
     pub gcp_project: String,
-    pub cj_cid: String,
-    pub cj_type: String,
-    pub cj_signature: String,
+    pub host: String, // server host to run on
+    pub port: String, // server port to run on
 }
 
 impl Settings {
@@ -69,15 +67,15 @@ pub mod test_settings {
 
     pub fn get_test_settings(gcp_project: &str) -> Settings {
         let mut file = NamedTempFile::new().unwrap();
-        writeln!(file, "host: 127.1.2.3").unwrap();
-        writeln!(file, "port: 2222").unwrap();
+        writeln!(file, "cj_cid: cid").unwrap();
+        writeln!(file, "cj_signature: signature").unwrap();
+        writeln!(file, "cj_type: type").unwrap();
         writeln!(file, "database_url: postgres....").unwrap();
         writeln!(file, "environment: prod").unwrap();
         writeln!(file, "log_level: info").unwrap();
         writeln!(file, "gcp_project: {}", gcp_project).unwrap();
-        writeln!(file, "cj_cid: cid").unwrap();
-        writeln!(file, "cj_type: type").unwrap();
-        writeln!(file, "cj_signature: signature").unwrap();
+        writeln!(file, "host: 127.1.2.3").unwrap();
+        writeln!(file, "port: 2222").unwrap();
         let path = file.into_temp_path();
         let path_str = format!("{}", path.display());
         let mut mock = MockHasFile::new();
@@ -120,8 +118,9 @@ pub mod test_settings {
     #[test]
     #[serial]
     fn get_settings_with_envvars() {
-        env::set_var("HOST", "111.2.3.6");
-        env::set_var("PORT", "2222");
+        env::set_var("CJ_CID", "test cj cid");
+        env::set_var("CJ_SIGNATURE", "test cj signature");
+        env::set_var("CJ_TYPE", "test cj type");
         env::set_var(
             "DATABASE_URL",
             "postgres://user:password@127.0.0.1:5432/test",
@@ -129,9 +128,8 @@ pub mod test_settings {
         env::set_var("ENVIRONMENT", "test");
         env::set_var("LOG_LEVEL", "info");
         env::set_var("GCP_PROJECT", "a--te-st-pr0j");
-        env::set_var("CJ_CID", "test cj cid");
-        env::set_var("CJ_TYPE", "test cj type");
-        env::set_var("CJ_SIGNATURE", "test cj signature");
+        env::set_var("HOST", "111.2.3.6");
+        env::set_var("PORT", "2222");
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const(String::new());
         let actual = _get_settings(mock);
@@ -147,29 +145,29 @@ pub mod test_settings {
             cj_signature: "test cj signature".to_string(),
         };
         assert_eq!(expected, actual);
-        env::remove_var("HOST");
-        env::remove_var("PORT");
+        env::remove_var("CJ_CID");
+        env::remove_var("CJ_SIGNATURE");
+        env::remove_var("CJ_TYPE");
         env::remove_var("DATABASE_URL");
         env::remove_var("ENVIRONMENT");
         env::remove_var("GCP_PROJECT");
-        env::remove_var("CJ_CID");
-        env::remove_var("CJ_TYPE");
-        env::remove_var("CJ_SIGNATURE");
+        env::remove_var("HOST");
+        env::remove_var("PORT");
     }
 
     #[test]
     fn passing_a_file_and_server_address() {
         let settings = get_test_settings("a-gcp-Pr0j3ct");
         let expected = Settings {
-            host: "127.1.2.3".to_string(),
-            port: "2222".to_string(),
+            cj_cid: "cid".to_string(),
+            cj_signature: "signature".to_string(),
+            cj_type: "type".to_string(),
             database_url: "postgres....".to_string(),
             environment: "prod".to_string(),
             log_level: "info".to_string(),
             gcp_project: "a-gcp-Pr0j3ct".to_string(),
-            cj_cid: "cid".to_string(),
-            cj_type: "type".to_string(),
-            cj_signature: "signature".to_string(),
+            host: "127.1.2.3".to_string(),
+            port: "2222".to_string(),
         };
         assert_eq!(expected, settings);
         assert_eq!("127.1.2.3:2222", settings.server_address());
