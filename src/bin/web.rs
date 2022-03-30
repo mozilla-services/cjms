@@ -12,7 +12,7 @@ async fn main() -> std::io::Result<()> {
     init_tracing("cjms-web", &settings.log_level, std::io::stdout);
 
     let _guard = sentry::init((
-        &settings.sentry_dsn,
+        settings.sentry_dsn.clone(),
         sentry::ClientOptions {
             release: sentry::release_name!(),
             ..Default::default()
