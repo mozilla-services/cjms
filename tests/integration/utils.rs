@@ -57,9 +57,7 @@ pub async fn spawn_app() -> TestApp {
     let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
     let server = run_server(settings.clone(), listener, db_pool).expect("Failed to start server");
     let _ = tokio::spawn(server);
-    TestApp {
-        settings: settings,
-    }
+    TestApp { settings }
 }
 
 pub fn random_ascii_string() -> String {

@@ -56,13 +56,13 @@ pub fn run_server(
                 resource("/corrections")
                     .route(get().to(controllers::corrections::list))
                     .wrap(auth.clone())
-                    .app_data(settings.clone())
+                    .app_data(settings.clone()),
             )
             .service(
                 resource("/corrections/{correction_batch_id}")
                     .route(get().to(controllers::corrections::detail))
                     .wrap(auth)
-                    .app_data(settings.clone())
+                    .app_data(settings.clone()),
             )
             .app_data(db_pool.clone())
     })
