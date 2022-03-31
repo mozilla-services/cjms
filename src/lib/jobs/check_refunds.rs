@@ -18,6 +18,7 @@ fn make_refund_from_bq_row(rs: &ResultSet) -> Result<Refund, BQError> {
         refund_amount: rs.require_i32_by_name("amount")?,
         refund_status: rs.get_string_by_name("status")?,
         refund_reason: rs.get_string_by_name("reason")?,
+        correction_file_date: None,
     });
     Ok(refund)
 }

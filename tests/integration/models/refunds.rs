@@ -16,6 +16,7 @@ pub fn make_fake_refund() -> Refund {
         refund_amount: random_price(),
         refund_status: Some(random_simple_ascii_string()),
         refund_reason: Some(random_simple_ascii_string()),
+        correction_file_date: None,
     })
 }
 

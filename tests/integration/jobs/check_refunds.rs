@@ -130,7 +130,8 @@ async fn check_refunds() {
                 .assume_utc(),
             refund_amount: 5988,
             refund_status: Some("pending".to_string()),
-            refund_reason: Some("requested_by_customer".to_string())
+            refund_reason: Some("requested_by_customer".to_string()),
+            correction_file_date: None,
         })
     );
     assert_eq!(
@@ -144,7 +145,8 @@ async fn check_refunds() {
                 .assume_utc(),
             refund_amount: 5988,
             refund_status: Some("failed".to_string()),
-            refund_reason: Some("fraudulent".to_string())
+            refund_reason: Some("fraudulent".to_string()),
+            correction_file_date: None,
         })
     );
     assert_eq!(
@@ -159,6 +161,7 @@ async fn check_refunds() {
             refund_amount: 5988,
             refund_status: None,
             refund_reason: None,
+            correction_file_date: None,
         })
     );
 
