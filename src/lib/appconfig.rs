@@ -1,34 +1,14 @@
 use actix_cors::Cors;
 use actix_web::{
-    dev::{Server, ServiceRequest},
-    error::ErrorUnauthorized,
+    dev::Server,
     http,
     web::{get, post, put, resource, Data},
-    App, Error, HttpServer,
+    App, HttpServer,
 };
-use actix_web_httpauth::extractors::basic::BasicAuth;
-use actix_web_httpauth::middleware::HttpAuthentication;
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
 
 use crate::{controllers, settings::Settings};
-
-async fn basic_auth_middleware(
-    req: ServiceRequest,
-    credentials: BasicAuth,
-) -> Result<ServiceRequest, Error> {
-    // Intentional expect. Can't go on without them.
-    let settings = req.app_data::<Settings>().expect("Missing settings");
-    let password = match credentials.password() {
-        Some(password) => password,
-        None => return Err(ErrorUnauthorized("Password missing.")),
-    };
-    if password.eq(&settings.authentication) {
-        Ok(req)
-    } else {
-        Err(ErrorUnauthorized("Incorrect password."))
-    }
-}
 
 pub fn run_server(
     settings: Settings,
@@ -38,7 +18,6 @@ pub fn run_server(
     let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
         let cors = get_cors(settings.clone());
-        let auth = HttpAuthentication::basic(basic_auth_middleware);
         App::new()
             .wrap(cors)
             // Custodial
@@ -53,17 +32,11 @@ pub fn run_server(
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
             // Corrections
             .service(
-                resource("/corrections")
-                    .route(get().to(controllers::corrections::list))
-                    .wrap(auth.clone())
-                    .app_data(settings.clone()),
-            )
-            .service(
-                resource("/corrections/{correction_batch_id}")
+                resource("/corrections/{id}/file.csv")
                     .route(get().to(controllers::corrections::detail))
-                    .wrap(auth)
-                    .app_data(settings.clone()),
+                    .app_data(Data::new(settings.clone())),
             )
+            // Make DB available to all routes
             .app_data(db_pool.clone())
     })
     .listen(listener)?

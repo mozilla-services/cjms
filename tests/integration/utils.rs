@@ -46,7 +46,7 @@ pub async fn get_test_db_pool() -> Pool<Postgres> {
 
 pub async fn spawn_app() -> TestApp {
     let mut settings = get_settings();
-    let test_auth_password = random_ascii_string();
+    let test_auth_password = random_simple_ascii_string();
     let test_database_url = create_test_database(&settings.database_url).await;
     let listener =
         TcpListener::bind(format!("{}:0", settings.host)).expect("Failed to bind random port");
