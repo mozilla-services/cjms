@@ -30,15 +30,16 @@ Micro-service supporting VPN activities
 
 The required settings are listed in `settings.yaml.example`. There may be other local setting needs  (see "Auto-magic behavior based on environment" below).
 
-* host: the host the web service runs on
-* port: the port the web service runs on
+* authentication: Used for basic_auth on the the corrections detail page
+* cj_cid: For CJ S2S configuration
+* cj_signature: For CJ S2S configuration
+* cj_subid: For CJ corrections
+* cj_type: For CJ S2S configuration
 * database_url: the database url for connecting to postgres database
 * environment: the environment (see "Auto-magic behavior based on envrionment" below)
 * gcp_project: the gcp project where the big query data lives that the check_subscriptions binary pulls from
-* cj_cid: For CJ S2S configuration
-* cj_type: For CJ S2S configuration
-* cj_signature: For CJ S2S configuration
-* authentication: Used for basic_auth on the the corrections detail page
+* host: the host the web service runs on
+* port: the port the web service runs on
 
 # Development pre-requisites
 #### Rust

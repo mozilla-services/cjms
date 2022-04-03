@@ -6,6 +6,7 @@ pub struct Settings {
     pub authentication: String,
     pub cj_cid: String,
     pub cj_signature: String,
+    pub cj_subid: String,
     pub cj_type: String,
     pub database_url: String,
     pub environment: String,
@@ -70,6 +71,7 @@ pub mod test_settings {
         writeln!(file, "authentication: auth a pass").unwrap();
         writeln!(file, "cj_cid: cid").unwrap();
         writeln!(file, "cj_signature: signature").unwrap();
+        writeln!(file, "cj_subid: subid").unwrap();
         writeln!(file, "cj_type: type").unwrap();
         writeln!(file, "database_url: postgres....").unwrap();
         writeln!(file, "environment: prod").unwrap();
@@ -121,6 +123,7 @@ pub mod test_settings {
         env::set_var("AUTHENTICATION", "auth pass");
         env::set_var("CJ_CID", "test cj cid");
         env::set_var("CJ_SIGNATURE", "test cj signature");
+        env::set_var("CJ_SUBID", "test cj subid");
         env::set_var("CJ_TYPE", "test cj type");
         env::set_var(
             "DATABASE_URL",
@@ -138,6 +141,7 @@ pub mod test_settings {
             cj_cid: "test cj cid".to_string(),
             cj_type: "test cj type".to_string(),
             cj_signature: "test cj signature".to_string(),
+            cj_subid: "test cj subid".to_string(),
             database_url: "postgres://user:password@127.0.0.1:5432/test".to_string(),
             environment: "test".to_string(),
             gcp_project: "a--te-st-pr0j".to_string(),
@@ -148,6 +152,7 @@ pub mod test_settings {
         env::remove_var("AUTHENTICATION");
         env::remove_var("CJ_CID");
         env::remove_var("CJ_SIGNATURE");
+        env::remove_var("CJ_SUBID");
         env::remove_var("CJ_TYPE");
         env::remove_var("DATABASE_URL");
         env::remove_var("ENVIRONMENT");
@@ -163,6 +168,7 @@ pub mod test_settings {
             authentication: "auth a pass".to_string(),
             cj_cid: "cid".to_string(),
             cj_signature: "signature".to_string(),
+            cj_subid: "subid".to_string(),
             cj_type: "type".to_string(),
             database_url: "postgres....".to_string(),
             environment: "prod".to_string(),
