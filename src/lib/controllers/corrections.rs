@@ -3,7 +3,7 @@ use sqlx::PgPool;
 
 use crate::settings::Settings;
 
-pub async fn detail(
+pub async fn today(
     path: web::Path<String>,
     settings: web::Data<Settings>,
     _pool: web::Data<PgPool>,

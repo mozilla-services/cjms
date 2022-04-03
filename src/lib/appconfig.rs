@@ -32,8 +32,8 @@ pub fn run_server(
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
             // Corrections
             .service(
-                resource("/corrections/{id}/file.csv")
-                    .route(get().to(controllers::corrections::detail))
+                resource("/corrections/{id}/today.csv")
+                    .route(get().to(controllers::corrections::today))
                     .app_data(Data::new(settings.clone())),
             )
             // Make DB available to all routes
