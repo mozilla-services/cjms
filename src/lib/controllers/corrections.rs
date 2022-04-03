@@ -4,22 +4,50 @@ use sqlx::PgPool;
 use time::{Date, OffsetDateTime};
 
 use crate::{
-    models::refunds::{Refund, RefundModel},
+    models::{
+        refunds::{Refund, RefundModel},
+        subscriptions::SubscriptionModel,
+    },
     settings::Settings,
 };
 
-fn build_body_from_results(settings: &Settings, results: Vec<Refund>) -> String {
+async fn build_body_from_results(
+    settings: &Settings,
+    results: Vec<Refund>,
+    db_pool: &PgPool,
+) -> String {
     let mut body = format!(
         r#"
 &CID={}
 &SUBID={}"#,
         settings.cj_cid, settings.cj_subid
     );
+    let subscriptions = SubscriptionModel { db_pool };
     for refund in results {
+        let sub = match subscriptions
+            .fetch_one_by_subscription_id(&refund.subscription_id)
+            .await
+        {
+            Ok(sub) => {
+                // TODO - LOGGING
+                println!(
+                    "Success fetching sub {} for refund {}",
+                    refund.subscription_id, refund.refund_id
+                );
+                sub
+            }
+            Err(_) => {
+                println!(
+                    "Failed to fetch sub {} for refund {}. Continuing....",
+                    refund.subscription_id, refund.refund_id
+                );
+                continue;
+            }
+        };
         body.push_str(&format!(
             r#"
 RETRN,,{}"#,
-            refund.subscription_id
+            sub.id
         ));
     }
     body
@@ -59,7 +87,7 @@ pub async fn by_day(
     settings: web::Data<Settings>,
 ) -> HttpResponse {
     let results = get_results_for_day(pool.as_ref(), path.day).await;
-    let body = build_body_from_results(settings.as_ref(), results);
+    let body = build_body_from_results(settings.as_ref(), results, pool.as_ref()).await;
     HttpResponse::Ok().body(body)
 }
 
@@ -67,6 +95,6 @@ pub async fn today(pool: web::Data<PgPool>, settings: web::Data<Settings>) -> Ht
     // TODO - LOGGING - Add statsd metrics to see how often this is running
     let today = OffsetDateTime::now_utc().date();
     let results = get_results_for_day(pool.as_ref(), today).await;
-    let body = build_body_from_results(settings.as_ref(), results);
+    let body = build_body_from_results(settings.as_ref(), results, pool.as_ref()).await;
     HttpResponse::Ok().body(body)
 }
