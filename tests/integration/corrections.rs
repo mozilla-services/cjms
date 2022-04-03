@@ -28,18 +28,9 @@ async fn make_test_refunds(model: &RefundModel<'_>) {
 }
 
 #[tokio::test]
-async fn test_corrections_today_path() {
-    let app = spawn_app().await;
-    let path = app.build_url("/corrections/today.csv");
-    let client = reqwest::Client::new();
-    let r = client.get(&path).send().await.expect("Failed to GET");
-    assert_eq!(r.status(), 200);
-}
-
-#[tokio::test]
 async fn test_corrections_by_day_auth() {
     let app = spawn_app().await;
-    let path = app.build_url("/corrections/20220328.csv");
+    let path = app.build_url("/corrections/2022-03-28.csv");
     let client = reqwest::Client::new();
     // Bad auth - no auth
     let r = client.get(&path).send().await.expect("Failed to GET");
@@ -121,6 +112,32 @@ async fn test_corrections_by_day_result() {
 &SUBID=123
 RETRN,,{}"#,
         app.settings.cj_cid, expected_refund.subscription_id
+    );
+    assert_eq!(actual_body.trim(), expected_body.trim());
+}
+
+#[tokio::test]
+async fn test_corrections_today() {
+    let app = spawn_app().await;
+    let refunds = RefundModel {
+        db_pool: &app.db_connection(),
+    };
+    make_test_refunds(&refunds).await;
+    let expected_refund_1 = refunds.fetch_one_by_refund_id("refund_1").await.unwrap();
+    let expected_refund_2 = refunds.fetch_one_by_refund_id("refund_3").await.unwrap();
+
+    let path = app.build_url("/corrections/today.csv");
+    let r = get_authed_path(&path, &app.settings.authentication).await;
+    assert_eq!(r.status(), 200);
+    let actual_body = r.text().await.unwrap();
+    // TODO - This is wrong it should be OID which is refund.subscription.id
+    let expected_body = format!(
+        r#"
+&CID={}
+&SUBID=123
+RETRN,,{}
+RETRN,,{}"#,
+        app.settings.cj_cid, expected_refund_1.subscription_id, expected_refund_2.subscription_id
     );
     assert_eq!(actual_body.trim(), expected_body.trim());
 }

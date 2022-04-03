@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
 use sqlx::PgPool;
-use time::Date;
+use time::{Date, OffsetDateTime};
 
 use crate::{
     models::refunds::{Refund, RefundModel},
@@ -34,10 +34,6 @@ async fn get_results_for_day(db_pool: &PgPool, day: Date) -> Vec<Refund> {
         .unwrap_or_else(|_| panic!("Could not fetch refunds for date: {}", day))
 }
 
-pub async fn today(_pool: web::Data<PgPool>) -> HttpResponse {
-    HttpResponse::Ok().finish()
-}
-
 #[derive(Deserialize)]
 pub struct CorrectionsByDayPath {
     #[serde(with = "date_parser")]
@@ -63,6 +59,14 @@ pub async fn by_day(
     settings: web::Data<Settings>,
 ) -> HttpResponse {
     let results = get_results_for_day(pool.as_ref(), path.day).await;
+    let body = build_body_from_results(settings.as_ref(), results);
+    HttpResponse::Ok().body(body)
+}
+
+pub async fn today(pool: web::Data<PgPool>, settings: web::Data<Settings>) -> HttpResponse {
+    // TODO - LOGGING - Add statsd metrics to see how often this is running
+    let today = OffsetDateTime::now_utc().date();
+    let results = get_results_for_day(pool.as_ref(), today).await;
     let body = build_body_from_results(settings.as_ref(), results);
     HttpResponse::Ok().body(body)
 }
