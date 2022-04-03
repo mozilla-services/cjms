@@ -14,7 +14,7 @@ pub async fn detail(
     settings: web::Data<Settings>,
     _pool: web::Data<PgPool>,
 ) -> HttpResponse {
-    if !path.id.eq(&settings.authentication) {
+    if !path.id.eq(&settings.cj_signature) {
         return HttpResponse::NotFound().finish();
     }
     HttpResponse::Ok().finish()

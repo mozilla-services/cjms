@@ -46,13 +46,15 @@ pub async fn get_test_db_pool() -> Pool<Postgres> {
 
 pub async fn spawn_app() -> TestApp {
     let mut settings = get_settings();
-    let test_auth_password = random_simple_ascii_string();
+    let test_auth_password = random_ascii_string();
+    let test_cj_signature = random_simple_ascii_string();
     let test_database_url = create_test_database(&settings.database_url).await;
     let listener =
         TcpListener::bind(format!("{}:0", settings.host)).expect("Failed to bind random port");
     let port = listener.local_addr().unwrap().port();
     settings.port = format!("{}", port);
     settings.authentication = test_auth_password;
+    settings.cj_signature = test_cj_signature;
     settings.database_url = test_database_url;
     let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
     let server = run_server(settings.clone(), listener, db_pool).expect("Failed to start server");
