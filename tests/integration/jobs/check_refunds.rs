@@ -10,7 +10,7 @@ use lib::models::subscriptions::SubscriptionModel;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use serial_test::serial;
-use time::{date, time, OffsetDateTime};
+use time::{date, time, Duration, OffsetDateTime};
 use uuid::Version;
 use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
@@ -52,6 +52,9 @@ async fn check_refunds() {
     // Update from Reported to NotReported as amount changes
     let refund_6_refund_id = "re_test_changing_data";
     let refund_6_subscription_id = "sub_test_changing_data";
+    // Do not update if data hasn't changed
+    let refund_7_refund_id = "re_data_has_not_changed";
+    let refund_7_subscription_id = "sub_data_has_not_changed";
 
     let mut sub_1 = make_fake_sub();
     sub_1.subscription_id = refund_1_subscription_id.to_string();
@@ -63,7 +66,9 @@ async fn check_refunds() {
     sub_4.subscription_id = refund_5_subscription_id.to_string();
     let mut sub_5 = make_fake_sub();
     sub_5.subscription_id = refund_6_subscription_id.to_string();
-    for sub in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5] {
+    let mut sub_6 = make_fake_sub();
+    sub_6.subscription_id = refund_7_subscription_id.to_string();
+    for sub in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5, &sub_6] {
         sub_model
             .create_from_sub(sub)
             .await
@@ -74,14 +79,29 @@ async fn check_refunds() {
     refund_2.refund_id = refund_2_refund_id.to_string();
     refund_2.refund_status = Some("pending".to_string());
     refund_2.subscription_id = refund_2_subscription_id.to_string();
+    assert_eq!(refund_2.get_status_history().unwrap().entries.len(), 1);
     let mut refund_6 = make_fake_refund();
     refund_6.refund_id = refund_6_refund_id.to_string();
     refund_6.refund_amount = 5555;
     refund_6.update_status(Status::Reported);
     refund_6.correction_file_date = Some(OffsetDateTime::now_utc().date());
-    for refund in [&refund_2, &refund_6] {
+    let mut refund_7 = make_fake_refund();
+    refund_7.refund_id = refund_7_refund_id.to_string();
+    refund_7.subscription_id = refund_7_subscription_id.to_string();
+    refund_7.refund_amount = 5988;
+    refund_7.refund_created = date!(2022 - 03 - 21)
+        .with_time(time!(22:14:50))
+        .assume_utc();
+    refund_7.refund_status = Some("failed".to_string());
+    refund_7.refund_reason = Some("fraudulent".to_string());
+    refund_7.update_status(Status::Reported);
+    let refund_7_status_t = OffsetDateTime::now_utc() - Duration::seconds(14992);
+    refund_7.set_status_t(Some(refund_7_status_t));
+    refund_7.correction_file_date = Some(OffsetDateTime::now_utc().date());
+    assert_eq!(refund_7.get_status_history().unwrap().entries.len(), 2);
+    for refund in [&refund_2, &refund_6, &refund_7] {
         refund_model
-            .create_from_refund(&refund)
+            .create_from_refund(refund)
             .await
             .expect("Failed to create refund.");
     }
@@ -129,6 +149,10 @@ async fn check_refunds() {
         .fetch_one_by_refund_id(refund_6_refund_id)
         .await
         .expect("Failed to get refund 6");
+    let refund_7 = refund_model
+        .fetch_one_by_refund_id(refund_7_refund_id)
+        .await
+        .expect("Failed to get refund 7");
 
     for r in &[&refund_1, &refund_2] {
         // Test that subs have a uuid as "id" (this is used for oid for cj reporting)
@@ -167,6 +191,8 @@ async fn check_refunds() {
             correction_file_date: None,
         })
     );
+    assert_eq!(refund_2.get_status_history().unwrap().entries.len(), 2);
+
     assert_eq!(
         refund_4,
         Refund::new(PartialRefund {
@@ -197,6 +223,14 @@ async fn check_refunds() {
             refund_reason: None,
             correction_file_date: None,
         })
+    );
+
+    let refund_7_status_history = refund_7.get_status_history().unwrap();
+    assert_eq!(refund_7_status_history.entries.len(), 2);
+    assert_eq!(refund_7.get_status().unwrap(), Status::Reported);
+    assert_eq!(
+        refund_7.get_status_t().unwrap().unix_timestamp(),
+        refund_7_status_t.unix_timestamp()
     );
 
     // CLEAN UP

@@ -32,7 +32,7 @@ pub async fn fetch_and_process_refunds(bq: BQClient, db_pool: &Pool<Postgres>) {
     let mut rs = bq.get_bq_results(query).await;
     while rs.next_row() {
         // If can't deserialize e.g. required fields are not available log and move on.
-        let mut r = match make_refund_from_bq_row(&rs) {
+        let r = match make_refund_from_bq_row(&rs) {
             Ok(r) => {
                 // TODO - LOGGING
                 println!(
@@ -64,49 +64,85 @@ pub async fn fetch_and_process_refunds(bq: BQClient, db_pool: &Pool<Postgres>) {
             continue;
         }
         // Do we already have it in the refunds table
-        let in_db = refunds.fetch_one_by_refund_id(&r.refund_id).await.is_ok();
-        if in_db {
-            match refunds.update_refund(&mut r).await {
-                Ok(_) => {
-                    println!("Refund {} updated. Continuing...", r.refund_id);
-                }
-                Err(e) => {
-                    // TODO - LOGGING
+        match refunds.fetch_one_by_refund_id(&r.refund_id).await {
+            Ok(mut refund) => {
+                // Only update if data is different
+                if refund.subscription_id == r.subscription_id
+                    && refund.refund_created.unix_timestamp() == r.refund_created.unix_timestamp()
+                    && refund.refund_amount == r.refund_amount
+                    && refund.refund_status == r.refund_status
+                    && refund.refund_reason == r.refund_reason
+                {
                     println!(
-                        "Error updating refund: {}. {}. Continuing....",
-                        r.refund_id, e
+                        "Data for refund {} is unchanged. Continuing....",
+                        refund.refund_id
                     );
+                    continue;
                 }
-            };
-        } else {
-            match refunds.create_from_refund(&r).await {
-                Ok(r) => {
-                    // TODO - LOGGING
-                    println!("Successfully created refund: {}.", r.refund_id);
-                }
-                Err(e) => match e {
-                    sqlx::Error::Database(e) => {
-                        // 23505 is the code for unique constraints e.g. duplicate flow id issues
-                        if e.code() == Some(std::borrow::Cow::Borrowed("23505")) {
-                            // TODO - LOGGING - add some specific logging / metrics around duplicate key issues.
-                            // This could help us see that we have an ETL issue.
-                            println!("Duplicate Key Violation");
-                        }
+
+                println!(
+                    "Data for refund {} is changed. Updating....",
+                    refund.refund_id
+                );
+                refund.subscription_id = r.subscription_id;
+                refund.refund_created = r.refund_created;
+                refund.refund_amount = r.refund_amount;
+                refund.refund_status = r.refund_status;
+                refund.refund_reason = r.refund_reason;
+                match refunds.update_refund(&mut refund).await {
+                    Ok(_) => {
+                        println!("Refund {} updated. Continuing...", refund.refund_id);
+                    }
+                    Err(e) => {
+                        // TODO - LOGGING
                         println!(
-                            "DatabaseError error while creating refund {:?}. Continuing...",
-                            e
+                            "Error updating refund: {}. {}. Continuing....",
+                            r.refund_id, e
                         );
-                        continue;
+                    }
+                };
+            }
+            Err(e) => {
+                match e {
+                    sqlx::Error::RowNotFound => {
+                        match refunds.create_from_refund(&r).await {
+                            Ok(r) => {
+                                // TODO - LOGGING
+                                println!("Successfully created refund: {}.", r.refund_id);
+                            }
+                            Err(e) => match e {
+                                sqlx::Error::Database(e) => {
+                                    // 23505 is the code for unique constraints e.g. duplicate flow id issues
+                                    if e.code() == Some(std::borrow::Cow::Borrowed("23505")) {
+                                        // TODO - LOGGING - add some specific logging / metrics around duplicate key issues.
+                                        // This could help us see that we have an ETL issue.
+                                        println!("Duplicate Key Violation");
+                                    }
+                                    println!(
+                                "DatabaseError error while creating refund {:?}. Continuing...",
+                                e
+                            );
+                                    continue;
+                                }
+                                _ => {
+                                    println!(
+                                "Unexpected error while creating refund {:?}. Continuing...",
+                                e
+                            );
+                                    continue;
+                                }
+                            },
+                        };
                     }
                     _ => {
+                        // TODO - LOGGING
                         println!(
-                            "Unexpected error while creating refund {:?}. Continuing...",
-                            e
+                            "Error when trying to retrieve: {}. {}. Continuing....",
+                            r.refund_id, e
                         );
-                        continue;
                     }
-                },
-            };
-        }
+                }
+            }
+        };
     }
 }
