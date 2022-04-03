@@ -51,7 +51,7 @@ async fn test_refund_model_update_refund() {
     r_update.refund_id = refund_id.clone();
     r_update.id = r.id;
     model
-        .update_refund(&mut r_update)
+        .update_refund(&r_update)
         .await
         .expect("Failed to update refund.");
     let result = model
