@@ -1,15 +1,11 @@
 use actix_web::{web, HttpResponse};
 use sqlx::PgPool;
 
-use crate::settings::Settings;
-
-pub async fn today(
-    path: web::Path<String>,
-    settings: web::Data<Settings>,
-    _pool: web::Data<PgPool>,
-) -> HttpResponse {
-    if !path.into_inner().eq(&settings.cj_signature) {
-        return HttpResponse::NotFound().finish();
-    }
+pub async fn today(_pool: web::Data<PgPool>) -> HttpResponse {
     HttpResponse::Ok().finish()
+}
+
+pub async fn by_day(path: web::Path<String>, _pool: web::Data<PgPool>) -> HttpResponse {
+    let today = path.into_inner();
+    HttpResponse::Ok().body(today)
 }
