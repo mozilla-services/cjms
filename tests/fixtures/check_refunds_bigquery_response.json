@@ -39,7 +39,7 @@
         "jobId": "job_OTrudlt4Vv5DVOsXWiTsp7y_Snns",
         "location": "US"
     },
-    "totalRows": "3",
+    "totalRows": "6",
     "rows": [
         {
             "f": [
@@ -117,6 +117,28 @@
                 },
                 {
                     "v": "5988"
+                },
+                {
+                    "v": "1.64790089E9"
+                },
+                {
+                    "v": null
+                },
+                {
+                    "v": null
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "re_test_changing_data"
+                },
+                {
+                    "v": "sub_test_changing_data"
+                },
+                {
+                    "v": "1111"
                 },
                 {
                     "v": "1.64790089E9"

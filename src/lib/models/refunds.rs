@@ -142,6 +142,7 @@ impl RefundModel<'_> {
 
     pub async fn update_refund(&self, r: &mut Refund) -> Result<Refund, Error> {
         r.update_status(Status::NotReported);
+        r.correction_file_date = None;
         query_as!(
             Refund,
             "UPDATE refunds
