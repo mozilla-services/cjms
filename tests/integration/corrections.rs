@@ -91,12 +91,11 @@ async fn test_corrections_by_day_result() {
     let r = get_authed_path(&path, &app.settings.authentication).await;
     assert_eq!(r.status(), 200);
     let actual_body = r.text().await.unwrap();
-    // TODO - SUBID Needs to BE IN SETTINGS
     let expected_body = format!(
         r#"
 &CID={}
-&SUBID=123"#,
-        app.settings.cj_cid
+&SUBID={}"#,
+        app.settings.cj_cid, app.settings.cj_subid
     );
     assert_eq!(actual_body.trim(), expected_body.trim());
 
@@ -109,9 +108,9 @@ async fn test_corrections_by_day_result() {
     let expected_body = format!(
         r#"
 &CID={}
-&SUBID=123
+&SUBID={}
 RETRN,,{}"#,
-        app.settings.cj_cid, expected_refund.subscription_id
+        app.settings.cj_cid, app.settings.cj_subid, expected_refund.subscription_id
     );
     assert_eq!(actual_body.trim(), expected_body.trim());
 }
@@ -134,10 +133,13 @@ async fn test_corrections_today() {
     let expected_body = format!(
         r#"
 &CID={}
-&SUBID=123
+&SUBID={}
 RETRN,,{}
 RETRN,,{}"#,
-        app.settings.cj_cid, expected_refund_1.subscription_id, expected_refund_2.subscription_id
+        app.settings.cj_cid,
+        app.settings.cj_subid,
+        expected_refund_1.subscription_id,
+        expected_refund_2.subscription_id
     );
     assert_eq!(actual_body.trim(), expected_body.trim());
 }
