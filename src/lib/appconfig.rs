@@ -53,7 +53,9 @@ pub fn run_server(
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
             // Corrections
             .service(
-                resource("/corrections/today.csv").route(get().to(controllers::corrections::today)),
+                resource("/corrections/today.csv")
+                    .route(get().to(controllers::corrections::today))
+                    .app_data(Data::new(settings.clone())),
             )
             .service(
                 resource("/corrections/{day}.csv")
