@@ -12,8 +12,8 @@ fn build_body_from_results(settings: &Settings, results: Vec<Refund>) -> String 
     let mut body = format!(
         r#"
 &CID={}
-&SUBID=123"#,
-        settings.cj_cid
+&SUBID={}"#,
+        settings.cj_cid, settings.cj_subid
     );
     for refund in results {
         body.push_str(&format!(
