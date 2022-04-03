@@ -15,8 +15,20 @@ pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>) {
         .expect("Could not retrieve refunds from DB.");
     println!("Found {} refunds to report.", not_reported_refunds.len());
     for mut refund in not_reported_refunds {
-        refund.correction_file_date = Some(OffsetDateTime::now_utc().date());
-        refund.update_status(Status::Reported);
+        let next_state = match &refund.refund_status {
+            Some(refund_status) => {
+                if refund_status == "succeeded" {
+                    Status::Reported
+                } else {
+                    Status::WillNotReport
+                }
+            }
+            None => Status::Reported,
+        };
+        if next_state == Status::Reported {
+            refund.correction_file_date = Some(OffsetDateTime::now_utc().date());
+        }
+        refund.update_status(next_state);
         match refunds.update_refund(&refund).await {
             Ok(r) => {
                 println!("Success updating refund: {}", &r.refund_id);
