@@ -23,6 +23,7 @@ pub mod test_utils {
             authentication: "_".to_string(),
             cj_cid: "_".to_string(),
             cj_signature: "_".to_string(),
+            cj_subid: "_".to_string(),
             cj_type: "_".to_string(),
             database_url: "_".to_string(),
             environment: "_".to_string(),
