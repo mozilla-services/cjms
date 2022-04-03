@@ -5,7 +5,7 @@ use crate::{
     bigquery::client::{BQClient, BQError, ResultSet},
     models::{
         refunds::{PartialRefund, Refund, RefundModel},
-        subscriptions::SubscriptionModel,
+        subscriptions::SubscriptionModel, status_history::{UpdateStatus, Status},
     },
 };
 
@@ -89,6 +89,8 @@ pub async fn fetch_and_process_refunds(bq: BQClient, db_pool: &Pool<Postgres>) {
                 refund.refund_amount = r.refund_amount;
                 refund.refund_status = r.refund_status;
                 refund.refund_reason = r.refund_reason;
+                refund.update_status(Status::NotReported);
+                refund.correction_file_date = None;
                 match refunds.update_refund(&mut refund).await {
                     Ok(_) => {
                         println!("Refund {} updated. Continuing...", refund.refund_id);
