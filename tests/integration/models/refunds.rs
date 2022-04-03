@@ -96,3 +96,28 @@ async fn test_refund_model_update_refund_updates_the_status_to_not_reported() {
         now.unix_timestamp()
     );
 }
+
+#[tokio::test]
+async fn test_refund_model_get_all_not_reported() {
+    let db_pool = get_test_db_pool().await;
+    let model = RefundModel { db_pool: &db_pool };
+    let refund_1 = make_fake_refund();
+    save_refund(&model, &refund_1).await;
+
+    let mut refund_2 = make_fake_refund();
+    refund_2.update_status(Status::Reported);
+    save_refund(&model, &refund_2).await;
+
+    let refund_3 = make_fake_refund();
+    save_refund(&model, &refund_3).await;
+
+    let all = model.fetch_all().await.unwrap();
+    assert_eq!(all.len(), 3);
+    let result = model
+        .fetch_all_not_reported()
+        .await
+        .expect("Could not fetch from DB.");
+    assert_eq!(result.len(), 2);
+    assert!(result.contains(&refund_1));
+    assert!(result.contains(&refund_3));
+}

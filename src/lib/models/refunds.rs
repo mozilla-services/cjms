@@ -171,6 +171,18 @@ impl RefundModel<'_> {
         .fetch_one(self.db_pool)
         .await
     }
+
+    pub async fn fetch_all(&self) -> Result<Vec<Refund>, Error> {
+        query_as!(Refund, "SELECT * FROM refunds")
+            .fetch_all(self.db_pool)
+            .await
+    }
+
+    pub async fn fetch_all_not_reported(&self) -> Result<Vec<Refund>, Error> {
+        query_as!(Refund, "SELECT * FROM refunds WHERE status = 'NotReported'")
+            .fetch_all(self.db_pool)
+            .await
+    }
 }
 
 #[cfg(test)]
