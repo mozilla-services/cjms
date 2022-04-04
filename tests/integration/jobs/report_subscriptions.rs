@@ -36,6 +36,7 @@ async fn report_subscriptions() {
     // Sub 1 - should be reported
     let mut sub_1 = make_fake_sub();
     sub_1.flow_id = "1".to_string();
+    sub_1.plan_amount = 5988;
     sub_1.subscription_created =
         OffsetDateTime::parse("2021-12-25 14:22:33 +0000", "%F %T %z").unwrap();
     sub_1.aic_expires = Some(OffsetDateTime::now_utc() + Duration::days(10));
@@ -75,11 +76,11 @@ async fn report_subscriptions() {
         .and(query_param("OID", sub_1.id.to_string()))
         .and(query_param("CURRENCY", sub_1.plan_currency))
         .and(query_param("ITEM1", sub_1.plan_id))
-        .and(query_param("AMT1", sub_1.plan_amount.to_string()))
+        .and(query_param("AMT1", "59.88"))
         .and(query_param("QTY1", sub_1.quantity.to_string()))
         .and(query_param(
             "CUST_COUNTRY",
-            get_iso_code_3_from_iso_code_2(sub_3.country.as_ref().unwrap()),
+            get_iso_code_3_from_iso_code_2(sub_1.country.as_ref().unwrap()),
         ))
         .respond_with(ResponseTemplate::new(200))
         .up_to_n_times(1)
@@ -95,7 +96,10 @@ async fn report_subscriptions() {
         .and(query_param("OID", sub_3.id.to_string()))
         .and(query_param("CURRENCY", sub_3.plan_currency))
         .and(query_param("ITEM1", sub_3.plan_id))
-        .and(query_param("AMT1", format!("{}", sub_3.plan_amount)))
+        .and(query_param(
+            "AMT1",
+            format!("{}", sub_3.plan_amount as f32 / 100.0),
+        ))
         .and(query_param("QTY1", format!("{}", sub_3.quantity)))
         .and(query_param(
             "CUST_COUNTRY",
@@ -115,7 +119,10 @@ async fn report_subscriptions() {
         .and(query_param("OID", sub_4.id.to_string()))
         .and(query_param("CURRENCY", sub_4.plan_currency))
         .and(query_param("ITEM1", sub_4.plan_id))
-        .and(query_param("AMT1", format!("{}", sub_4.plan_amount)))
+        .and(query_param(
+            "AMT1",
+            format!("{}", sub_4.plan_amount as f32 / 100.0),
+        ))
         .and(query_param("QTY1", format!("{}", sub_4.quantity)))
         .and(query_param("CUST_COUNTRY", "N/A"))
         .respond_with(ResponseTemplate::new(200))

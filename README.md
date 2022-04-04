@@ -30,12 +30,17 @@ Micro-service supporting VPN activities
 
 The required settings are listed in `settings.yaml.example`. There may be other local setting needs  (see "Auto-magic behavior based on environment" below).
 
-* host: the host the web service runs on
-* port: the port the web service runs on
+* authentication: Used for basic_auth on the the corrections detail page
+* cj_cid: For CJ S2S configuration
+* cj_signature: For CJ S2S configuration
+* cj_subid: For CJ corrections
+* cj_type: For CJ S2S configuration
 * database_url: the database url for connecting to postgres database
 * environment: the environment (see "Auto-magic behavior based on envrionment" below)
 * gcp_project: the gcp project where the big query data lives that the check_subscriptions binary pulls from
+* host: the host the web service runs on
 * log_level: The lowest priority log level that is logged to the output sink. Value can be one of `error`, `warn`, `info`, `debug`, or `trace`.
+* port: the port the web service runs on
 
 ## Development pre-requisites
 
@@ -100,10 +105,6 @@ for db in `psql -U cjms -c '\l' | grep cjms_test_ | cut -d '|' -f 1`; do psql -U
 ```
 
 In this case my db_name is `cjms` and my user is `cjms` and my password is in the environment variables `export PGPASSWORD=<>`.
-
-### Logging under test
-
-It can sometimes be useful to observe the logs as tests run. By default the logs are suppressed, but you can set the `TEST_LOG` environment variable to a non-empty value before running, which will send log values to stdout. The level of logs that are written will correspong to the `log_level` config value.
 
 ## Tips
 

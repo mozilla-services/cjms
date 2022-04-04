@@ -1,8 +1,6 @@
 use fake::{Fake, StringFaker};
 use lib::appconfig::{connect_to_database_and_migrate, run_server};
 use lib::settings::{get_settings, Settings};
-use lib::telemetry::init_tracing;
-use once_cell::sync::Lazy;
 
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Connection, Executor, PgConnection, PgPool, Pool, Postgres};
@@ -46,34 +44,24 @@ pub async fn get_test_db_pool() -> Pool<Postgres> {
     connect_to_database_and_migrate(&test_database_url).await
 }
 
-/// Enables log output on stdout if the TEST_LOG environment variable is set.
-/// Wrapped in an invocation of `Lazy` to ensure that tracing is only
-/// instantiated once, not on each test.
-static TRACING: Lazy<()> = Lazy::new(|| {
-    if std::env::var("TEST_LOG").is_ok() {
-        init_tracing("cjms", "info", std::io::stdout);
-    } else {
-        init_tracing("cjms", "info", std::io::sink);
-    };
-});
-
 pub async fn spawn_app() -> TestApp {
-    Lazy::force(&TRACING);
-
-    let settings = get_settings();
+    let mut settings = get_settings();
+    let test_subid = random_simple_ascii_string();
+    let test_auth_password = random_ascii_string();
+    let test_cj_signature = random_simple_ascii_string();
+    let test_database_url = create_test_database(&settings.database_url).await;
     let listener =
         TcpListener::bind(format!("{}:0", settings.host)).expect("Failed to bind random port");
     let port = listener.local_addr().unwrap().port();
-    let test_database_url = create_test_database(&settings.database_url).await;
-    let db_pool = connect_to_database_and_migrate(&test_database_url).await;
-    let mut test_app_settings = settings.clone();
-    let server = run_server(settings, listener, db_pool).expect("Failed to start server");
+    settings.port = format!("{}", port);
+    settings.authentication = test_auth_password;
+    settings.cj_signature = test_cj_signature;
+    settings.cj_subid = test_subid;
+    settings.database_url = test_database_url;
+    let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
+    let server = run_server(settings.clone(), listener, db_pool).expect("Failed to start server");
     let _ = tokio::spawn(server);
-    test_app_settings.database_url = test_database_url;
-    test_app_settings.port = format!("{}", port);
-    TestApp {
-        settings: test_app_settings,
-    }
+    TestApp { settings }
 }
 
 pub fn random_ascii_string() -> String {

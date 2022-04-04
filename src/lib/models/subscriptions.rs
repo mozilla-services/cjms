@@ -73,7 +73,14 @@ impl PartialEq for Subscription {
             },
             None => other.aic_expires.is_none(),
         };
-        aic_expires_match && simple_match
+        let status_t_match = match self.status_t {
+            Some(self_v) => match other.status_t {
+                Some(other_v) => self_v.unix_timestamp() == other_v.unix_timestamp(),
+                None => false,
+            },
+            None => other.status_t.is_none(),
+        };
+        status_t_match && aic_expires_match && simple_match
     }
 }
 impl Eq for Subscription {}
@@ -154,9 +161,10 @@ impl SubscriptionModel<'_> {
                 aic_expires,
                 cj_event_value,
                 status,
+                status_t,
                 status_history
              )
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 			RETURNING *",
             sub.id,
             sub.flow_id,
@@ -173,6 +181,7 @@ impl SubscriptionModel<'_> {
             sub.aic_expires,
             sub.cj_event_value,
             sub.status,
+            sub.status_t,
             sub.status_history,
         )
         .fetch_one(self.db_pool)
@@ -239,10 +248,12 @@ impl SubscriptionModel<'_> {
             r#"UPDATE subscriptions
             SET
                 status = $1,
-                status_history = $2
-            WHERE id = $3
+                status_t = $2,
+                status_history = $3
+            WHERE id = $4
 			RETURNING *"#,
             sub.status,
+            sub.status_t,
             sub.status_history,
             id,
         )
