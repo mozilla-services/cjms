@@ -1,6 +1,6 @@
 use serde_json::Value as JsonValue;
 use sqlx::{query_as, Error, PgPool};
-use time::OffsetDateTime;
+use time::{Date, OffsetDateTime};
 use uuid::Uuid;
 
 use super::status_history::{Status, UpdateStatus};
@@ -13,6 +13,7 @@ pub struct PartialRefund {
     pub refund_amount: i32,
     pub refund_status: Option<String>,
     pub refund_reason: Option<String>,
+    pub correction_file_date: Option<Date>,
 }
 #[derive(Debug)]
 pub struct Refund {
@@ -23,6 +24,7 @@ pub struct Refund {
     pub refund_amount: i32,
     pub refund_status: Option<String>,
     pub refund_reason: Option<String>,
+    pub correction_file_date: Option<Date>,
     // Note we use string and json to save in database for simplicity
     status: Option<String>,
     status_t: Option<OffsetDateTime>,
@@ -38,6 +40,7 @@ impl PartialEq for Refund {
         self.refund_amount == other.refund_amount &&
         self.refund_status == other.refund_status &&
         self.refund_reason == other.refund_reason &&
+        self.correction_file_date == other.correction_file_date &&
         self.status == other.status
         // Compare manually if needed
         // self.status_history == other.status_history
@@ -90,6 +93,7 @@ impl Refund {
             refund_amount: partial.refund_amount,
             refund_status: partial.refund_status,
             refund_reason: partial.refund_reason,
+            correction_file_date: partial.correction_file_date,
             status: None,
             status_t: None,
             status_history: None,
@@ -107,8 +111,8 @@ impl RefundModel<'_> {
     pub async fn create_from_refund(&self, refund: &Refund) -> Result<Refund, Error> {
         query_as!(
             Refund,
-            "INSERT INTO refunds (id, refund_id, subscription_id, refund_created, refund_amount, refund_status, refund_reason, status, status_t, status_history)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            "INSERT INTO refunds (id, refund_id, subscription_id, refund_created, refund_amount, refund_status, refund_reason, correction_file_date, status, status_t, status_history)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 			RETURNING *",
             refund.id,
             refund.refund_id,
@@ -117,10 +121,10 @@ impl RefundModel<'_> {
             refund.refund_amount,
             refund.refund_status,
             refund.refund_reason,
+            refund.correction_file_date,
             refund.status,
             refund.status_t,
             refund.status_history,
-
         )
         .fetch_one(self.db_pool)
         .await
@@ -136,8 +140,7 @@ impl RefundModel<'_> {
         .await
     }
 
-    pub async fn update_refund(&self, r: &mut Refund) -> Result<Refund, Error> {
-        r.update_status(Status::NotReported);
+    pub async fn update_refund(&self, r: &Refund) -> Result<Refund, Error> {
         query_as!(
             Refund,
             "UPDATE refunds
@@ -147,22 +150,46 @@ impl RefundModel<'_> {
                 refund_amount = $3,
                 refund_status = $4,
                 refund_reason = $5,
-                status = $6,
-                status_t = $7,
-                status_history = $8
-            WHERE refund_id = $9
+                correction_file_date = $6,
+                status = $7,
+                status_t = $8,
+                status_history = $9
+            WHERE refund_id = $10
 			RETURNING *",
             r.subscription_id,
             r.refund_created,
             r.refund_amount,
             r.refund_status,
             r.refund_reason,
+            r.correction_file_date,
             r.status,
             r.status_t,
             r.status_history,
             r.refund_id
         )
         .fetch_one(self.db_pool)
+        .await
+    }
+
+    pub async fn fetch_all(&self) -> Result<Vec<Refund>, Error> {
+        query_as!(Refund, "SELECT * FROM refunds")
+            .fetch_all(self.db_pool)
+            .await
+    }
+
+    pub async fn fetch_not_reported(&self) -> Result<Vec<Refund>, Error> {
+        query_as!(Refund, "SELECT * FROM refunds WHERE status = 'NotReported'")
+            .fetch_all(self.db_pool)
+            .await
+    }
+
+    pub async fn fetch_by_correction_file_day(&self, day: &Date) -> Result<Vec<Refund>, Error> {
+        query_as!(
+            Refund,
+            "SELECT * FROM refunds WHERE correction_file_date = $1",
+            day
+        )
+        .fetch_all(self.db_pool)
         .await
     }
 }
@@ -182,6 +209,7 @@ mod test {
             refund_amount: 1,
             refund_status: None,
             refund_reason: None,
+            correction_file_date: None,
         });
         let now = OffsetDateTime::now_utc();
         assert_eq!(new.get_status().unwrap(), Status::NotReported);

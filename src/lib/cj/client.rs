@@ -40,7 +40,7 @@ impl CJS2SClient {
             .append_pair("OID", &sub.id.to_string())
             .append_pair("CURRENCY", &sub.plan_currency)
             .append_pair("ITEM1", &sub.plan_id)
-            .append_pair("AMT1", &format!("{}", sub.plan_amount))
+            .append_pair("AMT1", &format!("{}", sub.plan_amount as f32 / 100.0))
             .append_pair("QTY1", &format!("{}", sub.quantity))
             .append_pair(
                 "CUST_COUNTRY",

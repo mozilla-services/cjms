@@ -1,5 +1,7 @@
+authentication: authpass
 cj_cid: cj_cid
 cj_signature: cj_signature
+cj_subid: cj_subid
 cj_type: cj_type
 database_url: "postgres://db_user:db_password@localhost:5432/cjms"
 environment: local
