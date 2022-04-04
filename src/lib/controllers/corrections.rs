@@ -17,8 +17,7 @@ async fn build_body_from_results(
     db_pool: &PgPool,
 ) -> String {
     let mut body = format!(
-        r#"
-&CID={}
+        r#"&CID={}
 &SUBID={}"#,
         settings.cj_cid, settings.cj_subid
     );

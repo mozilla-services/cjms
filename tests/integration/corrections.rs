@@ -111,12 +111,11 @@ async fn test_corrections_by_day_result() {
     assert_eq!(r.status(), 200);
     let actual_body = r.text().await.unwrap();
     let expected_body = format!(
-        r#"
-&CID={}
+        r#"&CID={}
 &SUBID={}"#,
         app.settings.cj_cid, app.settings.cj_subid
     );
-    assert_eq!(actual_body.trim(), expected_body.trim());
+    assert_eq!(actual_body, expected_body);
 
     // Path with expected refund
     let path = app.build_url("/corrections/2021-11-07.csv");
@@ -124,13 +123,12 @@ async fn test_corrections_by_day_result() {
     assert_eq!(r.status(), 200);
     let actual_body = r.text().await.unwrap();
     let expected_body = format!(
-        r#"
-&CID={}
+        r#"&CID={}
 &SUBID={}
 RETRN,,{}"#,
         app.settings.cj_cid, app.settings.cj_subid, expected_sub.id
     );
-    assert_eq!(actual_body.trim(), expected_body.trim());
+    assert_eq!(actual_body, expected_body);
 }
 
 #[tokio::test]
@@ -159,12 +157,11 @@ async fn test_corrections_today() {
     assert_eq!(r.status(), 200);
     let actual_body = r.text().await.unwrap();
     let expected_body = format!(
-        r#"
-&CID={}
+        r#"&CID={}
 &SUBID={}
 RETRN,,{}
 RETRN,,{}"#,
         app.settings.cj_cid, app.settings.cj_subid, expected_sub_1.id, expected_sub_2.id
     );
-    assert_eq!(actual_body.trim(), expected_body.trim());
+    assert_eq!(actual_body, expected_body);
 }
