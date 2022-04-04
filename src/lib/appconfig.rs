@@ -18,7 +18,7 @@ async fn basic_auth_middleware(
     credentials: BasicAuth,
 ) -> Result<ServiceRequest, Error> {
     // Intentional expect. Can't go on without them.
-    let settings = req.app_data::<Settings>().expect("Missing settings");
+    let settings = req.app_data::<Data<Settings>>().expect("Missing settings");
     let password = match credentials.password() {
         Some(password) => password,
         None => return Err(ErrorUnauthorized("Password missing.")),
@@ -53,13 +53,15 @@ pub fn run_server(
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
             // Corrections
             .service(
-                resource("/corrections/today.csv").route(get().to(controllers::corrections::today)),
+                resource("/corrections/today.csv")
+                    .route(get().to(controllers::corrections::today))
+                    .app_data(Data::new(settings.clone())),
             )
             .service(
                 resource("/corrections/{day}.csv")
                     .route(get().to(controllers::corrections::by_day))
                     .wrap(auth)
-                    .app_data(settings.clone()),
+                    .app_data(Data::new(settings.clone())),
             )
             // Make DB available to all routes
             .app_data(db_pool.clone())

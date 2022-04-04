@@ -10,7 +10,7 @@ pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>) {
     let refunds = RefundModel { db_pool };
     // Intentional panic. Cannot continue if we can't retrieve refunds.
     let not_reported_refunds = refunds
-        .fetch_all_not_reported()
+        .fetch_not_reported()
         .await
         .expect("Could not retrieve refunds from DB.");
     println!("Found {} refunds to report.", not_reported_refunds.len());

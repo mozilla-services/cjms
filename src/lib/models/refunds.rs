@@ -177,10 +177,20 @@ impl RefundModel<'_> {
             .await
     }
 
-    pub async fn fetch_all_not_reported(&self) -> Result<Vec<Refund>, Error> {
+    pub async fn fetch_not_reported(&self) -> Result<Vec<Refund>, Error> {
         query_as!(Refund, "SELECT * FROM refunds WHERE status = 'NotReported'")
             .fetch_all(self.db_pool)
             .await
+    }
+
+    pub async fn fetch_by_correction_file_day(&self, day: &Date) -> Result<Vec<Refund>, Error> {
+        query_as!(
+            Refund,
+            "SELECT * FROM refunds WHERE correction_file_date = $1",
+            day
+        )
+        .fetch_all(self.db_pool)
+        .await
     }
 }
 
