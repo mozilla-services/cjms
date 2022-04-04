@@ -101,10 +101,6 @@ for db in `psql -U cjms -c '\l' | grep cjms_test_ | cut -d '|' -f 1`; do psql -U
 
 In this case my db_name is `cjms` and my user is `cjms` and my password is in the environment variables `export PGPASSWORD=<>`.
 
-### Logging under test
-
-It can sometimes be useful to observe the logs as tests run. By default the logs are suppressed, but you can set the `TEST_LOG` environment variable to a non-empty value before running, which will send log values to stdout. The level of logs that are written will correspong to the `log_level` config value.
-
 ## Tips
 
 ### VSCode Settings
