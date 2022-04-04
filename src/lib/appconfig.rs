@@ -1,14 +1,34 @@
 use actix_cors::Cors;
 use actix_web::{
-    dev::Server,
+    dev::{Server, ServiceRequest},
+    error::ErrorUnauthorized,
     http,
     web::{get, post, put, resource, Data},
-    App, HttpServer,
+    App, Error, HttpServer,
 };
+use actix_web_httpauth::extractors::basic::BasicAuth;
+use actix_web_httpauth::middleware::HttpAuthentication;
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
 
 use crate::{controllers, settings::Settings};
+
+async fn basic_auth_middleware(
+    req: ServiceRequest,
+    credentials: BasicAuth,
+) -> Result<ServiceRequest, Error> {
+    // Intentional expect. Can't go on without them.
+    let settings = req.app_data::<Settings>().expect("Missing settings");
+    let password = match credentials.password() {
+        Some(password) => password,
+        None => return Err(ErrorUnauthorized("Password missing.")),
+    };
+    if password.eq(&settings.authentication) {
+        Ok(req)
+    } else {
+        Err(ErrorUnauthorized("Incorrect password."))
+    }
+}
 
 pub fn run_server(
     settings: Settings,
@@ -18,16 +38,30 @@ pub fn run_server(
     let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
         let cors = get_cors(settings.clone());
+        let auth = HttpAuthentication::basic(basic_auth_middleware);
         App::new()
             .wrap(cors)
+            // Custodial
             .service(resource("/").route(get().to(controllers::custodial::index)))
             .service(resource("/__heartbeat__").route(get().to(controllers::custodial::heartbeat)))
             .service(
                 resource("/__lbheartbeat__").route(get().to(controllers::custodial::heartbeat)),
             )
             .service(resource("/__version__").route(get().to(controllers::custodial::version)))
+            // AIC
             .service(resource("/aic").route(post().to(controllers::aic::create)))
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
+            // Corrections
+            .service(
+                resource("/corrections/today.csv").route(get().to(controllers::corrections::today)),
+            )
+            .service(
+                resource("/corrections/{day}.csv")
+                    .route(get().to(controllers::corrections::by_day))
+                    .wrap(auth)
+                    .app_data(settings.clone()),
+            )
+            // Make DB available to all routes
             .app_data(db_pool.clone())
     })
     .listen(listener)?
