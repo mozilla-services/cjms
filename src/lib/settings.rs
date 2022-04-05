@@ -3,7 +3,7 @@ use std::fs;
 
 #[derive(serde::Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct Settings {
-    pub aic_expiration_days: i32,
+    pub aic_expiration_days: u64,
     pub authentication: String,
     pub cj_cid: String,
     pub cj_signature: String,

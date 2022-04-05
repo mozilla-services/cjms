@@ -1,4 +1,4 @@
-use crate::utils::{get_test_db_pool, random_ascii_string};
+use crate::utils::{get_test_db_pool, random_ascii_string, spawn_app};
 use lib::models::aic::{AICModel, AIC};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
@@ -15,10 +15,16 @@ pub fn make_fake_aic() -> AIC {
 
 #[tokio::test]
 async fn test_aic_model_fetch_one_by_ids() {
-    let db_pool = get_test_db_pool().await;
-    let model = AICModel { db_pool: &db_pool };
+    let test = spawn_app().await;
+    let model = AICModel {
+        db_pool: &test.db_connection(),
+    };
     let created = model
-        .create(&random_ascii_string(), &random_ascii_string())
+        .create(
+            &random_ascii_string(),
+            &random_ascii_string(),
+            &test.settings,
+        )
         .await
         .expect("Failed to create test object.");
     // id
@@ -37,10 +43,16 @@ async fn test_aic_model_fetch_one_by_ids() {
 
 #[tokio::test]
 async fn test_aic_model_fetch_one_by_uuid_if_not_available() {
-    let db_pool = get_test_db_pool().await;
-    let model = AICModel { db_pool: &db_pool };
+    let test = spawn_app().await;
+    let model = AICModel {
+        db_pool: &test.db_connection(),
+    };
     model
-        .create(&random_ascii_string(), &random_ascii_string())
+        .create(
+            &random_ascii_string(),
+            &random_ascii_string(),
+            &test.settings,
+        )
         .await
         .expect("Failed to create test object.");
     let bad_id = Uuid::new_v4();
