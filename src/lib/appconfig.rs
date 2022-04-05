@@ -55,6 +55,10 @@ pub fn run_server(
             .service(
                 resource("/__error_panic__").route(get().to(controllers::custodial::error_panic)),
             )
+            .service(
+                resource("/__error_capture__")
+                    .route(get().to(controllers::custodial::error_capture)),
+            )
             // AIC
             .service(resource("/aic").route(post().to(controllers::aic::create)))
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
