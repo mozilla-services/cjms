@@ -47,17 +47,19 @@ pub async fn get_test_db_pool() -> Pool<Postgres> {
 pub async fn spawn_app() -> TestApp {
     let mut settings = get_settings();
     let test_subid = random_simple_ascii_string();
+    let test_aic_expiration_days = random_integer();
     let test_auth_password = random_ascii_string();
     let test_cj_signature = random_simple_ascii_string();
     let test_database_url = create_test_database(&settings.database_url).await;
     let listener =
         TcpListener::bind(format!("{}:0", settings.host)).expect("Failed to bind random port");
     let port = listener.local_addr().unwrap().port();
-    settings.port = format!("{}", port);
+    settings.aic_expiration_days = test_aic_expiration_days;
     settings.authentication = test_auth_password;
     settings.cj_signature = test_cj_signature;
     settings.cj_subid = test_subid;
     settings.database_url = test_database_url;
+    settings.port = format!("{}", port);
     let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
     let server = run_server(settings.clone(), listener, db_pool).expect("Failed to start server");
     let _ = tokio::spawn(server);
@@ -81,6 +83,10 @@ pub fn random_currency_or_country() -> String {
     const LETTERS: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     let f = StringFaker::with(Vec::from(LETTERS), 1..5);
     f.fake()
+}
+
+pub fn random_integer() -> u64 {
+    (1..200).fake()
 }
 
 pub fn random_price() -> i32 {

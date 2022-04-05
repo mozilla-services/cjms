@@ -30,6 +30,7 @@ Micro-service supporting VPN activities
 
 The required settings are listed in `settings.yaml.example`. There may be other local setting needs  (see "Auto-magic behavior based on environment" below).
 
+* aic_expiration_days: How long for an aic cookie to expire
 * authentication: Used for basic_auth on the the corrections detail page
 * cj_cid: For CJ S2S configuration
 * cj_signature: For CJ S2S configuration

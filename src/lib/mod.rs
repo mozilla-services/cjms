@@ -22,6 +22,7 @@ pub mod test_utils {
 
     pub fn empty_settings() -> Settings {
         Settings {
+            aic_expiration_days: 2,
             authentication: "_".to_string(),
             cj_cid: "_".to_string(),
             cj_signature: "_".to_string(),

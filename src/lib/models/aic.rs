@@ -2,6 +2,8 @@ use sqlx::{query, query_as, Error, PgPool};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
+use crate::settings::Settings;
+
 #[derive(Debug)]
 pub struct AIC {
     pub id: Uuid,
@@ -44,10 +46,15 @@ impl AICModel<'_> {
     }
 
     #[tracing::instrument(name = "aic-record-create", skip(self))]
-    pub async fn create(&self, cj_event_value: &str, flow_id: &str) -> Result<AIC, Error> {
+    pub async fn create(
+        &self,
+        cj_event_value: &str,
+        flow_id: &str,
+        settings: &Settings,
+    ) -> Result<AIC, Error> {
         let id = Uuid::new_v4();
         let created = OffsetDateTime::now_utc();
-        let expires = created + Duration::days(30);
+        let expires = created + Duration::days(settings.aic_expiration_days as i64);
         query_as!(
             AIC,
             "INSERT INTO aic (id, cj_event_value, flow_id, created, expires)
@@ -91,10 +98,11 @@ impl AICModel<'_> {
         id: Uuid,
         cj_event_value: &str,
         flow_id: &str,
+        settings: &Settings,
     ) -> Result<AIC, Error> {
         // A new cj_event_value resets the clock on the cookie
         let created = OffsetDateTime::now_utc();
-        let expires = created + Duration::days(30);
+        let expires = created + Duration::days(settings.aic_expiration_days as i64);
         query_as!(
             AIC,
             "UPDATE aic
@@ -113,6 +121,12 @@ impl AICModel<'_> {
         )
         .fetch_one(self.db_pool)
         .await
+    }
+
+    pub async fn fetch_expired(&self) -> Result<Vec<AIC>, Error> {
+        query_as!(AIC, "SELECT * FROM aic WHERE expires < CURRENT_TIMESTAMP")
+            .fetch_all(self.db_pool)
+            .await
     }
 
     pub async fn fetch_one(&self) -> Result<AIC, Error> {

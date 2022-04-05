@@ -64,18 +64,17 @@ pub fn run_server(
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
             // Corrections
             .service(
-                resource("/corrections/today.csv")
-                    .route(get().to(controllers::corrections::today))
-                    .app_data(Data::new(settings.clone())),
+                resource("/corrections/today.csv").route(get().to(controllers::corrections::today)),
             )
             .service(
                 resource("/corrections/{day}.csv")
                     .route(get().to(controllers::corrections::by_day))
-                    .wrap(auth)
-                    .app_data(Data::new(settings.clone())),
+                    .wrap(auth),
             )
             // Make DB available to all routes
             .app_data(db_pool.clone())
+            // Make settings available to all routes
+            .app_data(Data::new(settings.clone()))
     })
     .listen(listener)?
     .run();

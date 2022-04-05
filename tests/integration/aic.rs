@@ -1,6 +1,7 @@
 use lib::{
     controllers::aic::AICResponse,
     models::aic::{AICModel, AIC},
+    settings::Settings,
 };
 use serde_json::json;
 use time::OffsetDateTime;
@@ -58,15 +59,16 @@ async fn aic_create_success() {
     // Should be UUID v4 aka Version::Random
     assert_eq!(Some(Version::Random), response.aic_id.get_version());
     /*
-    Expires date is 30 days from today
+    Expires date is X days from today (per settings value)
     (because we created the expires a few nano seconds ago, this is a minute under 30 days)
     */
     assert_eq!(
         (response.expires - OffsetDateTime::now_utc()).whole_minutes(),
-        30 * 24 * 60 - 1
+        setup.app.settings.aic_expiration_days as i64 * 24 * 60 - 1
     );
     let saved = assert_saved(
         model,
+        &setup.app.settings,
         response.aic_id,
         response.expires.unix_timestamp(),
         setup.cj_event_value,
@@ -93,7 +95,7 @@ async fn aic_update_with_existing_aic_and_new_flow_and_cjid() {
     let cj_event_value_orig = setup.cj_event_value;
     let flow_id_orig = setup.flow_id;
     let aic_orig = model
-        .create(&cj_event_value_orig, &flow_id_orig)
+        .create(&cj_event_value_orig, &flow_id_orig, &setup.app.settings)
         .await
         .expect("Failed to create test object.");
     // Make sure time has passed so timestamps are different
@@ -114,6 +116,7 @@ async fn aic_update_with_existing_aic_and_new_flow_and_cjid() {
     assert!(response.expires > aic_orig.expires);
     assert_saved(
         model,
+        &setup.app.settings,
         response.aic_id,
         response.expires.unix_timestamp(),
         cj_event_value_new,
@@ -136,7 +139,7 @@ async fn aic_update_when_aic_and_cjevent_exists() {
     let cj_event_value_orig = setup.cj_event_value;
     let flow_id_orig = setup.flow_id;
     let aic_orig = model
-        .create(&cj_event_value_orig, &flow_id_orig)
+        .create(&cj_event_value_orig, &flow_id_orig, &setup.app.settings)
         .await
         .expect("Failed to create test object.");
     std::thread::sleep(std::time::Duration::from_secs(1));
@@ -157,6 +160,7 @@ async fn aic_update_when_aic_and_cjevent_exists() {
     );
     assert_saved(
         model,
+        &setup.app.settings,
         response.aic_id,
         response.expires.unix_timestamp(),
         cj_event_value_orig,
@@ -179,7 +183,7 @@ async fn aic_update_with_new_flow_id() {
     let cj_event_value_orig = setup.cj_event_value;
     let flow_id_orig = setup.flow_id;
     let aic_orig = model
-        .create(&cj_event_value_orig, &flow_id_orig)
+        .create(&cj_event_value_orig, &flow_id_orig, &setup.app.settings)
         .await
         .expect("Failed to create test object.");
     std::thread::sleep(std::time::Duration::from_secs(1));
@@ -199,6 +203,7 @@ async fn aic_update_with_new_flow_id() {
     );
     assert_saved(
         model,
+        &setup.app.settings,
         response.aic_id,
         response.expires.unix_timestamp(),
         cj_event_value_orig,
@@ -245,6 +250,7 @@ async fn setup_aic_test() -> TestData {
 
 async fn assert_saved(
     model: AICModel<'_>,
+    settings: &Settings,
     id: Uuid,
     expires_timestamp: i64,
     cj_event_value: String,
@@ -255,5 +261,9 @@ async fn assert_saved(
     assert_eq!(saved.expires.unix_timestamp(), expires_timestamp);
     assert_eq!(saved.cj_event_value, cj_event_value);
     assert_eq!(saved.flow_id, flow_id);
+    assert_eq!(
+        settings.aic_expiration_days as i64,
+        (saved.expires - saved.created).whole_days()
+    );
     saved
 }

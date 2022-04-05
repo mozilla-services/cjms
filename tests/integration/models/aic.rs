@@ -1,4 +1,4 @@
-use crate::utils::{get_test_db_pool, random_ascii_string};
+use crate::utils::{get_test_db_pool, random_ascii_string, spawn_app};
 use lib::models::aic::{AICModel, AIC};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
@@ -15,10 +15,16 @@ pub fn make_fake_aic() -> AIC {
 
 #[tokio::test]
 async fn test_aic_model_fetch_one_by_ids() {
-    let db_pool = get_test_db_pool().await;
-    let model = AICModel { db_pool: &db_pool };
+    let test = spawn_app().await;
+    let model = AICModel {
+        db_pool: &test.db_connection(),
+    };
     let created = model
-        .create(&random_ascii_string(), &random_ascii_string())
+        .create(
+            &random_ascii_string(),
+            &random_ascii_string(),
+            &test.settings,
+        )
         .await
         .expect("Failed to create test object.");
     // id
@@ -37,10 +43,16 @@ async fn test_aic_model_fetch_one_by_ids() {
 
 #[tokio::test]
 async fn test_aic_model_fetch_one_by_uuid_if_not_available() {
-    let db_pool = get_test_db_pool().await;
-    let model = AICModel { db_pool: &db_pool };
+    let test = spawn_app().await;
+    let model = AICModel {
+        db_pool: &test.db_connection(),
+    };
     model
-        .create(&random_ascii_string(), &random_ascii_string())
+        .create(
+            &random_ascii_string(),
+            &random_ascii_string(),
+            &test.settings,
+        )
         .await
         .expect("Failed to create test object.");
     let bad_id = Uuid::new_v4();
@@ -186,4 +198,35 @@ async fn test_aic_archive_does_not_delete_if_cannot_insert() {
             assert!(model.fetch_one_by_id_from_archive(&aic.id).await.is_err());
         }
     }
+}
+
+#[tokio::test]
+async fn test_get_all_expired() {
+    let db_pool = get_test_db_pool().await;
+    let aic_model = AICModel { db_pool: &db_pool };
+
+    let now = OffsetDateTime::now_utc();
+
+    // Should be expired
+    let mut aic_1 = make_fake_aic();
+    aic_1.expires = now - Duration::seconds(5);
+    // Should not be expired
+    let mut aic_2 = make_fake_aic();
+    aic_2.expires = now + Duration::seconds(5);
+    // Should be expired
+    let mut aic_3 = make_fake_aic();
+    aic_3.expires = now - Duration::seconds(5);
+    for aic in [&aic_1, &aic_2, &aic_3] {
+        aic_model
+            .create_from_aic(aic)
+            .await
+            .expect("Could not create AIC");
+    }
+    let result = aic_model
+        .fetch_expired()
+        .await
+        .expect("Could not fetch expired.");
+    assert_eq!(result.len(), 2);
+    assert!(result.contains(&aic_1));
+    assert!(result.contains(&aic_3));
 }
