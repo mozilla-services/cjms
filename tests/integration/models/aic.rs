@@ -222,7 +222,10 @@ async fn test_get_all_expired() {
             .await
             .expect("Could not create AIC");
     }
-    let result = aic_model.fetch_expired().await.expect("Could not fetch expired.");
+    let result = aic_model
+        .fetch_expired()
+        .await
+        .expect("Could not fetch expired.");
     assert_eq!(result.len(), 2);
     assert!(result.contains(&aic_1));
     assert!(result.contains(&aic_3));
