@@ -182,6 +182,7 @@ pub mod test_settings {
             cj_type: "type".to_string(),
             database_url: "postgres....".to_string(),
             environment: "prod".to_string(),
+            log_level: "info".to_string(),
             gcp_project: "a-gcp-Pr0j3ct".to_string(),
             host: "127.1.2.3".to_string(),
             log_level: "info".to_string(),
