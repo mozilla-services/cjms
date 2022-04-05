@@ -5,6 +5,7 @@ pub mod controllers;
 pub mod jobs;
 pub mod models;
 pub mod settings;
+pub mod telemetry;
 
 #[cfg(test)]
 pub mod test_utils {
@@ -29,6 +30,7 @@ pub mod test_utils {
             environment: "_".to_string(),
             gcp_project: "_".to_string(),
             host: "_".to_string(),
+            log_level: "_".to_string(),
             port: "_".to_string(),
         }
     }

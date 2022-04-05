@@ -10,6 +10,7 @@ use actix_web_httpauth::extractors::basic::BasicAuth;
 use actix_web_httpauth::middleware::HttpAuthentication;
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
+use tracing_actix_web_mozlog::MozLog;
 
 use crate::{controllers, settings::Settings};
 
@@ -38,8 +39,10 @@ pub fn run_server(
     let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
         let cors = get_cors(settings.clone());
+        let moz_log = MozLog::default();
         let auth = HttpAuthentication::basic(basic_auth_middleware);
         App::new()
+            .wrap(moz_log)
             .wrap(cors)
             // Custodial
             .service(resource("/").route(get().to(controllers::custodial::index)))

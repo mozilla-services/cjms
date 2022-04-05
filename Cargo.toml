@@ -45,6 +45,11 @@ thiserror = "1.0.30"
 # time must be 0.2 for sqlx support
 time = { version = "0.2.27", features = ["serde"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tracing = { version = "0.1", features = ["log"] }
+tracing-actix-web = "0.5"
+tracing-actix-web-mozlog = { git = "https://github.com/birdsarah/common-rs", branch = "chrono_to_time" }
+tracing-log = "0.1"
+tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
 # uuid must be 0.8 for sqlx support
 uuid = { version = "0.8", features = ["v4", "serde"] }
 

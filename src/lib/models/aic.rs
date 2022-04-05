@@ -43,6 +43,7 @@ impl AICModel<'_> {
         .await
     }
 
+    #[tracing::instrument(name = "aic-record-create", skip(self))]
     pub async fn create(&self, cj_event_value: &str, flow_id: &str) -> Result<AIC, Error> {
         let id = Uuid::new_v4();
         let created = OffsetDateTime::now_utc();
@@ -60,6 +61,14 @@ impl AICModel<'_> {
         )
         .fetch_one(self.db_pool)
         .await
+        .map_err(|e| {
+            tracing::error!(
+                r#type = "aic-record-create-failed",
+                "Failed to execute query: {:?}",
+                e
+            );
+            e
+        })
     }
 
     pub async fn update_flow_id(&self, id: Uuid, flow_id: &str) -> Result<AIC, Error> {
