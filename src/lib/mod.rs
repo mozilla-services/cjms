@@ -6,6 +6,7 @@ pub mod jobs;
 pub mod models;
 pub mod settings;
 pub mod telemetry;
+pub mod version;
 
 #[cfg(test)]
 pub mod test_utils {

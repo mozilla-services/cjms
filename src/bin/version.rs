@@ -1,11 +1,11 @@
-use lib::controllers::custodial::VERSION_FILE;
+use lib::version::{write_version, VersionInfo, VERSION_FILE};
+use std::env;
 use std::process::Command;
 use std::str;
-use std::{env, fs};
 
+// Note that this binary is run as part of the Docker image build process.
+// Therefore cannot initialize telemetry tools like tracing and Sentry here.
 fn main() -> std::io::Result<()> {
-    // Note that this binary is run as part of the Docker image build process.
-    // Therefore cannot initialize telemetry tools like tracing and Sentry here.
     let (sha, tag) = match env::var("CI") {
         Ok(_) => {
             // If we're in CI use local variables
@@ -36,13 +36,14 @@ fn main() -> std::io::Result<()> {
             (sha, tag)
         }
     };
-    // Repo link
-    let source = env!("CARGO_PKG_REPOSITORY");
-    fs::write(
-        VERSION_FILE,
-        format!("source: {}\ncommit: {}\nversion: {}\n", source, sha, tag),
-    )
-    .expect("Failed to write file.");
+
+    let version_info = VersionInfo {
+        source: env!("CARGO_PKG_REPOSITORY").to_string(),
+        commit: sha,
+        version: tag,
+    };
+    write_version(VERSION_FILE, &version_info);
+
     Ok(())
 }
 
@@ -50,6 +51,7 @@ fn main() -> std::io::Result<()> {
 mod test_bin_version {
     use super::*;
     use serial_test::serial;
+    use std::fs;
 
     #[test]
     #[serial]
@@ -61,7 +63,7 @@ mod test_bin_version {
         let source = env!("CARGO_PKG_REPOSITORY");
         let error_msg = format!("Got version file contents: \n{}", version_file);
         assert!(
-            version_file.contains(format!("source: {}", source).as_str()),
+            version_file.contains(format!(r#"source: "{}""#, source).as_str()),
             "{}",
             error_msg
         );

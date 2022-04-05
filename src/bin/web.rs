@@ -10,7 +10,7 @@ async fn main() -> std::io::Result<()> {
     let settings = get_settings();
 
     init_tracing("cjms-web", &settings.log_level, std::io::stdout);
-    let _guard = init_sentry(&settings.sentry_dsn);
+    let _guard = init_sentry(&settings);
 
     let addr = settings.server_address();
     let db_pool = connect_to_database_and_migrate(&settings.database_url).await;

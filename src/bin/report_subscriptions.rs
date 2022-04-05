@@ -15,7 +15,7 @@ async fn main() -> std::io::Result<()> {
         &settings.log_level,
         std::io::stdout,
     );
-    let _guard = init_sentry(&settings.sentry_dsn);
+    let _guard = init_sentry(&settings);
 
     let db = connect_to_database_and_migrate(&settings.database_url).await;
     let cj_client = CJS2SClient::new(&settings, None);

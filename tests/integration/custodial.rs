@@ -1,7 +1,7 @@
 use std::fs;
 
 use crate::utils::{send_get_request, spawn_app};
-use lib::controllers::custodial::{VersionInfo, VERSION_FILE};
+use lib::version::{VersionInfo, VERSION_FILE};
 
 #[tokio::test]
 async fn index_get() {

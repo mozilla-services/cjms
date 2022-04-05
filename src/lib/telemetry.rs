@@ -6,6 +6,9 @@ use tracing_log::LogTracer;
 use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 
+use crate::settings::Settings;
+use crate::version::{read_version, VERSION_FILE};
+
 /// Creates a tracing subscriber and sets it as the global default.
 pub fn init_tracing<Sink>(service_name: &str, log_level: &str, sink: Sink)
 where
@@ -22,18 +25,21 @@ where
     set_global_default(subscriber).expect("Failed to set subscriber");
 }
 
-pub fn init_sentry(dsn: &str) -> ClientInitGuard {
+pub fn init_sentry(settings: &Settings) -> ClientInitGuard {
+    let version_data = read_version(VERSION_FILE);
+
     sentry::init((
-        dsn,
+        settings.sentry_dsn.clone(),
         sentry::ClientOptions {
-            // TODO pull from version.yaml
-            release: sentry::release_name!(),
-            // TODO doc
+            environment: Some(Cow::from(settings.environment.clone())),
+            release: Some(Cow::from(version_data.version)),
+            /// `sample_rate` defines the sample rate of error events (i.e. panics and error
+            /// log messages). Should always be 1.0.
             sample_rate: 1.0,
-            // TODO doc
+            /// `traces_sample_rate` defines the sample rate of "transactional"
+            /// events that are used for performance insights but are not
+            /// directly related to error handling.
             traces_sample_rate: 0.3,
-            // TODO how to vary this?
-            environment: Some(Cow::from("local")),
             ..Default::default()
         },
     ))
