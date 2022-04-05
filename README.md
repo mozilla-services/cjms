@@ -43,6 +43,8 @@ The required settings are listed in `settings.yaml.example`. There may be other 
 * port: the port the web service runs on
 * sentry_dsn: The [DSN identifier] for the Sentry instance
 * sentry_environment: The environment passed to Sentry. Should be the same as `environment`.
+* statsd_host: The host of the statsd server.
+* statsd_port: The port of the statsd server.
 
 ## Development pre-requisites
 

@@ -12,6 +12,10 @@ async fn main() -> std::io::Result<()> {
     init_tracing("cjms-web", &settings.log_level, std::io::stdout);
     let _guard = init_sentry(&settings);
 
+    // Statsd basic integration
+    // TODO move into its own file
+    // TODO investigate non-blocking version
+
     let addr = settings.server_address();
     let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
     tracing::info!(r#type = "server-init", "Server running at http://{}", addr);
