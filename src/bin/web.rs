@@ -1,7 +1,8 @@
+use cadence::prelude::*;
 use lib::{
     appconfig::{connect_to_database_and_migrate, run_server},
     settings::get_settings,
-    telemetry::{init_sentry, init_tracing},
+    telemetry::{create_statsd_client, init_sentry, init_tracing},
 };
 use std::net::TcpListener;
 
@@ -11,6 +12,10 @@ async fn main() -> std::io::Result<()> {
 
     init_tracing("cjms-web", &settings.log_level, std::io::stdout);
     let _guard = init_sentry(&settings);
+
+    let statsd_client = create_statsd_client(&settings);
+    // TODO what to do with the error?
+    statsd_client.incr("app-init").unwrap();
 
     let addr = settings.server_address();
     let db_pool = connect_to_database_and_migrate(&settings.database_url).await;

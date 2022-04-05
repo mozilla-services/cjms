@@ -35,6 +35,8 @@ pub mod test_utils {
             port: "_".to_string(),
             sentry_dsn: "_".to_string(),
             sentry_environment: "_".to_string(),
+            statsd_host: "_".to_string(),
+            statsd_port: "_".to_string(),
         }
     }
 }

@@ -11,11 +11,13 @@ pub struct Settings {
     pub database_url: String,
     pub environment: String,
     pub gcp_project: String,
-    pub host: String, // server host to run on
+    pub host: String,
     pub log_level: String,
-    pub port: String, // server port to run on
+    pub port: String,
     pub sentry_dsn: String,
     pub sentry_environment: String,
+    pub statsd_host: String,
+    pub statsd_port: String,
 }
 
 impl Settings {
@@ -84,6 +86,8 @@ pub mod test_settings {
         writeln!(file, "port: 2222").unwrap();
         writeln!(file, "sentry_dsn: somevalue").unwrap();
         writeln!(file, "sentry_environment: somevalue").unwrap();
+        writeln!(file, "statsd_host: 0.0.0.0").unwrap();
+        writeln!(file, "statsd_port: 10101").unwrap();
         let path = file.into_temp_path();
         let path_str = format!("{}", path.display());
         let mut mock = MockHasFile::new();
@@ -142,6 +146,8 @@ pub mod test_settings {
         env::set_var("PORT", "2222");
         env::set_var("SENTRY_DSN", "somevalue");
         env::set_var("SENTRY_ENVIRONMENT", "somevalue");
+        env::set_var("STATSD_HOST", "0.0.0.0");
+        env::set_var("STATSD_PORT", "10101");
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const(String::new());
         let actual = _get_settings(mock);
@@ -159,6 +165,8 @@ pub mod test_settings {
             port: "2222".to_string(),
             sentry_dsn: "somevalue".to_string(),
             sentry_environment: "somevalue".to_string(),
+            statsd_host: "0.0.0.0".to_string(),
+            statsd_port: "10101".to_string(),
         };
         assert_eq!(expected, actual);
         env::remove_var("AUTHENTICATION");
@@ -174,6 +182,8 @@ pub mod test_settings {
         env::remove_var("PORT");
         env::remove_var("SENTRY_DSN");
         env::remove_var("SENTRY_ENVIRONMENT");
+        env::remove_var("STATSD_HOST");
+        env::remove_var("STATSD_PORT");
     }
 
     #[test]
@@ -193,6 +203,8 @@ pub mod test_settings {
             port: "2222".to_string(),
             sentry_dsn: "somevalue".to_string(),
             sentry_environment: "somevalue".to_string(),
+            statsd_host: "0.0.0.0".to_string(),
+            statsd_port: "10101".to_string(),
         };
         assert_eq!(expected, settings);
         assert_eq!("127.1.2.3:2222", settings.server_address());

@@ -1,5 +1,7 @@
+use cadence::{StatsdClient, UdpMetricSink};
 use sentry::ClientInitGuard;
 use std::borrow::Cow;
+use std::net::UdpSocket;
 use tracing::subscriber::set_global_default;
 use tracing_actix_web_mozlog::{JsonStorageLayer, MozLogFormatLayer};
 use tracing_log::LogTracer;
@@ -43,4 +45,16 @@ pub fn init_sentry(settings: &Settings) -> ClientInitGuard {
             ..Default::default()
         },
     ))
+}
+
+pub fn create_statsd_client(settings: &Settings) -> StatsdClient {
+    // TODO investigate non-blocking version
+    let host = (
+        settings.statsd_host.clone(),
+        settings.statsd_port.parse::<u16>().unwrap(),
+    );
+    let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
+    let sink = UdpMetricSink::from(host, socket).unwrap();
+
+    StatsdClient::from_sink("cjms", sink)
 }
