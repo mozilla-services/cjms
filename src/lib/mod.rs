@@ -6,6 +6,7 @@ pub mod jobs;
 pub mod models;
 pub mod settings;
 pub mod telemetry;
+pub mod version;
 
 #[cfg(test)]
 pub mod test_utils {
@@ -32,6 +33,8 @@ pub mod test_utils {
             host: "_".to_string(),
             log_level: "_".to_string(),
             port: "_".to_string(),
+            sentry_dsn: "_".to_string(),
+            sentry_environment: "_".to_string(),
         }
     }
 }

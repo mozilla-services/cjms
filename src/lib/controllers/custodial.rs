@@ -1,6 +1,5 @@
+use crate::version::{read_version, VERSION_FILE};
 use actix_web::{Error, HttpResponse};
-use config::{Config, File, FileFormat};
-use serde::{Deserialize, Serialize};
 
 /*
  * Custodial Helpers
@@ -14,27 +13,29 @@ pub async fn index() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
 
+pub async fn error_log() -> Result<HttpResponse, Error> {
+    tracing::error!(r#type = "request-error-log-test", "Test error log report");
+    Ok(HttpResponse::Ok().body("Error log test"))
+}
+
+pub async fn error_panic() -> Result<HttpResponse, Error> {
+    panic!("This is fine. :fire:");
+}
+
+pub async fn error_capture() -> Result<HttpResponse, Error> {
+    let err = "NaN".parse::<usize>().unwrap_err();
+    sentry::capture_error(&err);
+
+    Ok(HttpResponse::Ok().body("Error capture test"))
+}
+
 pub async fn heartbeat() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("OK"))
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct VersionInfo {
-    pub commit: String,
-    pub source: String,
-    pub version: String,
-}
-
-pub const VERSION_FILE: &str = "version.yaml";
-
 pub async fn version() -> Result<HttpResponse, Error> {
-    let builder = Config::builder().add_source(File::new(VERSION_FILE, FileFormat::Yaml));
-    let config = builder.build().expect("Config couldn't be built.");
-    let response = match config.try_deserialize::<VersionInfo>() {
-        Ok(result) => result,
-        Err(e) => panic!("Config didn't match serialization. {:?}", e),
-    };
-    Ok(HttpResponse::Ok().json(response))
+    let version_data = read_version(VERSION_FILE);
+    Ok(HttpResponse::Ok().json(version_data))
 }
 
 #[cfg(test)]
@@ -47,39 +48,14 @@ mod test_controllers_custodial {
 
     use std::fs;
 
-    #[tokio::test]
-    #[serial]
-    #[should_panic(expected = "Config couldn't be built.")]
-    async fn missing_file_panics() {
-        fs::remove_file(VERSION_FILE).ok();
-        version().await.expect("Failed to call version().");
-    }
+    use crate::version::VersionInfo;
 
     #[tokio::test]
     #[serial]
-    #[should_panic(expected = "Config didn't match serialization.")]
-    async fn missing_values_panics() {
+    async fn version_success() {
         fs::write(
             VERSION_FILE,
-            r#"
-commit: 123456
-        "#,
-        )
-        .expect("Failed to write test file.");
-        version().await.expect("Failed to call version().");
-        fs::remove_file(VERSION_FILE).ok();
-    }
-
-    #[tokio::test]
-    #[serial]
-    async fn returns_values_in_file() {
-        fs::write(
-            VERSION_FILE,
-            r#"
-commit: 123456
-source: a source
-version: the version
-        "#,
+            "commit: a1b2c3\nsource: a source\nversion: the version",
         )
         .expect("Failed to write test file.");
         let response = version().await.expect("Failed to call version().");
@@ -87,7 +63,7 @@ version: the version
         let body_data: VersionInfo =
             from_slice(&to_bytes(body).await.expect("Failed to get body."))
                 .expect("Failed to deserialize");
-        assert_eq!(body_data.commit, "123456");
+        assert_eq!(body_data.commit, "a1b2c3");
         assert_eq!(body_data.source, "a source");
         assert_eq!(body_data.version, "the version");
         fs::remove_file(VERSION_FILE).ok();

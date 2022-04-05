@@ -41,6 +41,8 @@ The required settings are listed in `settings.yaml.example`. There may be other 
 * host: the host the web service runs on
 * log_level: The lowest priority log level that is logged to the output sink. Value can be one of `error`, `warn`, `info`, `debug`, or `trace`.
 * port: the port the web service runs on
+* sentry_dsn: The [DSN identifier] for the Sentry instance
+* sentry_environment: The environment passed to Sentry. Should be the same as `environment`.
 
 ## Development pre-requisites
 
@@ -272,3 +274,5 @@ into main. The supports the following workflow elements:
 PRs should be squash merged into the release branch.
 
 Release branch should be merged with a merge commit into main.
+
+[DSN Identifier]: https://docs.sentry.io/product/sentry-basics/dsn-explainer/
