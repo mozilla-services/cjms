@@ -4,6 +4,8 @@ use std::str;
 use std::{env, fs};
 
 fn main() -> std::io::Result<()> {
+    // Note that this binary is run as part of the Docker image build process.
+    // Therefore cannot initialize telemetry tools like tracing and Sentry here.
     let (sha, tag) = match env::var("CI") {
         Ok(_) => {
             // If we're in CI use local variables

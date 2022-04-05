@@ -15,6 +15,7 @@ pub struct Settings {
     pub log_level: String,
     pub port: String, // server port to run on
     pub sentry_dsn: String,
+    pub sentry_environment: String,
 }
 
 impl Settings {
@@ -82,6 +83,7 @@ pub mod test_settings {
         writeln!(file, "log_level: info").unwrap();
         writeln!(file, "port: 2222").unwrap();
         writeln!(file, "sentry_dsn: somevalue").unwrap();
+        writeln!(file, "sentry_environment: somevalue").unwrap();
         let path = file.into_temp_path();
         let path_str = format!("{}", path.display());
         let mut mock = MockHasFile::new();
@@ -139,6 +141,7 @@ pub mod test_settings {
         env::set_var("LOG_LEVEL", "info");
         env::set_var("PORT", "2222");
         env::set_var("SENTRY_DSN", "somevalue");
+        env::set_var("SENTRY_ENVIRONMENT", "somevalue");
         let mut mock = MockHasFile::new();
         mock.expect_file().return_const(String::new());
         let actual = _get_settings(mock);
@@ -155,6 +158,7 @@ pub mod test_settings {
             log_level: "info".to_string(),
             port: "2222".to_string(),
             sentry_dsn: "somevalue".to_string(),
+            sentry_environment: "somevalue".to_string(),
         };
         assert_eq!(expected, actual);
         env::remove_var("AUTHENTICATION");
@@ -169,6 +173,7 @@ pub mod test_settings {
         env::remove_var("LOG_LEVEL");
         env::remove_var("PORT");
         env::remove_var("SENTRY_DSN");
+        env::remove_var("SENTRY_ENVIRONMENT");
     }
 
     #[test]
@@ -182,12 +187,12 @@ pub mod test_settings {
             cj_type: "type".to_string(),
             database_url: "postgres....".to_string(),
             environment: "prod".to_string(),
-            log_level: "info".to_string(),
             gcp_project: "a-gcp-Pr0j3ct".to_string(),
             host: "127.1.2.3".to_string(),
             log_level: "info".to_string(),
             port: "2222".to_string(),
             sentry_dsn: "somevalue".to_string(),
+            sentry_environment: "somevalue".to_string(),
         };
         assert_eq!(expected, settings);
         assert_eq!("127.1.2.3:2222", settings.server_address());

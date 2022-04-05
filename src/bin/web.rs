@@ -1,7 +1,7 @@
 use lib::{
     appconfig::{connect_to_database_and_migrate, run_server},
     settings::get_settings,
-    telemetry::init_tracing,
+    telemetry::{init_sentry, init_tracing},
 };
 use std::net::TcpListener;
 
@@ -10,16 +10,7 @@ async fn main() -> std::io::Result<()> {
     let settings = get_settings();
 
     init_tracing("cjms-web", &settings.log_level, std::io::stdout);
-
-    // TODO move to the telemetry module
-    let _guard = sentry::init((
-        settings.sentry_dsn.clone(),
-        sentry::ClientOptions {
-            release: sentry::release_name!(), // TODO what is this for
-            traces_sample_rate: 1.0,          // TODO set to a lower value in prod
-            ..Default::default()
-        },
-    ));
+    let _guard = init_sentry(&settings.sentry_dsn);
 
     let addr = settings.server_address();
     let db_pool = connect_to_database_and_migrate(&settings.database_url).await;

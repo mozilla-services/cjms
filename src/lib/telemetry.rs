@@ -1,3 +1,5 @@
+use sentry::ClientInitGuard;
+use std::borrow::Cow;
 use tracing::subscriber::set_global_default;
 use tracing_actix_web_mozlog::{JsonStorageLayer, MozLogFormatLayer};
 use tracing_log::LogTracer;
@@ -18,4 +20,21 @@ where
 
     LogTracer::init().expect("Failed to set logger");
     set_global_default(subscriber).expect("Failed to set subscriber");
+}
+
+pub fn init_sentry(dsn: &str) -> ClientInitGuard {
+    sentry::init((
+        dsn,
+        sentry::ClientOptions {
+            // TODO pull from version.yaml
+            release: sentry::release_name!(),
+            // TODO doc
+            sample_rate: 1.0,
+            // TODO doc
+            traces_sample_rate: 0.3,
+            // TODO how to vary this?
+            environment: Some(Cow::from("local")),
+            ..Default::default()
+        },
+    ))
 }

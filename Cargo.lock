@@ -457,6 +457,7 @@ dependencies = [
  "pretty_assertions",
  "reqwest",
  "sentry",
+ "sentry-actix",
  "sentry-tracing",
  "serde",
  "serde_json",
@@ -2080,6 +2081,17 @@ dependencies = [
  "sentry-core",
  "sentry-panic",
  "tokio",
+]
+
+[[package]]
+name = "sentry-actix"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82ec8ee3655ec56335ee86b6a9e5cb2c86c61a457e9b550781e64c8928066737"
+dependencies = [
+ "actix-web",
+ "futures-util",
+ "sentry-core",
 ]
 
 [[package]]
