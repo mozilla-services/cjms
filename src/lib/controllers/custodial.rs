@@ -13,7 +13,6 @@ pub async fn index() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
 
-// TODO wrap in a macro to prevent prod compile?
 pub async fn error_log() -> Result<HttpResponse, Error> {
     tracing::error!(r#type = "request-error-log-test", "Test error log report");
     Ok(HttpResponse::Ok().body("Error log test"))
@@ -21,6 +20,13 @@ pub async fn error_log() -> Result<HttpResponse, Error> {
 
 pub async fn error_panic() -> Result<HttpResponse, Error> {
     panic!("This is fine. :fire:");
+}
+
+pub async fn error_capture() -> Result<HttpResponse, Error> {
+    let err = "NaN".parse::<usize>().unwrap_err();
+    sentry::capture_error(&err);
+
+    Ok(HttpResponse::Ok().body("Error capture test"))
 }
 
 pub async fn heartbeat() -> Result<HttpResponse, Error> {
