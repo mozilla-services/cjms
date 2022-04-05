@@ -11,7 +11,6 @@ pub struct VersionInfo {
     pub version: String,
 }
 
-// TODO should these panic?
 pub fn read_version(handle: &str) -> VersionInfo {
     let f = fs::File::open(handle).expect("Couldn't read version file.");
     serde_yaml::from_reader(f).expect("Couldn't parse YAML from version file.")
@@ -60,7 +59,6 @@ mod test_version {
     async fn read_version_fails_if_contents_not_parseable() {
         fs::write(VERSION_FILE_TEST, "not a version file").unwrap();
         read_version(VERSION_FILE_TEST);
-        // TODO will this ever make it here?
         fs::remove_file(VERSION_FILE_TEST).unwrap();
     }
 
