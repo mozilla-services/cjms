@@ -14,6 +14,16 @@ pub async fn index() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
 
+// TODO wrap in a macro to prevent prod compile?
+pub async fn error_log() -> Result<HttpResponse, Error> {
+    tracing::error!(r#type = "request-error-log-test", "Test error log report");
+    Ok(HttpResponse::Ok().body("Error log test"))
+}
+
+pub async fn error_panic() -> Result<HttpResponse, Error> {
+    panic!("This is fine. :fire:");
+}
+
 pub async fn heartbeat() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("OK"))
 }

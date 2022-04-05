@@ -13,7 +13,8 @@ where
     let subscriber = Registry::default()
         .with(env_filter)
         .with(JsonStorageLayer)
-        .with(MozLogFormatLayer::new(service_name, sink));
+        .with(MozLogFormatLayer::new(service_name, sink))
+        .with(sentry_tracing::layer());
 
     LogTracer::init().expect("Failed to set logger");
     set_global_default(subscriber).expect("Failed to set subscriber");

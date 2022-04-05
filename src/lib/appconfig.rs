@@ -51,6 +51,10 @@ pub fn run_server(
                 resource("/__lbheartbeat__").route(get().to(controllers::custodial::heartbeat)),
             )
             .service(resource("/__version__").route(get().to(controllers::custodial::version)))
+            .service(resource("/__error_log__").route(get().to(controllers::custodial::error_log)))
+            .service(
+                resource("/__error_panic__").route(get().to(controllers::custodial::error_panic)),
+            )
             // AIC
             .service(resource("/aic").route(post().to(controllers::aic::create)))
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
