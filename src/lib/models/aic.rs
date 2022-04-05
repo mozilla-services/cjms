@@ -123,6 +123,12 @@ impl AICModel<'_> {
         .await
     }
 
+    pub async fn fetch_expired(&self) -> Result<Vec<AIC>, Error> {
+        query_as!(AIC, "SELECT * FROM aic WHERE expires < CURRENT_TIMESTAMP")
+            .fetch_all(self.db_pool)
+            .await
+    }
+
     pub async fn fetch_one(&self) -> Result<AIC, Error> {
         query_as!(AIC, "SELECT * FROM aic")
             .fetch_one(self.db_pool)

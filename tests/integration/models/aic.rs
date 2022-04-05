@@ -199,3 +199,31 @@ async fn test_aic_archive_does_not_delete_if_cannot_insert() {
         }
     }
 }
+
+#[tokio::test]
+async fn test_get_all_expired() {
+    let db_pool = get_test_db_pool().await;
+    let aic_model = AICModel { db_pool: &db_pool };
+
+    let now = OffsetDateTime::now_utc();
+
+    // Should be expired
+    let mut aic_1 = make_fake_aic();
+    aic_1.expires = now - Duration::seconds(5);
+    // Should not be expired
+    let mut aic_2 = make_fake_aic();
+    aic_2.expires = now + Duration::seconds(5);
+    // Should be expired
+    let mut aic_3 = make_fake_aic();
+    aic_3.expires = now - Duration::seconds(5);
+    for aic in [&aic_1, &aic_2, &aic_3] {
+        aic_model
+            .create_from_aic(aic)
+            .await
+            .expect("Could not create AIC");
+    }
+    let result = aic_model.fetch_expired().await.expect("Could not fetch expired.");
+    assert_eq!(result.len(), 2);
+    assert!(result.contains(&aic_1));
+    assert!(result.contains(&aic_3));
+}
