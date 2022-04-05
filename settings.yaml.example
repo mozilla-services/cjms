@@ -1,3 +1,4 @@
+aic_expiration_days: 2
 authentication: authpass
 cj_cid: cj_cid
 cj_signature: cj_signature
