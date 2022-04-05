@@ -2627,14 +2627,14 @@ dependencies = [
 [[package]]
 name = "tracing-actix-web-mozlog"
 version = "0.5.0"
-source = "git+https://github.com/birdsarah/common-rs?branch=chrono_to_time#504bfbc816c064333623bcee6385918380d0caae"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ff47cd44988a34610360846743a4a1a2a318d84f2b16810d77b119a662c4634"
 dependencies = [
  "actix-web",
  "futures-util",
  "gethostname",
  "serde",
  "serde_json",
- "time 0.3.7",
  "tracing",
  "tracing-actix-web",
  "tracing-bunyan-formatter",
