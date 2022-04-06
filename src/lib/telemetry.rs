@@ -1,5 +1,6 @@
 use cadence::{StatsdClient, UdpMetricSink};
 use sentry::ClientInitGuard;
+use sentry_tracing::EventFilter;
 use std::borrow::Cow;
 use std::net::UdpSocket;
 use tracing::subscriber::set_global_default;
@@ -16,12 +17,23 @@ pub fn init_tracing<Sink>(service_name: &str, log_level: &str, sink: Sink)
 where
     Sink: for<'a> MakeWriter<'a> + Send + Sync + 'static,
 {
+    // Filter out any events that are below `log_level`.
     let env_filter = EnvFilter::new(log_level);
+
+    // Prevent the subscriber from sending any events to Sentry that are below
+    // ERROR. This is separate from the EnvFilter, which is responsible for the
+    // log output itself. This is necessary to respect Sentry API call limits
+    // set by SRE.
+    let sentry_layer = sentry_tracing::layer().event_filter(|md| match md.level() {
+        &tracing::Level::ERROR => EventFilter::Event,
+        _ => EventFilter::Ignore,
+    });
+
     let subscriber = Registry::default()
         .with(env_filter)
         .with(JsonStorageLayer)
         .with(MozLogFormatLayer::new(service_name, sink))
-        .with(sentry_tracing::layer());
+        .with(sentry_layer);
 
     LogTracer::init().expect("Failed to set logger");
     set_global_default(subscriber).expect("Failed to set subscriber");
@@ -39,9 +51,9 @@ pub fn init_sentry(settings: &Settings) -> ClientInitGuard {
             /// log messages). Should always be 1.0.
             sample_rate: 1.0,
             /// `traces_sample_rate` defines the sample rate of "transactional"
-            /// events that are used for performance insights but are not
-            /// directly related to error handling.
-            traces_sample_rate: 0.3,
+            /// events that are used for performance insights. We don't want any
+            /// of this, so we set to zero.
+            traces_sample_rate: 0.0,
             ..Default::default()
         },
     ))
