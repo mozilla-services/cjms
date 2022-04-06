@@ -1,7 +1,8 @@
-&&use cadence::{StatsdClient, UdpMetricSink};
+use cadence::{StatsdClient, UdpMetricSink};
 use sentry::ClientInitGuard;
 use sentry_tracing::EventFilter;
 use std::borrow::Cow;
+use std::fmt;
 use std::net::UdpSocket;
 use tracing::subscriber::set_global_default;
 use tracing_actix_web_mozlog::{JsonStorageLayer, MozLogFormatLayer};
@@ -12,17 +13,16 @@ use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 use crate::settings::Settings;
 use crate::version::{read_version, VERSION_FILE};
 
+#[derive(Debug)]
 pub enum TraceType {
     AicRecordCreate,
     AicRecordCreateFailed,
 }
 
-impl TraceType {
-    fn as_str(&self) -> &'static str {
-        match self {
-            TraceType::AicRecordCreate => "aic-record-create",
-            TraceType::AicRecordCreateFailed => "aic-record-create-failed",
-        }
+impl fmt::Display for TraceType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // TODO convert from camel case to snake case
+        write!(f, "{:?}", self)
     }
 }
 
@@ -88,25 +88,29 @@ pub fn create_statsd_client(settings: &Settings) -> StatsdClient {
 }
 
 pub fn trace(trace_type: TraceType, message: &str) {
-    tracing::trace!(r#type = trace_type.to_string(), message);
+    tracing::trace!(r#type = trace_type.to_string().as_str(), message);
 }
 
 pub fn debug(trace_type: TraceType, message: &str) {
-    tracing::debug!(r#type = trace_type.to_string(), message);
+    tracing::debug!(r#type = trace_type.to_string().as_str(), message);
 }
 
 pub fn info(trace_type: TraceType, message: &str) {
-    tracing::info!(r#type = trace_type.to_string(), message);
+    tracing::info!(r#type = trace_type.to_string().as_str(), message);
 }
 
 pub fn warn(trace_type: TraceType, message: &str) {
-    tracing::warn!(r#type = trace_type.to_string(), message);
+    tracing::warn!(r#type = trace_type.to_string().as_str(), message);
 }
 
 pub fn error(trace_type: TraceType, message: &str, error: Option<Box<dyn std::error::Error>>) {
-    let message = match error {
-        Some(err) => format!("Message: '{}'. Original error: {}", &message, err),
-        None => message,
+    match error {
+        Some(err) => tracing::error!(
+            r#type = trace_type.to_string().as_str(),
+            "Message: '{}'. Original error: {:?}",
+            message,
+            err
+        ),
+        None => tracing::error!(r#type = trace_type.to_string().as_str(), message),
     };
-    tracing::error!(r#type = trace_type.to_string(), message);
 }
