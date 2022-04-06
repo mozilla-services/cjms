@@ -49,7 +49,7 @@ mod test_version {
     #[serial]
     #[should_panic(expected = "Couldn't read version file.")]
     async fn read_version_fails_if_no_file() {
-        fs::remove_file(VERSION_FILE_TEST).unwrap();
+        fs::remove_file(VERSION_FILE_TEST).ok();
         read_version(VERSION_FILE_TEST);
     }
 
