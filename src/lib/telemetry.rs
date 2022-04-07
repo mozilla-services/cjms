@@ -2,9 +2,8 @@ use cadence::{StatsdClient, UdpMetricSink};
 use sentry::ClientInitGuard;
 use sentry_tracing::EventFilter;
 use std::borrow::Cow;
-use std::fmt;
 use std::net::UdpSocket;
-use strum_macros::{Display as EnumToString};
+use strum_macros::Display as EnumToString;
 use tracing::subscriber::set_global_default;
 use tracing_actix_web_mozlog::{JsonStorageLayer, MozLogFormatLayer};
 use tracing_log::LogTracer;
@@ -15,9 +14,12 @@ use crate::settings::Settings;
 use crate::version::{read_version, VERSION_FILE};
 
 #[derive(Debug, EnumToString)]
+#[strum(serialize_all = "kebab_case")]
 pub enum TraceType {
     AicRecordCreate,
     AicRecordCreateFailed,
+    RequestErrorLogTest,
+    RequestIndexSuccess,
 }
 
 /// Creates a tracing subscriber and sets it as the global default.
