@@ -385,19 +385,6 @@ impl ResultSet {
             .and_then(|col| col.value.clone()))
     }
 
-    pub fn get_json_value_by_name(
-        &self,
-        col_name: &str,
-    ) -> Result<Option<serde_json::Value>, BQError> {
-        let col_pos = self.fields.get(col_name);
-        match col_pos {
-            None => Err(BQError::InvalidColumnName {
-                col_name: col_name.into(),
-            }),
-            Some(col_pos) => self.get_json_value(*col_pos),
-        }
-    }
-
     fn json_type(json_value: &serde_json::Value) -> String {
         match json_value {
             Value::Null => "Null".into(),
@@ -419,24 +406,6 @@ impl ResultSet {
         match data {
             Ok(maybe_data) => match maybe_data {
                 Some(data) => Ok(OffsetDateTime::from_unix_timestamp(data)),
-                None => Err(BQError::NoDataAvailable),
-            },
-            Err(e) => Err(e),
-        }
-    }
-
-    pub fn require_commaseperatedstring_by_name(
-        &self,
-        column_name: &str,
-    ) -> Result<String, BQError> {
-        let promotion_codes_raw = self.get_json_value_by_name(column_name);
-        match promotion_codes_raw {
-            Ok(maybe_data) => match maybe_data {
-                Some(data) => {
-                    let data = data.to_string();
-                    let promotion_codes: Vec<String> = serde_json::from_str(&data).unwrap();
-                    Ok(promotion_codes.join(","))
-                }
                 None => Err(BQError::NoDataAvailable),
             },
             Err(e) => Err(e),
