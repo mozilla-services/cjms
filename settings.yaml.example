@@ -1,6 +1,7 @@
 aic_expiration_days: 2
 authentication: authpass
 cj_cid: cj_cid
+cj_sftp_user: cj_sftp_user
 cj_signature: cj_signature
 cj_subid: cj_subid
 cj_type: cj_type
