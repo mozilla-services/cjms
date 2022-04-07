@@ -15,11 +15,11 @@ pub struct Settings {
     pub gcp_project: String,
     pub host: String,
     pub log_level: String,
-    pub port: String,
+    pub port: u16,
     pub sentry_dsn: String,
     pub sentry_environment: String,
     pub statsd_host: String,
-    pub statsd_port: String,
+    pub statsd_port: u16,
 }
 
 impl Settings {
@@ -170,11 +170,11 @@ pub mod test_settings {
             gcp_project: "a--te-st-pr0j".to_string(),
             host: "111.2.3.6".to_string(),
             log_level: "info".to_string(),
-            port: "2222".to_string(),
+            port: 2222,
             sentry_dsn: "somevalue".to_string(),
             sentry_environment: "somevalue".to_string(),
             statsd_host: "0.0.0.0".to_string(),
-            statsd_port: "10101".to_string(),
+            statsd_port: 10101,
         };
         assert_eq!(expected, actual);
         env::remove_var("AIC_EXPIRATION_DAYS");
@@ -212,11 +212,11 @@ pub mod test_settings {
             gcp_project: "a-gcp-Pr0j3ct".to_string(),
             host: "127.1.2.3".to_string(),
             log_level: "info".to_string(),
-            port: "2222".to_string(),
+            port: 2222,
             sentry_dsn: "somevalue".to_string(),
             sentry_environment: "somevalue".to_string(),
             statsd_host: "0.0.0.0".to_string(),
-            statsd_port: "10101".to_string(),
+            statsd_port: 10101,
         };
         assert_eq!(expected, settings);
         assert_eq!("127.1.2.3:2222", settings.server_address());

@@ -34,11 +34,11 @@ pub mod test_utils {
             gcp_project: "_".to_string(),
             host: "_".to_string(),
             log_level: "_".to_string(),
-            port: "_".to_string(),
+            port: 1111,
             sentry_dsn: "_".to_string(),
             sentry_environment: "_".to_string(),
             statsd_host: "_".to_string(),
-            statsd_port: "_".to_string(),
+            statsd_port: 2222,
         }
     }
 }

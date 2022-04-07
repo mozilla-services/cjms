@@ -96,11 +96,7 @@ pub struct StatsD {
 
 impl StatsD {
     pub fn new(settings: &Settings) -> Self {
-        // TODO investigate non-blocking version
-        let host = (
-            settings.statsd_host.clone(),
-            settings.statsd_port.parse::<u16>().unwrap(),
-        );
+        let host = (settings.statsd_host.clone(), settings.statsd_port);
         let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
         let sink = UdpMetricSink::from(host, socket).unwrap();
 
