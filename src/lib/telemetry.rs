@@ -1,7 +1,9 @@
 use cadence::{StatsdClient, UdpMetricSink};
 use sentry::ClientInitGuard;
+use sentry_tracing::EventFilter;
 use std::borrow::Cow;
 use std::net::UdpSocket;
+use strum_macros::Display as EnumToString;
 use tracing::subscriber::set_global_default;
 use tracing_actix_web_mozlog::{JsonStorageLayer, MozLogFormatLayer};
 use tracing_log::LogTracer;
@@ -11,17 +13,37 @@ use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 use crate::settings::Settings;
 use crate::version::{read_version, VERSION_FILE};
 
+#[derive(Debug, EnumToString)]
+#[strum(serialize_all = "kebab_case")]
+pub enum TraceType {
+    AicRecordCreate,
+    AicRecordCreateFailed,
+    RequestErrorLogTest,
+    RequestIndexSuccess,
+}
+
 /// Creates a tracing subscriber and sets it as the global default.
 pub fn init_tracing<Sink>(service_name: &str, log_level: &str, sink: Sink)
 where
     Sink: for<'a> MakeWriter<'a> + Send + Sync + 'static,
 {
+    // Filter out any events that are below `log_level`.
     let env_filter = EnvFilter::new(log_level);
+
+    // Prevent the subscriber from sending any events to Sentry that are below
+    // ERROR. This is separate from the EnvFilter, which is responsible for the
+    // log output itself. This is necessary to respect Sentry API call limits
+    // set by SRE.
+    let sentry_layer = sentry_tracing::layer().event_filter(|md| match md.level() {
+        &tracing::Level::ERROR => EventFilter::Event,
+        _ => EventFilter::Ignore,
+    });
+
     let subscriber = Registry::default()
         .with(env_filter)
         .with(JsonStorageLayer)
         .with(MozLogFormatLayer::new(service_name, sink))
-        .with(sentry_tracing::layer());
+        .with(sentry_layer);
 
     LogTracer::init().expect("Failed to set logger");
     set_global_default(subscriber).expect("Failed to set subscriber");
@@ -34,14 +56,16 @@ pub fn init_sentry(settings: &Settings) -> ClientInitGuard {
         settings.sentry_dsn.clone(),
         sentry::ClientOptions {
             environment: Some(Cow::from(settings.environment.clone())),
+            // Suppress breadcrumbs.
+            max_breadcrumbs: 0,
             release: Some(Cow::from(version_data.version)),
-            /// `sample_rate` defines the sample rate of error events (i.e. panics and error
-            /// log messages). Should always be 1.0.
+            // `sample_rate` defines the sample rate of error events (i.e. panics and error
+            // log messages). Should always be 1.0.
             sample_rate: 1.0,
-            /// `traces_sample_rate` defines the sample rate of "transactional"
-            /// events that are used for performance insights but are not
-            /// directly related to error handling.
-            traces_sample_rate: 0.3,
+            // `traces_sample_rate` defines the sample rate of "transactional"
+            // events that are used for performance insights. We don't want any
+            // of this, so we set to zero.
+            traces_sample_rate: 0.0,
             ..Default::default()
         },
     ))
@@ -57,4 +81,20 @@ pub fn create_statsd_client(settings: &Settings) -> StatsdClient {
     let sink = UdpMetricSink::from(host, socket).unwrap();
 
     StatsdClient::from_sink("cjms", sink)
+}
+
+pub fn info(trace_type: TraceType, message: &str) {
+    tracing::info!(r#type = trace_type.to_string().as_str(), message);
+}
+
+pub fn error(trace_type: TraceType, message: &str, error: Option<Box<dyn std::error::Error>>) {
+    match error {
+        Some(err) => tracing::error!(
+            r#type = trace_type.to_string().as_str(),
+            "Message: '{}'. Original error: {:?}",
+            message,
+            err
+        ),
+        None => tracing::error!(r#type = trace_type.to_string().as_str(), message),
+    };
 }

@@ -10,8 +10,8 @@ use std::net::TcpListener;
 async fn main() -> std::io::Result<()> {
     let settings = get_settings();
 
-    init_tracing("cjms-web", &settings.log_level, std::io::stdout);
     let _guard = init_sentry(&settings);
+    init_tracing("cjms-web", &settings.log_level, std::io::stdout);
 
     let statsd_client = create_statsd_client(&settings);
     // TODO what to do with the error?

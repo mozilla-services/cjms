@@ -10,8 +10,8 @@ use lib::{
 async fn main() -> std::io::Result<()> {
     let settings = get_settings();
 
-    init_tracing("cjms-check-refunds", &settings.log_level, std::io::stdout);
     let _guard = init_sentry(&settings);
+    init_tracing("cjms-check-refunds", &settings.log_level, std::io::stdout);
 
     let bq = get_bqclient(&settings).await;
     let db = connect_to_database_and_migrate(&settings.database_url).await;

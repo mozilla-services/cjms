@@ -9,8 +9,8 @@ use lib::{
 async fn main() -> std::io::Result<()> {
     let settings = get_settings();
 
-    init_tracing("cjms-batch-refunds", &settings.log_level, std::io::stdout);
     let _guard = init_sentry(&settings);
+    init_tracing("cjms-batch-refunds", &settings.log_level, std::io::stdout);
 
     let db = connect_to_database_and_migrate(&settings.database_url).await;
     // TODO - LOGGING - This is a process we'll want to log and time (if possible)

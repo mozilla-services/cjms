@@ -1,4 +1,7 @@
-use crate::version::{read_version, VERSION_FILE};
+use crate::{
+    telemetry::{error, info, TraceType},
+    version::{read_version, VERSION_FILE},
+};
 use actix_web::{Error, HttpResponse};
 
 /*
@@ -9,24 +12,22 @@ use actix_web::{Error, HttpResponse};
 
 #[tracing::instrument(name = "request-index")]
 pub async fn index() -> Result<HttpResponse, Error> {
-    tracing::info!(r#type = "request-index-success");
+    info(TraceType::RequestIndexSuccess, "");
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
 
 pub async fn error_log() -> Result<HttpResponse, Error> {
-    tracing::error!(r#type = "request-error-log-test", "Test error log report");
+    let err = "NaN".parse::<usize>().unwrap_err();
+    error(
+        TraceType::RequestErrorLogTest,
+        "Test error log report",
+        Some(Box::new(err)),
+    );
     Ok(HttpResponse::Ok().body("Error log test"))
 }
 
 pub async fn error_panic() -> Result<HttpResponse, Error> {
     panic!("This is fine. :fire:");
-}
-
-pub async fn error_capture() -> Result<HttpResponse, Error> {
-    let err = "NaN".parse::<usize>().unwrap_err();
-    sentry::capture_error(&err);
-
-    Ok(HttpResponse::Ok().body("Error capture test"))
 }
 
 pub async fn heartbeat() -> Result<HttpResponse, Error> {
