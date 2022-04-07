@@ -4,6 +4,7 @@ use sentry_tracing::EventFilter;
 use std::borrow::Cow;
 use std::fmt;
 use std::net::UdpSocket;
+use strum_macros::{Display as EnumToString};
 use tracing::subscriber::set_global_default;
 use tracing_actix_web_mozlog::{JsonStorageLayer, MozLogFormatLayer};
 use tracing_log::LogTracer;
@@ -13,17 +14,10 @@ use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 use crate::settings::Settings;
 use crate::version::{read_version, VERSION_FILE};
 
-#[derive(Debug)]
+#[derive(Debug, EnumToString)]
 pub enum TraceType {
     AicRecordCreate,
     AicRecordCreateFailed,
-}
-
-impl fmt::Display for TraceType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // TODO convert from camel case to snake case
-        write!(f, "{:?}", self)
-    }
 }
 
 /// Creates a tracing subscriber and sets it as the global default.
@@ -87,20 +81,8 @@ pub fn create_statsd_client(settings: &Settings) -> StatsdClient {
     StatsdClient::from_sink("cjms", sink)
 }
 
-pub fn trace(trace_type: TraceType, message: &str) {
-    tracing::trace!(r#type = trace_type.to_string().as_str(), message);
-}
-
-pub fn debug(trace_type: TraceType, message: &str) {
-    tracing::debug!(r#type = trace_type.to_string().as_str(), message);
-}
-
 pub fn info(trace_type: TraceType, message: &str) {
     tracing::info!(r#type = trace_type.to_string().as_str(), message);
-}
-
-pub fn warn(trace_type: TraceType, message: &str) {
-    tracing::warn!(r#type = trace_type.to_string().as_str(), message);
 }
 
 pub fn error(trace_type: TraceType, message: &str, error: Option<Box<dyn std::error::Error>>) {
