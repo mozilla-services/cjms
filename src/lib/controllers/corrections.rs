@@ -19,7 +19,7 @@ async fn build_body_from_results(
     let mut body = format!(
         r#"&CID={}
 &SUBID={}"#,
-        settings.cj_cid, settings.cj_subid
+        settings.cj_sftp_user, settings.cj_subid
     );
     let subscriptions = SubscriptionModel { db_pool };
     for refund in results {
