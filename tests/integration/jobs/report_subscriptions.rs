@@ -135,7 +135,7 @@ async fn report_subscriptions() {
     // GO
     std::thread::sleep(std::time::Duration::from_secs(2));
     let now = OffsetDateTime::now_utc();
-    report_subscriptions_to_cj(&db_pool, mock_cj_client).await;
+    report_subscriptions_to_cj(&db_pool, &mock_cj_client).await;
 
     // ASSERT
 

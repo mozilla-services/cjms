@@ -117,7 +117,7 @@ async fn check_refunds() {
         .await;
 
     // GO
-    fetch_and_process_refunds(bq, &db_pool).await;
+    fetch_and_process_refunds(&bq, &db_pool).await;
 
     // Expect missing refunds
     for refund_id in [refund_3_refund_id, refund_5_refund_id] {

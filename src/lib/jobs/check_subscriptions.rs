@@ -30,7 +30,7 @@ fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError
     Ok(sub)
 }
 
-pub async fn fetch_and_process_new_subscriptions(bq: BQClient, db_pool: &Pool<Postgres>) {
+pub async fn fetch_and_process_new_subscriptions(bq: &BQClient, db_pool: &Pool<Postgres>) {
     let subscriptions = SubscriptionModel { db_pool };
     let aics = AICModel { db_pool };
     // Get all results from bigquery table that stores new subscription reports

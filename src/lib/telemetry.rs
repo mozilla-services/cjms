@@ -19,10 +19,15 @@ use crate::version::{read_version, VERSION_FILE};
 pub enum TraceType {
     AicRecordCreate,
     AicRecordCreateFailed,
+    BatchRefunds,
+    CheckRefunds,
+    CheckSubscriptions,
+    Cleanup,
+    ReportSubscriptions,
     RequestErrorLogTest,
     RequestIndexSuccess,
     StatsDError,
-    WebAppInit,
+    WebApp,
 }
 
 /// Creates a tracing subscriber and sets it as the global default.
@@ -74,11 +79,11 @@ pub fn init_sentry(settings: &Settings) -> ClientInitGuard {
     ))
 }
 
-pub fn info(trace_type: TraceType, message: &str) {
+pub fn info(trace_type: &TraceType, message: &str) {
     tracing::info!(r#type = trace_type.to_string().as_str(), message);
 }
 
-pub fn error(trace_type: TraceType, message: &str, error: Option<Box<dyn std::error::Error>>) {
+pub fn error(trace_type: &TraceType, message: &str, error: Option<Box<dyn std::error::Error>>) {
     match error {
         Some(err) => tracing::error!(
             r#type = trace_type.to_string().as_str(),
@@ -104,13 +109,14 @@ impl StatsD {
             client: StatsdClient::from_sink("cjms", sink),
         }
     }
-    pub fn incr(&self, key: TraceType) {
+    pub fn incr(&self, key: &TraceType, suffix: &str) {
+        let counter = format!("{}-{}", key, suffix.to_lowercase());
         self.client
-            .incr(key.to_string().as_str())
+            .incr(&counter)
             .map_err(|e| {
                 error(
-                    TraceType::StatsDError,
-                    "Could not increment statsd",
+                    &TraceType::StatsDError,
+                    &format!("Could not increment statsd {}", counter),
                     Some(Box::new(e)),
                 );
             })

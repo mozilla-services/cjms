@@ -8,7 +8,7 @@ use crate::{
 // TODO - LOGGING
 // Need logging through out all these possible match conditions. Marking each println with the tag seemed redundant.
 
-pub async fn report_subscriptions_to_cj(db_pool: &Pool<Postgres>, cj_client: CJS2SClient) {
+pub async fn report_subscriptions_to_cj(db_pool: &Pool<Postgres>, cj_client: &CJS2SClient) {
     let subscriptions = SubscriptionModel { db_pool };
     // Intentional panic. Cannot continue if we can't retrieve subs.
     let not_reported_subscriptions = subscriptions

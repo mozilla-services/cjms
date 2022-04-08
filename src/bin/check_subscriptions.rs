@@ -1,28 +1,11 @@
 use lib::{
-    appconfig::connect_to_database_and_migrate,
-    bigquery::client::get_bqclient,
-    jobs::check_subscriptions::fetch_and_process_new_subscriptions,
-    settings::get_settings,
-    telemetry::{init_sentry, init_tracing},
+    appconfig::CJ, jobs::check_subscriptions::fetch_and_process_new_subscriptions,
+    telemetry::TraceType,
 };
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let settings = get_settings();
-
-    let _guard = init_sentry(&settings);
-    init_tracing(
-        "cjms-check-subscriptions",
-        &settings.log_level,
-        std::io::stdout,
-    );
-
-    let bq = get_bqclient(&settings).await;
-    let db = connect_to_database_and_migrate(&settings.database_url).await;
-    // TODO - LOGGING - This is a process we'll want to log and time (if possible)
-    println!("Starting fetch_and_process_new_subscriptions");
-    fetch_and_process_new_subscriptions(bq, &db).await;
-    println!("End fetch_and_process_new_subscriptions");
-    db.close().await;
-    Ok(())
+    let cj = CJ::new(TraceType::CheckSubscriptions).await;
+    fetch_and_process_new_subscriptions(&cj.bq_client, &cj.db_pool).await;
+    cj.shutdown().await
 }

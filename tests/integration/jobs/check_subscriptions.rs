@@ -78,7 +78,7 @@ async fn check_subscriptions() {
         .await;
 
     // GO
-    fetch_and_process_new_subscriptions(bq, &db_pool).await;
+    fetch_and_process_new_subscriptions(&bq, &db_pool).await;
 
     // ASSERT
     let sub_1 = sub_model

@@ -24,7 +24,7 @@ fn make_refund_from_bq_row(rs: &ResultSet) -> Result<Refund, BQError> {
     Ok(refund)
 }
 
-pub async fn fetch_and_process_refunds(bq: BQClient, db_pool: &Pool<Postgres>) {
+pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>) {
     let subscriptions = SubscriptionModel { db_pool };
     let refunds = RefundModel { db_pool };
 
