@@ -6,6 +6,7 @@ pub struct Settings {
     pub aic_expiration_days: u64,
     pub authentication: String,
     pub cj_cid: String,
+    pub cj_sftp_user: String,
     pub cj_signature: String,
     pub cj_subid: String,
     pub cj_type: String,
@@ -77,6 +78,7 @@ pub mod test_settings {
         writeln!(file, "aic_expiration_days: 22222").unwrap();
         writeln!(file, "authentication: auth a pass").unwrap();
         writeln!(file, "cj_cid: cid").unwrap();
+        writeln!(file, "cj_sftp_user: sftp_user").unwrap();
         writeln!(file, "cj_signature: signature").unwrap();
         writeln!(file, "cj_subid: subid").unwrap();
         writeln!(file, "cj_type: type").unwrap();
@@ -135,6 +137,7 @@ pub mod test_settings {
         env::set_var("AIC_EXPIRATION_DAYS", "121212");
         env::set_var("AUTHENTICATION", "auth pass");
         env::set_var("CJ_CID", "test cj cid");
+        env::set_var("CJ_SFTP_USER", "test cj sftp user");
         env::set_var("CJ_SIGNATURE", "test cj signature");
         env::set_var("CJ_SUBID", "test cj subid");
         env::set_var("CJ_TYPE", "test cj type");
@@ -158,6 +161,7 @@ pub mod test_settings {
             aic_expiration_days: 121212,
             authentication: "auth pass".to_string(),
             cj_cid: "test cj cid".to_string(),
+            cj_sftp_user: "test cj sftp user".to_string(),
             cj_signature: "test cj signature".to_string(),
             cj_subid: "test cj subid".to_string(),
             cj_type: "test cj type".to_string(),
@@ -176,6 +180,7 @@ pub mod test_settings {
         env::remove_var("AIC_EXPIRATION_DAYS");
         env::remove_var("AUTHENTICATION");
         env::remove_var("CJ_CID");
+        env::remove_var("CJ_SFTP_USER");
         env::remove_var("CJ_SIGNATURE");
         env::remove_var("CJ_SUBID");
         env::remove_var("CJ_TYPE");
@@ -198,6 +203,7 @@ pub mod test_settings {
             aic_expiration_days: 22222,
             authentication: "auth a pass".to_string(),
             cj_cid: "cid".to_string(),
+            cj_sftp_user: "sftp_user".to_string(),
             cj_signature: "signature".to_string(),
             cj_subid: "subid".to_string(),
             cj_type: "type".to_string(),

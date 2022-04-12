@@ -113,7 +113,7 @@ async fn test_corrections_by_day_result() {
     let expected_body = format!(
         r#"&CID={}
 &SUBID={}"#,
-        app.settings.cj_cid, app.settings.cj_subid
+        app.settings.cj_sftp_user, app.settings.cj_subid
     );
     assert_eq!(actual_body, expected_body);
 
@@ -126,7 +126,7 @@ async fn test_corrections_by_day_result() {
         r#"&CID={}
 &SUBID={}
 RETRN,,{}"#,
-        app.settings.cj_cid, app.settings.cj_subid, expected_sub.id
+        app.settings.cj_sftp_user, app.settings.cj_subid, expected_sub.id
     );
     assert_eq!(actual_body, expected_body);
 }
@@ -161,7 +161,7 @@ async fn test_corrections_today() {
 &SUBID={}
 RETRN,,{}
 RETRN,,{}"#,
-        app.settings.cj_cid, app.settings.cj_subid, expected_sub_1.id, expected_sub_2.id
+        app.settings.cj_sftp_user, app.settings.cj_subid, expected_sub_1.id, expected_sub_2.id
     );
     assert_eq!(actual_body, expected_body);
 }

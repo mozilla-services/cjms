@@ -33,6 +33,7 @@ The required settings are listed in `settings.yaml.example`. There may be other 
 * aic_expiration_days: How long for an aic cookie to expire
 * authentication: Used for basic_auth on the the corrections detail page
 * cj_cid: For CJ S2S configuration
+* cj_sftp_user: For CJ corrections
 * cj_signature: For CJ S2S configuration
 * cj_subid: For CJ corrections
 * cj_type: For CJ S2S configuration
