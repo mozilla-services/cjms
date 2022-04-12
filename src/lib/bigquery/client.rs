@@ -369,21 +369,16 @@ mod tests {
             start_date: OffsetDateTime,
             plan_id: String,
             plan_amount: i64,
-            promotion_codes: String,
         }
         let mut rows: Vec<TestItem> = Vec::new();
         while rs.next_row() {
             let start_date = rs
                 .require_offsetdatetime_by_name("start_date")
                 .expect("Should get start_date");
-            let promotion_codes = rs
-                .require_commaseperatedstring_by_name("promotion_codes")
-                .expect("Should get promotion codes");
             rows.push(TestItem {
                 start_date,
                 plan_id: rs.get_string_by_name("plan_id").unwrap().unwrap(),
                 plan_amount: rs.get_i64_by_name("plan_amount").unwrap().unwrap(),
-                promotion_codes,
             });
         }
         // One test for each data type. Plus one test that rows are different.
@@ -394,7 +389,6 @@ mod tests {
                 .unix_timestamp()
         );
         assert_eq!(rows[0].plan_id, "price_1Iw85dJNcmPzuWtRyhMDdtM7");
-        assert_eq!(rows[0].promotion_codes, "a,b");
         assert_eq!(rows[0].plan_amount, 3988);
         assert_eq!(rows[1].plan_amount, 4988);
         assert_eq!(rows[2].plan_amount, 5988);
