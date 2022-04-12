@@ -7,6 +7,8 @@ use lib::jobs::check_refunds::fetch_and_process_refunds;
 use lib::models::refunds::{PartialRefund, Refund, RefundModel};
 use lib::models::status_history::{Status, UpdateStatus};
 use lib::models::subscriptions::SubscriptionModel;
+use lib::settings::get_settings;
+use lib::telemetry::StatsD;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use serial_test::serial;
@@ -31,6 +33,8 @@ async fn check_refunds() {
     env::set_var("BQ_ACCESS_TOKEN", "a token");
 
     // SETUP
+    let settings = get_settings();
+    let mock_statsd = StatsD::new(&settings);
     let db_pool = get_test_db_pool().await;
     let sub_model = SubscriptionModel { db_pool: &db_pool };
     let refund_model = RefundModel { db_pool: &db_pool };
@@ -117,7 +121,7 @@ async fn check_refunds() {
         .await;
 
     // GO
-    fetch_and_process_refunds(&bq, &db_pool).await;
+    fetch_and_process_refunds(&bq, &db_pool, &mock_statsd).await;
 
     // Expect missing refunds
     for refund_id in [refund_3_refund_id, refund_5_refund_id] {

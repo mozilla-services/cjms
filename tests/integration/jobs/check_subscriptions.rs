@@ -7,6 +7,8 @@ use lib::jobs::check_subscriptions::fetch_and_process_new_subscriptions;
 use lib::models::aic::AICModel;
 use lib::models::status_history::{Status, UpdateStatus};
 use lib::models::subscriptions::{PartialSubscription, Subscription, SubscriptionModel};
+use lib::settings::get_settings;
+use lib::telemetry::StatsD;
 use pretty_assertions::assert_eq;
 
 use serde_json::Value;
@@ -29,6 +31,8 @@ fn fixture_bigquery_response() -> Value {
 #[serial]
 async fn check_subscriptions() {
     // SETUP
+    let settings = get_settings();
+    let mock_statsd = StatsD::new(&settings);
     let db_pool = get_test_db_pool().await;
     let sub_model = SubscriptionModel { db_pool: &db_pool };
     let aic_model = AICModel { db_pool: &db_pool };
@@ -78,7 +82,7 @@ async fn check_subscriptions() {
         .await;
 
     // GO
-    fetch_and_process_new_subscriptions(&bq, &db_pool).await;
+    fetch_and_process_new_subscriptions(&bq, &db_pool, &mock_statsd).await;
 
     // ASSERT
     let sub_1 = sub_model

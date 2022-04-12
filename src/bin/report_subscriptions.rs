@@ -5,6 +5,6 @@ use lib::{
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let cj = CJ::new(TraceType::ReportSubscriptions).await;
-    report_subscriptions_to_cj(&cj.db_pool, &cj.cj_client).await;
+    report_subscriptions_to_cj(&cj.db_pool, &cj.cj_client, &cj.statsd).await;
     cj.shutdown().await
 }

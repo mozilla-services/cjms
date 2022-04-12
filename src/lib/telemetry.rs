@@ -1,10 +1,10 @@
-use cadence::{CountedExt, StatsdClient, UdpMetricSink, Timed};
+use cadence::{CountedExt, Gauged, StatsdClient, Timed, UdpMetricSink};
 use sentry::ClientInitGuard;
 use sentry_tracing::EventFilter;
-use time::Duration;
 use std::borrow::Cow;
 use std::net::UdpSocket;
 use strum_macros::Display as EnumToString;
+use time::Duration;
 use tracing::subscriber::set_global_default;
 use tracing_actix_web_mozlog::{JsonStorageLayer, MozLogFormatLayer};
 use tracing_log::LogTracer;
@@ -21,6 +21,7 @@ pub enum TraceType {
     AicRecordCreate,
     AicRecordCreateFailed,
     BatchRefunds,
+    BigQuery,
     CheckRefunds,
     CheckSubscriptions,
     Cleanup,
@@ -119,6 +120,20 @@ impl StatsD {
                 error(
                     &TraceType::StatsDError,
                     &format!("Could not increment statsd tag {}", tag),
+                    Some(Box::new(e)),
+                );
+            })
+            .ok();
+    }
+    pub fn gauge(&self, key: &TraceType, suffix: &str, v: usize) {
+        let tag = format!("{}-{}", key, suffix.to_lowercase());
+        let v = v as u64;
+        self.client
+            .gauge(&tag, v)
+            .map_err(|e| {
+                error(
+                    &TraceType::StatsDError,
+                    &format!("Could not record value {:?} for statsd tag {}", v, tag),
                     Some(Box::new(e)),
                 );
             })

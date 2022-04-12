@@ -3,21 +3,27 @@ use sqlx::{Pool, Postgres};
 use crate::{
     cj::client::CJS2SClient,
     models::{status_history::Status, subscriptions::SubscriptionModel},
+    telemetry::{StatsD, TraceType},
 };
 
 // TODO - LOGGING
 // Need logging through out all these possible match conditions. Marking each println with the tag seemed redundant.
 
-pub async fn report_subscriptions_to_cj(db_pool: &Pool<Postgres>, cj_client: &CJS2SClient) {
+pub async fn report_subscriptions_to_cj(
+    db_pool: &Pool<Postgres>,
+    cj_client: &CJS2SClient,
+    statsd: &StatsD,
+) {
     let subscriptions = SubscriptionModel { db_pool };
     // Intentional panic. Cannot continue if we can't retrieve subs.
     let not_reported_subscriptions = subscriptions
         .fetch_all_not_reported()
         .await
         .expect("Could not retrieve subscriptions from DB.");
-    println!(
-        "Found {} subscriptions to report.",
-        not_reported_subscriptions.len()
+    statsd.gauge(
+        &TraceType::ReportSubscriptions,
+        "n-not-reported",
+        not_reported_subscriptions.len(),
     );
     for sub in not_reported_subscriptions {
         let next_status = match sub.aic_expires {

@@ -63,7 +63,8 @@ impl CJ {
         self.statsd.incr(&self.name, "ending");
         info(&self.name, "Ending");
         self.db_pool.close().await;
-        self.statsd.time(&self.name, "timer", OffsetDateTime::now_utc() - self.start);
+        self.statsd
+            .time(&self.name, "timer", OffsetDateTime::now_utc() - self.start);
         Ok(())
     }
 }
