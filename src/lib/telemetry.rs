@@ -1,6 +1,7 @@
-use cadence::{CountedExt, StatsdClient, UdpMetricSink};
+use cadence::{CountedExt, StatsdClient, UdpMetricSink, Timed};
 use sentry::ClientInitGuard;
 use sentry_tracing::EventFilter;
+use time::Duration;
 use std::borrow::Cow;
 use std::net::UdpSocket;
 use strum_macros::Display as EnumToString;
@@ -111,13 +112,27 @@ impl StatsD {
         }
     }
     pub fn incr(&self, key: &TraceType, suffix: &str) {
-        let counter = format!("{}-{}", key, suffix.to_lowercase());
+        let tag = format!("{}-{}", key, suffix.to_lowercase());
         self.client
-            .incr(&counter)
+            .incr(&tag)
             .map_err(|e| {
                 error(
                     &TraceType::StatsDError,
-                    &format!("Could not increment statsd {}", counter),
+                    &format!("Could not increment statsd tag {}", tag),
+                    Some(Box::new(e)),
+                );
+            })
+            .ok();
+    }
+    pub fn time(&self, key: &TraceType, suffix: &str, t: Duration) {
+        let tag = format!("{}-{}", key, suffix.to_lowercase());
+        let milliseconds = t.whole_milliseconds();
+        self.client
+            .time(&tag, milliseconds as u64)
+            .map_err(|e| {
+                error(
+                    &TraceType::StatsDError,
+                    &format!("Could not record time {:?} for statsd tag {}", t, tag),
                     Some(Box::new(e)),
                 );
             })

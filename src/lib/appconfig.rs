@@ -9,9 +9,9 @@ use actix_web::{
 use actix_web_httpauth::extractors::basic::BasicAuth;
 use actix_web_httpauth::middleware::HttpAuthentication;
 use sentry::ClientInitGuard;
-
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
+use time::OffsetDateTime;
 use tracing_actix_web_mozlog::MozLog;
 
 use crate::{
@@ -25,6 +25,7 @@ use crate::{
 pub struct CJ {
     _guard: ClientInitGuard,
     name: TraceType,
+    start: OffsetDateTime,
     pub bq_client: BQClient,
     pub cj_client: CJS2SClient,
     pub db_pool: PgPool,
@@ -34,6 +35,7 @@ pub struct CJ {
 
 impl CJ {
     pub async fn new(name: TraceType) -> Self {
+        let start = OffsetDateTime::now_utc();
         let settings = get_settings();
         let _guard = init_sentry(&settings);
         if name != TraceType::Test {
@@ -48,6 +50,7 @@ impl CJ {
         CJ {
             _guard,
             name,
+            start,
             bq_client,
             cj_client,
             db_pool,
@@ -60,6 +63,7 @@ impl CJ {
         self.statsd.incr(&self.name, "ending");
         info(&self.name, "Ending");
         self.db_pool.close().await;
+        self.statsd.time(&self.name, "timer", OffsetDateTime::now_utc() - self.start);
         Ok(())
     }
 }
