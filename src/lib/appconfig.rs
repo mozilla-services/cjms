@@ -36,7 +36,9 @@ impl CJ {
     pub async fn new(name: TraceType) -> Self {
         let settings = get_settings();
         let _guard = init_sentry(&settings);
-        init_tracing(&name.to_string(), &settings.log_level, std::io::stdout);
+        if name != TraceType::Test {
+            init_tracing(&name.to_string(), &settings.log_level, std::io::stdout);
+        }
         let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
         let bq_client = get_bqclient(&settings).await;
         let cj_client = CJS2SClient::new(&settings, None);

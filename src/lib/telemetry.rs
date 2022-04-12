@@ -14,7 +14,7 @@ use crate::settings::Settings;
 use crate::version::{read_version, VERSION_FILE};
 
 // TODO - Rename to something more generic e.g. LoggingKey
-#[derive(Debug, EnumToString)]
+#[derive(Debug, EnumToString, PartialEq, Eq)]
 #[strum(serialize_all = "kebab_case")]
 pub enum TraceType {
     AicRecordCreate,
@@ -27,6 +27,7 @@ pub enum TraceType {
     RequestErrorLogTest,
     RequestIndexSuccess,
     StatsDError,
+    Test, // For test cases
     WebApp,
 }
 

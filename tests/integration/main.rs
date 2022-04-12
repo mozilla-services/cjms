@@ -1,4 +1,5 @@
 mod aic;
+mod appconfig;
 mod corrections;
 mod custodial;
 mod jobs;
