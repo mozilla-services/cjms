@@ -11,7 +11,7 @@ gcp_project: proj
 host: 127.0.0.1
 log_level: info
 port: 8000
-sentry_dsn: somevalue
-sentry_environment: local
+sentry_dsn: https://public@sentry.example.com/1
+sentry_environment: ci
 statsd_host: 0.0.0.0
 statsd_port: 10101

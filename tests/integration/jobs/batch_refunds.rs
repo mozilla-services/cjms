@@ -4,6 +4,8 @@ use lib::{
         refunds::RefundModel,
         status_history::{Status, StatusHistoryEntry, UpdateStatus},
     },
+    settings::get_settings,
+    telemetry::StatsD,
 };
 use time::OffsetDateTime;
 
@@ -12,7 +14,8 @@ use crate::{models::refunds::make_fake_refund, utils::get_test_db_pool};
 #[tokio::test]
 async fn batch_refunds_by_day_makes_unreported_subscriptions_reported_and_gives_a_day() {
     // SETUP
-
+    let settings = get_settings();
+    let mock_statsd = StatsD::new(&settings);
     let db_pool = get_test_db_pool().await;
     let refunds = RefundModel { db_pool: &db_pool };
 
@@ -39,7 +42,7 @@ async fn batch_refunds_by_day_makes_unreported_subscriptions_reported_and_gives_
     // GO
     std::thread::sleep(std::time::Duration::from_secs(2));
     let now = OffsetDateTime::now_utc();
-    batch_refunds_by_day(&db_pool).await;
+    batch_refunds_by_day(&db_pool, &mock_statsd).await;
 
     // ASSERT
 

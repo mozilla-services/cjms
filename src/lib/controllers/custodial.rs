@@ -12,14 +12,14 @@ use actix_web::{Error, HttpResponse};
 
 #[tracing::instrument(name = "request-index")]
 pub async fn index() -> Result<HttpResponse, Error> {
-    info(TraceType::RequestIndexSuccess, "");
+    info(&TraceType::RequestIndexSuccess, "");
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
 
 pub async fn error_log() -> Result<HttpResponse, Error> {
     let err = "NaN".parse::<usize>().unwrap_err();
     error(
-        TraceType::RequestErrorLogTest,
+        &TraceType::RequestErrorLogTest,
         "Test error log report",
         Some(Box::new(err)),
     );

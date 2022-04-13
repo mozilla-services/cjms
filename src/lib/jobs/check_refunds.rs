@@ -8,6 +8,7 @@ use crate::{
         status_history::{Status, UpdateStatus},
         subscriptions::SubscriptionModel,
     },
+    telemetry::{StatsD, TraceType},
 };
 
 fn make_refund_from_bq_row(rs: &ResultSet) -> Result<Refund, BQError> {
@@ -24,13 +25,14 @@ fn make_refund_from_bq_row(rs: &ResultSet) -> Result<Refund, BQError> {
     Ok(refund)
 }
 
-pub async fn fetch_and_process_refunds(bq: BQClient, db_pool: &Pool<Postgres>) {
+pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, statsd: &StatsD) {
     let subscriptions = SubscriptionModel { db_pool };
     let refunds = RefundModel { db_pool };
 
     // Get all results from bigquery table that stores refunds reports
     let query = "SELECT * FROM `cjms_bigquery.refunds_v1`;";
     let mut rs = bq.get_bq_results(query).await;
+    rs.report_stats(statsd, &TraceType::CheckRefunds);
     while rs.next_row() {
         // If can't deserialize e.g. required fields are not available log and move on.
         let r = match make_refund_from_bq_row(&rs) {

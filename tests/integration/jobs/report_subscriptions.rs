@@ -6,6 +6,7 @@ use lib::{
         subscriptions::SubscriptionModel,
     },
     settings::{get_settings, Settings},
+    telemetry::StatsD,
 };
 
 use time::{Duration, OffsetDateTime};
@@ -30,6 +31,7 @@ async fn report_subscriptions() {
     // SETUP
 
     let settings = get_settings();
+    let mock_statsd = StatsD::new(&settings);
     let db_pool = get_test_db_pool().await;
     let sub_model = SubscriptionModel { db_pool: &db_pool };
 
@@ -135,7 +137,7 @@ async fn report_subscriptions() {
     // GO
     std::thread::sleep(std::time::Duration::from_secs(2));
     let now = OffsetDateTime::now_utc();
-    report_subscriptions_to_cj(&db_pool, mock_cj_client).await;
+    report_subscriptions_to_cj(&db_pool, &mock_cj_client, &mock_statsd).await;
 
     // ASSERT
 

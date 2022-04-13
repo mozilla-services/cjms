@@ -73,7 +73,7 @@ impl AICModel<'_> {
         .await
         .map_err(|e| {
             error(
-                TraceType::AicRecordCreateFailed,
+                &TraceType::AicRecordCreateFailed,
                 &format!("Failed to execute query: {:?}", e),
                 None,
             );

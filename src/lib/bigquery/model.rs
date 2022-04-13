@@ -31,6 +31,8 @@ use std::collections::HashMap;
 use thiserror::Error;
 use time::OffsetDateTime;
 
+use crate::telemetry::{error, StatsD, TraceType};
+
 #[derive(Error, Debug)]
 pub enum BQError {
     #[error("BQError: No data available. The result set is positioned before the first or after the last row. Try to call the method next on your result set.")]
@@ -304,6 +306,40 @@ impl ResultSet {
     /// Total number of rows in this result set.
     pub fn row_count(&self) -> usize {
         self.row_count as usize
+    }
+
+    pub fn report_stats(&self, statsd: &StatsD, key: &TraceType) {
+        statsd.gauge(key, "n-from-bq", self.row_count());
+        let total_rows = self
+            .query_response
+            .total_rows
+            .clone()
+            .unwrap_or_else(|| "-1".to_string());
+        match total_rows.parse::<usize>() {
+            Ok(n) => {
+                statsd.gauge(key, "total-n-from-bq", n);
+            }
+            Err(e) => error(
+                &TraceType::BigQuery,
+                "Could not get total rows",
+                Some(Box::new(e)),
+            ),
+        };
+        let bytes_processed = self
+            .query_response
+            .total_bytes_processed
+            .clone()
+            .unwrap_or_else(|| "-1".to_string());
+        match bytes_processed.parse::<usize>() {
+            Ok(n) => {
+                statsd.gauge(key, "bytes-from-bq", n);
+            }
+            Err(e) => error(
+                &TraceType::BigQuery,
+                "Could not get total bytes processed",
+                Some(Box::new(e)),
+            ),
+        };
     }
 
     pub fn get_i64(&self, col_index: usize) -> Result<Option<i64>, BQError> {

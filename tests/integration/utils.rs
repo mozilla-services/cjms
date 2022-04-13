@@ -59,7 +59,7 @@ pub async fn spawn_app() -> TestApp {
     settings.cj_signature = test_cj_signature;
     settings.cj_subid = test_subid;
     settings.database_url = test_database_url;
-    settings.port = format!("{}", port);
+    settings.port = port;
     let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
     let server = run_server(settings.clone(), listener, db_pool).expect("Failed to start server");
     let _ = tokio::spawn(server);

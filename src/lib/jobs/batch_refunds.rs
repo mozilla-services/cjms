@@ -1,19 +1,26 @@
 use sqlx::{Pool, Postgres};
 use time::OffsetDateTime;
 
-use crate::models::{
-    refunds::RefundModel,
-    status_history::{Status, UpdateStatus},
+use crate::{
+    models::{
+        refunds::RefundModel,
+        status_history::{Status, UpdateStatus},
+    },
+    telemetry::{StatsD, TraceType},
 };
 
-pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>) {
+pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>, statsd: &StatsD) {
     let refunds = RefundModel { db_pool };
     // Intentional panic. Cannot continue if we can't retrieve refunds.
     let not_reported_refunds = refunds
         .fetch_not_reported()
         .await
         .expect("Could not retrieve refunds from DB.");
-    println!("Found {} refunds to report.", not_reported_refunds.len());
+    statsd.gauge(
+        &TraceType::BatchRefunds,
+        "n-not-reported",
+        not_reported_refunds.len(),
+    );
     for mut refund in not_reported_refunds {
         let next_state = match &refund.refund_status {
             Some(refund_status) => {

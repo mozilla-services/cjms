@@ -8,11 +8,66 @@ use actix_web::{
 };
 use actix_web_httpauth::extractors::basic::BasicAuth;
 use actix_web_httpauth::middleware::HttpAuthentication;
+use sentry::ClientInitGuard;
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
+use time::OffsetDateTime;
 use tracing_actix_web_mozlog::MozLog;
 
-use crate::{controllers, settings::Settings};
+use crate::{
+    bigquery::client::{get_bqclient, BQClient},
+    cj::client::CJS2SClient,
+    controllers,
+    settings::{get_settings, Settings},
+    telemetry::{info, init_sentry, init_tracing, StatsD, TraceType},
+};
+
+pub struct CJ {
+    _guard: ClientInitGuard,
+    name: TraceType,
+    start: OffsetDateTime,
+    pub bq_client: BQClient,
+    pub cj_client: CJS2SClient,
+    pub db_pool: PgPool,
+    pub settings: Settings,
+    pub statsd: StatsD,
+}
+
+impl CJ {
+    pub async fn new(name: TraceType) -> Self {
+        let start = OffsetDateTime::now_utc();
+        let settings = get_settings();
+        let _guard = init_sentry(&settings);
+        if name != TraceType::Test {
+            init_tracing(&name.to_string(), &settings.log_level, std::io::stdout);
+        }
+        let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
+        let bq_client = get_bqclient(&settings).await;
+        let cj_client = CJS2SClient::new(&settings, None);
+        let statsd = StatsD::new(&settings);
+        statsd.incr(&name, "starting");
+        info(&name, "Starting");
+        CJ {
+            _guard,
+            name,
+            start,
+            bq_client,
+            cj_client,
+            db_pool,
+            settings,
+            statsd,
+        }
+    }
+
+    pub async fn shutdown(&self) -> std::io::Result<()> {
+        self.statsd.incr(&self.name, "ending");
+        info(&self.name, "Ending");
+        self.db_pool.close().await;
+        self.statsd
+            .time(&self.name, "timer", OffsetDateTime::now_utc() - self.start);
+        Ok(())
+    }
+}
 
 async fn basic_auth_middleware(
     req: ServiceRequest,

@@ -1,9 +1,10 @@
-use cadence::{StatsdClient, UdpMetricSink};
+use cadence::{CountedExt, Gauged, StatsdClient, Timed, UdpMetricSink};
 use sentry::ClientInitGuard;
 use sentry_tracing::EventFilter;
 use std::borrow::Cow;
 use std::net::UdpSocket;
 use strum_macros::Display as EnumToString;
+use time::Duration;
 use tracing::subscriber::set_global_default;
 use tracing_actix_web_mozlog::{JsonStorageLayer, MozLogFormatLayer};
 use tracing_log::LogTracer;
@@ -13,13 +14,23 @@ use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 use crate::settings::Settings;
 use crate::version::{read_version, VERSION_FILE};
 
-#[derive(Debug, EnumToString)]
+// TODO - Rename to something more generic e.g. LoggingKey
+#[derive(Debug, EnumToString, PartialEq, Eq)]
 #[strum(serialize_all = "kebab_case")]
 pub enum TraceType {
     AicRecordCreate,
     AicRecordCreateFailed,
+    BatchRefunds,
+    BigQuery,
+    CheckRefunds,
+    CheckSubscriptions,
+    Cleanup,
+    ReportSubscriptions,
     RequestErrorLogTest,
     RequestIndexSuccess,
+    StatsDError,
+    Test, // For test cases
+    WebApp,
 }
 
 /// Creates a tracing subscriber and sets it as the global default.
@@ -71,23 +82,11 @@ pub fn init_sentry(settings: &Settings) -> ClientInitGuard {
     ))
 }
 
-pub fn create_statsd_client(settings: &Settings) -> StatsdClient {
-    // TODO investigate non-blocking version
-    let host = (
-        settings.statsd_host.clone(),
-        settings.statsd_port.parse::<u16>().unwrap(),
-    );
-    let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
-    let sink = UdpMetricSink::from(host, socket).unwrap();
-
-    StatsdClient::from_sink("cjms", sink)
-}
-
-pub fn info(trace_type: TraceType, message: &str) {
+pub fn info(trace_type: &TraceType, message: &str) {
     tracing::info!(r#type = trace_type.to_string().as_str(), message);
 }
 
-pub fn error(trace_type: TraceType, message: &str, error: Option<Box<dyn std::error::Error>>) {
+pub fn error(trace_type: &TraceType, message: &str, error: Option<Box<dyn std::error::Error>>) {
     match error {
         Some(err) => tracing::error!(
             r#type = trace_type.to_string().as_str(),
@@ -97,4 +96,61 @@ pub fn error(trace_type: TraceType, message: &str, error: Option<Box<dyn std::er
         ),
         None => tracing::error!(r#type = trace_type.to_string().as_str(), message),
     };
+}
+
+pub struct StatsD {
+    client: StatsdClient,
+}
+
+impl StatsD {
+    pub fn new(settings: &Settings) -> Self {
+        let host = (settings.statsd_host.clone(), settings.statsd_port);
+        let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
+        let sink = UdpMetricSink::from(host, socket).unwrap();
+
+        StatsD {
+            client: StatsdClient::from_sink("cjms", sink),
+        }
+    }
+    pub fn incr(&self, key: &TraceType, suffix: &str) {
+        let tag = format!("{}-{}", key, suffix.to_lowercase());
+        self.client
+            .incr(&tag)
+            .map_err(|e| {
+                error(
+                    &TraceType::StatsDError,
+                    &format!("Could not increment statsd tag {}", tag),
+                    Some(Box::new(e)),
+                );
+            })
+            .ok();
+    }
+    pub fn gauge(&self, key: &TraceType, suffix: &str, v: usize) {
+        let tag = format!("{}-{}", key, suffix.to_lowercase());
+        let v = v as u64;
+        self.client
+            .gauge(&tag, v)
+            .map_err(|e| {
+                error(
+                    &TraceType::StatsDError,
+                    &format!("Could not record value {:?} for statsd tag {}", v, tag),
+                    Some(Box::new(e)),
+                );
+            })
+            .ok();
+    }
+    pub fn time(&self, key: &TraceType, suffix: &str, t: Duration) {
+        let tag = format!("{}-{}", key, suffix.to_lowercase());
+        let milliseconds = t.whole_milliseconds();
+        self.client
+            .time(&tag, milliseconds as u64)
+            .map_err(|e| {
+                error(
+                    &TraceType::StatsDError,
+                    &format!("Could not record time {:?} for statsd tag {}", t, tag),
+                    Some(Box::new(e)),
+                );
+            })
+            .ok();
+    }
 }
