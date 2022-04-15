@@ -1,8 +1,10 @@
-use cadence::{CountedExt, Gauged, StatsdClient, Timed, UdpMetricSink};
+use cadence::{MetricClient, StatsdClient, UdpMetricSink};
 use sentry::ClientInitGuard;
 use sentry_tracing::EventFilter;
 use std::borrow::Cow;
 use std::net::UdpSocket;
+use std::panic::RefUnwindSafe;
+use std::sync::Arc;
 use strum_macros::Display as EnumToString;
 use time::Duration;
 use tracing::subscriber::set_global_default;
@@ -25,6 +27,7 @@ pub enum TraceType {
     CheckRefunds,
     CheckSubscriptions,
     Cleanup,
+    CorrectionsReport,
     ReportSubscriptions,
     RequestErrorLogTest,
     RequestIndexSuccess,
@@ -98,8 +101,9 @@ pub fn error(trace_type: &TraceType, message: &str, error: Option<Box<dyn std::e
     };
 }
 
+#[derive(Clone)]
 pub struct StatsD {
-    client: StatsdClient,
+    client: Arc<dyn MetricClient + Send + Sync + RefUnwindSafe>,
 }
 
 impl StatsD {
@@ -109,7 +113,7 @@ impl StatsD {
         let sink = UdpMetricSink::from(host, socket).unwrap();
 
         StatsD {
-            client: StatsdClient::from_sink("cjms", sink),
+            client: Arc::new(StatsdClient::from_sink("cjms", sink)),
         }
     }
     pub fn incr(&self, key: &TraceType, suffix: &str) {
