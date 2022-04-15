@@ -91,8 +91,10 @@ pub fn run_server(
     listener: TcpListener,
     db_pool: PgPool,
 ) -> Result<Server, std::io::Error> {
-    let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
+        let db_pool_d = Data::new(db_pool.clone());
+        let settings_d = Data::new(settings.clone());
+        let statsd_d = Data::new(StatsD::new(&settings));
         let cors = get_cors(settings.clone());
         let moz_log = MozLog::default();
         let auth = HttpAuthentication::basic(basic_auth_middleware);
@@ -122,10 +124,10 @@ pub fn run_server(
                     .route(get().to(controllers::corrections::by_day))
                     .wrap(auth),
             )
-            // Make DB available to all routes
-            .app_data(db_pool.clone())
-            // Make settings available to all routes
-            .app_data(Data::new(settings.clone()))
+            // Make data objects available to all routes
+            .app_data(db_pool_d)
+            .app_data(settings_d)
+            .app_data(statsd_d)
     })
     .listen(listener)?
     .run();

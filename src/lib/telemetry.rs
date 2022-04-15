@@ -25,6 +25,7 @@ pub enum TraceType {
     CheckRefunds,
     CheckSubscriptions,
     Cleanup,
+    CorrectionsReport,
     ReportSubscriptions,
     RequestErrorLogTest,
     RequestIndexSuccess,
