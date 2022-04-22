@@ -5,23 +5,26 @@ use time::Duration;
 
 use super::country_codes::get_iso_code_3_from_iso_code_2;
 
-pub struct CJS2SClient {
-    url: Url,
+pub struct CJClient {
     client: reqwest::Client,
     cj_cid: String,
     cj_type: String,
     cj_signature: String,
+    commission_detail_endpoint: Url,
+    s2s_endpoint: Url,
 }
 
-impl CJS2SClient {
-    pub fn new(settings: &Settings, cj_endpoint: Option<&str>) -> CJS2SClient {
-        let cj_endpoint = cj_endpoint.unwrap_or("https://www.emjcd.com/u");
-        CJS2SClient {
-            url: Url::parse(cj_endpoint).expect("Could not parse cj_endpoint"),
+impl CJClient {
+    pub fn new(settings: &Settings, s2s_endpoint: Option<&str>, commission_detail_endpoint: Option<&str>) -> CJClient {
+        let s2s_endpoint = s2s_endpoint.unwrap_or("https://www.emjcd.com/u");
+        let commission_detail_endpoint = commission_detail_endpoint.unwrap_or("https://commissions.api.cj.com/query");
+        CJClient {
             client: Client::new(),
             cj_cid: settings.cj_cid.clone(),
             cj_type: settings.cj_type.clone(),
             cj_signature: settings.cj_signature.clone(),
+            commission_detail_endpoint: Url::parse(commission_detail_endpoint).expect("Could not parse commission_detail_endpoint"),
+            s2s_endpoint: Url::parse(s2s_endpoint).expect("Could not parse s2s_endpoint"),
         }
     }
 
@@ -32,7 +35,7 @@ impl CJS2SClient {
     }
 
     pub async fn report_subscription(&self, sub: &Subscription) -> Result<Response, Error> {
-        let mut url_for_sub = self.url.clone();
+        let mut url_for_sub = self.s2s_endpoint.clone();
         // Note this must be in the future or will fail CJ side
         let randomized_event_time = sub.subscription_created + self.random_minutes();
         let event_time = randomized_event_time.format("%FT%H:%M:00.000Z");
