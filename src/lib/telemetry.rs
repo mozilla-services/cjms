@@ -96,6 +96,7 @@ pub enum LogKey {
     RequestLogTest,
     StatsDError,
     StatusHistoryDeserializeError,
+    VerifyReports,
     WebApp,
     WebAppEnding,
     WebAppStarting,
