@@ -24,6 +24,7 @@ pub mod test_utils {
         Settings {
             aic_expiration_days: 2,
             authentication: "_".to_string(),
+            cj_api_access_token: "_".to_string(),
             cj_cid: "_".to_string(),
             cj_sftp_user: "_".to_string(),
             cj_signature: "_".to_string(),
