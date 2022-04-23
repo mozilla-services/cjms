@@ -12,6 +12,8 @@ pub enum Status {
     NotReported,
     Reported,
     WillNotReport,
+    CJReceived,
+    CJNotReceived,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

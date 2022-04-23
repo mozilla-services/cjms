@@ -15,15 +15,21 @@ pub struct CJClient {
 }
 
 impl CJClient {
-    pub fn new(settings: &Settings, s2s_endpoint: Option<&str>, commission_detail_endpoint: Option<&str>) -> CJClient {
+    pub fn new(
+        settings: &Settings,
+        s2s_endpoint: Option<&str>,
+        commission_detail_endpoint: Option<&str>,
+    ) -> CJClient {
         let s2s_endpoint = s2s_endpoint.unwrap_or("https://www.emjcd.com/u");
-        let commission_detail_endpoint = commission_detail_endpoint.unwrap_or("https://commissions.api.cj.com/query");
+        let commission_detail_endpoint =
+            commission_detail_endpoint.unwrap_or("https://commissions.api.cj.com/query");
         CJClient {
             client: Client::new(),
             cj_cid: settings.cj_cid.clone(),
             cj_type: settings.cj_type.clone(),
             cj_signature: settings.cj_signature.clone(),
-            commission_detail_endpoint: Url::parse(commission_detail_endpoint).expect("Could not parse commission_detail_endpoint"),
+            commission_detail_endpoint: Url::parse(commission_detail_endpoint)
+                .expect("Could not parse commission_detail_endpoint"),
             s2s_endpoint: Url::parse(s2s_endpoint).expect("Could not parse s2s_endpoint"),
         }
     }
