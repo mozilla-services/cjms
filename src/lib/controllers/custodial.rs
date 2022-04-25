@@ -1,8 +1,9 @@
 use crate::{
-    telemetry::{error, info, TraceType},
+    telemetry::{error, info, StatsD, TraceType},
     version::{read_version, VERSION_FILE},
 };
-use actix_web::{Error, HttpResponse};
+use actix_web::{web, Error, HttpResponse};
+use time::Duration;
 
 /*
  * Custodial Helpers
@@ -10,9 +11,16 @@ use actix_web::{Error, HttpResponse};
  * Any small helpers that are for general maintenance purposes
  */
 
-#[tracing::instrument(name = "request-index")]
-pub async fn index() -> Result<HttpResponse, Error> {
+#[tracing::instrument(name = "request-index", skip(statsd))]
+pub async fn index(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
     info(&TraceType::RequestIndexSuccess, "");
+    statsd.incr(&TraceType::RequestIndexSuccess, "test-incr");
+    statsd.gauge(&TraceType::RequestIndexSuccess, "test-gauge", 5);
+    statsd.time(
+        &TraceType::RequestIndexSuccess,
+        "test-time",
+        Duration::new(5, 0),
+    );
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
 
