@@ -11,9 +11,13 @@ use time::Duration;
  * Any small helpers that are for general maintenance purposes
  */
 
-#[tracing::instrument(name = "request-index", skip(statsd))]
-pub async fn index(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
+#[tracing::instrument(name = "request-index")]
+pub async fn index() -> Result<HttpResponse, Error> {
     info(&TraceType::RequestIndexSuccess, "");
+    Ok(HttpResponse::Ok().body("Hello world!"))
+}
+
+pub async fn metrics(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
     statsd.incr(&TraceType::RequestIndexSuccess, "test-incr");
     statsd.gauge(&TraceType::RequestIndexSuccess, "test-gauge", 5);
     statsd.time(
@@ -21,7 +25,7 @@ pub async fn index(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
         "test-time",
         Duration::new(5, 0),
     );
-    Ok(HttpResponse::Ok().body("Hello world!"))
+    Ok(HttpResponse::Ok().body("OK"))
 }
 
 pub async fn error_log() -> Result<HttpResponse, Error> {
