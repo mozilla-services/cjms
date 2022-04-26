@@ -16,9 +16,20 @@ use std::thread;
 
 #[tracing::instrument(name = "request-index")]
 pub async fn index() -> Result<HttpResponse, Error> {
-    info(&TraceType::Test, "");
+    info(&TraceType::RequestIndexSuccess, "");
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
+
+pub async fn heartbeat() -> Result<HttpResponse, Error> {
+    Ok(HttpResponse::Ok().body("OK"))
+}
+
+pub async fn version() -> Result<HttpResponse, Error> {
+    let version_data = read_version(VERSION_FILE);
+    Ok(HttpResponse::Ok().json(version_data))
+}
+
+// Debug endpoints
 
 pub async fn metrics(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
     statsd.incr(&TraceType::Test, "test-incr");
@@ -48,15 +59,6 @@ pub async fn error_log() -> Result<HttpResponse, Error> {
 
 pub async fn error_panic() -> Result<HttpResponse, Error> {
     panic!("This is fine. :fire:");
-}
-
-pub async fn heartbeat() -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().body("OK"))
-}
-
-pub async fn version() -> Result<HttpResponse, Error> {
-    let version_data = read_version(VERSION_FILE);
-    Ok(HttpResponse::Ok().json(version_data))
 }
 
 #[cfg(test)]

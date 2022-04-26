@@ -27,6 +27,7 @@ pub enum TraceType {
     Cleanup,
     CorrectionsReport,
     ReportSubscriptions,
+    RequestIndexSuccess,
     StatsDError,
     Test, // For test cases
     WebApp,
