@@ -221,6 +221,30 @@ magically compatible.
 In both cases the reason was because the versions of `time` and `uuid` that I had installed were ahead of what sqlx
 currently supports. This meant that the, I think, trait implementations for them to interoperate weren't present.
 
+### Working with statsd
+
+If configured using the defaults from settings.yaml.example, the statsd client
+will send metrics to a statsd server on localhost at UDP port 8125. Since statsd
+doesn't actually check if the metrics have been received by the server, this
+will work even if you don't have a local statsd server configured. However, it
+is trivial to run statsd and graphite locally for debugging purposes. A [Docker
+container](https://hub.docker.com/r/graphiteapp/graphite-statsd/) can be run
+using the following command:
+
+```
+docker run -d \
+ --name graphite \
+ --restart=always \
+ -p 80:80 \
+ -p 2003-2004:2003-2004 \
+ -p 2023-2024:2023-2024 \
+ -p 8125:8125/udp \
+ -p 8126:8126 \
+ graphiteapp/graphite-statsd
+```
+
+The graphite server is exposed at `localhost:80`.
+
 ## Deployment
 
 Service is deployed using docker containers.
