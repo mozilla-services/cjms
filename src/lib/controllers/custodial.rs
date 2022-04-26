@@ -3,7 +3,10 @@ use crate::{
     version::{read_version, VERSION_FILE},
 };
 use actix_web::{web, Error, HttpResponse};
-use time::Duration;
+use std::time::Duration;
+use time::OffsetDateTime;
+
+use std::thread;
 
 /*
  * Custodial Helpers
@@ -20,10 +23,15 @@ pub async fn index() -> Result<HttpResponse, Error> {
 pub async fn metrics(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
     statsd.incr(&TraceType::RequestIndexSuccess, "test-incr");
     statsd.gauge(&TraceType::RequestIndexSuccess, "test-gauge", 5);
+
+    let start = OffsetDateTime::now_utc();
+    let hundred_millis = Duration::from_millis(100);
+    thread::sleep(hundred_millis);
+
     statsd.time(
         &TraceType::RequestIndexSuccess,
         "test-time",
-        Duration::new(5, 0),
+        OffsetDateTime::now_utc() - start,
     );
     Ok(HttpResponse::Ok().body("OK"))
 }
