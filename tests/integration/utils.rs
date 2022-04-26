@@ -2,6 +2,7 @@ use fake::{Fake, StringFaker};
 use lib::appconfig::{connect_to_database_and_migrate, run_server};
 use lib::settings::{get_settings, Settings};
 
+use lib::telemetry::StatsD;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Connection, Executor, PgConnection, PgPool, Pool, Postgres};
 use std::net::TcpListener;
@@ -60,8 +61,10 @@ pub async fn spawn_app() -> TestApp {
     settings.cj_subid = test_subid;
     settings.database_url = test_database_url;
     settings.port = port;
+    let statsd = StatsD::new(&settings);
     let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
-    let server = run_server(settings.clone(), listener, db_pool).expect("Failed to start server");
+    let server =
+        run_server(settings.clone(), listener, db_pool, statsd).expect("Failed to start server");
     let _ = tokio::spawn(server);
     TestApp { settings }
 }

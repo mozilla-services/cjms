@@ -90,9 +90,12 @@ pub fn run_server(
     settings: Settings,
     listener: TcpListener,
     db_pool: PgPool,
+    statsd: StatsD,
 ) -> Result<Server, std::io::Error> {
-    let db_pool = Data::new(db_pool);
     let server = HttpServer::new(move || {
+        let db_pool_d = Data::new(db_pool.clone());
+        let settings_d = Data::new(settings.clone());
+        let statsd_d = Data::new(statsd.clone());
         let cors = get_cors(settings.clone());
         let moz_log = MozLog::default();
         let auth = HttpAuthentication::basic(basic_auth_middleware);
@@ -110,6 +113,7 @@ pub fn run_server(
             .service(
                 resource("/__error_panic__").route(get().to(controllers::custodial::error_panic)),
             )
+            .service(resource("/__metrics__").route(get().to(controllers::custodial::metrics)))
             // AIC
             .service(resource("/aic").route(post().to(controllers::aic::create)))
             .service(resource("/aic/{aic_id}").route(put().to(controllers::aic::update)))
@@ -122,10 +126,10 @@ pub fn run_server(
                     .route(get().to(controllers::corrections::by_day))
                     .wrap(auth),
             )
-            // Make DB available to all routes
-            .app_data(db_pool.clone())
-            // Make settings available to all routes
-            .app_data(Data::new(settings.clone()))
+            // Make data objects available to all routes
+            .app_data(db_pool_d)
+            .app_data(settings_d)
+            .app_data(statsd_d)
     })
     .listen(listener)?
     .run();
