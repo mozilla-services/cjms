@@ -16,20 +16,20 @@ use std::thread;
 
 #[tracing::instrument(name = "request-index")]
 pub async fn index() -> Result<HttpResponse, Error> {
-    info(&TraceType::RequestIndexSuccess, "");
+    info(&TraceType::Test, "");
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
 
 pub async fn metrics(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
-    statsd.incr(&TraceType::RequestIndexSuccess, "test-incr");
-    statsd.gauge(&TraceType::RequestIndexSuccess, "test-gauge", 5);
+    statsd.incr(&TraceType::Test, "test-incr");
+    statsd.gauge(&TraceType::Test, "test-gauge", 5);
 
     let start = OffsetDateTime::now_utc();
     let hundred_millis = Duration::from_millis(100);
     thread::sleep(hundred_millis);
 
     statsd.time(
-        &TraceType::RequestIndexSuccess,
+        &TraceType::Test,
         "test-time",
         OffsetDateTime::now_utc() - start,
     );
@@ -39,7 +39,7 @@ pub async fn metrics(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
 pub async fn error_log() -> Result<HttpResponse, Error> {
     let err = "NaN".parse::<usize>().unwrap_err();
     error(
-        &TraceType::RequestErrorLogTest,
+        &TraceType::Test,
         "Test error log report",
         Some(Box::new(err)),
     );
