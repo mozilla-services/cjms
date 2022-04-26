@@ -2,10 +2,7 @@ use sqlx::{query, query_as, Error, PgPool};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
-use crate::{
-    settings::Settings,
-    telemetry::{error, TraceType},
-};
+use crate::{error, settings::Settings, telemetry::TraceType};
 
 #[derive(Debug)]
 pub struct AIC {
@@ -72,10 +69,10 @@ impl AICModel<'_> {
         .fetch_one(self.db_pool)
         .await
         .map_err(|e| {
-            error(
-                &TraceType::AicRecordCreateFailed,
-                &format!("Failed to execute query: {:?}", e),
-                None,
+            error!(
+                TraceType::AicRecordCreateFailed,
+                error = e,
+                "Failed to execute query"
             );
             e
         })

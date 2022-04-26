@@ -17,9 +17,9 @@ use tracing_actix_web_mozlog::MozLog;
 use crate::{
     bigquery::client::{get_bqclient, BQClient},
     cj::client::CJS2SClient,
-    controllers,
+    controllers, info,
     settings::{get_settings, Settings},
-    telemetry::{info, init_sentry, init_tracing, StatsD, TraceType},
+    telemetry::{init_sentry, init_tracing, StatsD, TraceType},
 };
 
 pub struct CJ {
@@ -45,8 +45,10 @@ impl CJ {
         let bq_client = get_bqclient(&settings).await;
         let cj_client = CJS2SClient::new(&settings, None);
         let statsd = StatsD::new(&settings);
-        statsd.incr(&name, "starting");
-        info(&name, "Starting");
+
+        info!(name, "Starting");
+        statsd.incr(&name, Some("starting"));
+
         CJ {
             _guard,
             name,
@@ -60,11 +62,15 @@ impl CJ {
     }
 
     pub async fn shutdown(&self) -> std::io::Result<()> {
-        self.statsd.incr(&self.name, "ending");
-        info(&self.name, "Ending");
+        info!(self.name, "Ending");
+        self.statsd.incr(&self.name, Some("ending"));
+
         self.db_pool.close().await;
-        self.statsd
-            .time(&self.name, "timer", OffsetDateTime::now_utc() - self.start);
+        self.statsd.time(
+            &self.name,
+            Some("timer"),
+            OffsetDateTime::now_utc() - self.start,
+        );
         Ok(())
     }
 }
@@ -106,7 +112,7 @@ pub fn run_server(
                 resource("/__lbheartbeat__").route(get().to(controllers::custodial::heartbeat)),
             )
             .service(resource("/__version__").route(get().to(controllers::custodial::version)))
-            .service(resource("/__error_log__").route(get().to(controllers::custodial::error_log)))
+            .service(resource("/__log__").route(get().to(controllers::custodial::log)))
             .service(
                 resource("/__error_panic__").route(get().to(controllers::custodial::error_panic)),
             )

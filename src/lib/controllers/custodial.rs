@@ -1,5 +1,6 @@
 use crate::{
-    telemetry::{error, info, TraceType},
+    error, info,
+    telemetry::TraceType,
     version::{read_version, VERSION_FILE},
 };
 use actix_web::{Error, HttpResponse};
@@ -12,18 +13,28 @@ use actix_web::{Error, HttpResponse};
 
 #[tracing::instrument(name = "request-index")]
 pub async fn index() -> Result<HttpResponse, Error> {
-    info(&TraceType::RequestIndexSuccess, "");
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
 
-pub async fn error_log() -> Result<HttpResponse, Error> {
-    let err = "NaN".parse::<usize>().unwrap_err();
-    error(
-        &TraceType::RequestErrorLogTest,
-        "Test error log report",
-        Some(Box::new(err)),
+// TODO make sure info_and_incr and error_and_incr are used in one of these
+// endpoints
+
+pub async fn log() -> Result<HttpResponse, Error> {
+    info!(TraceType::RequestLogTest, "Trace test with message");
+    info!(
+        TraceType::RequestLogTest,
+        key = "value",
+        "Trace test with keyword arguments"
     );
-    Ok(HttpResponse::Ok().body("Error log test"))
+    info!(
+        TraceType::RequestLogTest,
+        "Trace test with format string: {}", "Hello world"
+    );
+
+    let err = "NaN".parse::<usize>().unwrap_err();
+    error!(TraceType::RequestLogTest, error = err, "Trace test error",);
+
+    Ok(HttpResponse::Ok().body("Log test"))
 }
 
 pub async fn error_panic() -> Result<HttpResponse, Error> {

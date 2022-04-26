@@ -26,11 +26,28 @@ pub enum TraceType {
     CheckSubscriptions,
     Cleanup,
     ReportSubscriptions,
-    RequestErrorLogTest,
-    RequestIndexSuccess,
+    RequestLogTest,
     StatsDError,
     Test, // For test cases
     WebApp,
+
+    // TODO sort
+    CorrectionsSubscriptionFetch,
+    CorrectionsSubscriptionFetchFailed,
+    BatchRefundsUpdate,
+    BatchRefundsUpdateFailed,
+    CheckRefundsDeserializeBigQuery,
+    CheckRefundsDeserializeBigQueryFailed,
+    CheckRefundsSubscriptionMissingFromDatabase,
+    CheckRefundsRefundDataChanged,
+    CheckRefundsRefundDataUnchanged,
+    CheckRefundsRefundUpdate,
+    CheckRefundsRefundUpdateFailed,
+    CheckRefundsRefundCreate,
+    CheckRefundsRefundCreateDuplicateKeyViolation,
+    CheckRefundsRefundCreateDatabaseError,
+    CheckRefundsRefundCreateFailed,
+    CheckRefundsRefundFetchFailed,
 }
 
 /// Creates a tracing subscriber and sets it as the global default.
@@ -82,20 +99,46 @@ pub fn init_sentry(settings: &Settings) -> ClientInitGuard {
     ))
 }
 
-pub fn info(trace_type: &TraceType, message: &str) {
-    tracing::info!(r#type = trace_type.to_string().as_str(), message);
+/// TODO doc
+#[macro_export]
+macro_rules! info {
+    ( $trace_type:expr, $($arg:tt)+ ) => {
+        tracing::info!(r#type = $trace_type.to_string().as_str(), $($arg)*)
+    }
 }
 
-pub fn error(trace_type: &TraceType, message: &str, error: Option<Box<dyn std::error::Error>>) {
-    match error {
-        Some(err) => tracing::error!(
-            r#type = trace_type.to_string().as_str(),
-            "Message: '{}'. Original error: {:?}",
-            message,
-            err
-        ),
-        None => tracing::error!(r#type = trace_type.to_string().as_str(), message),
+/// TODO doc
+#[macro_export]
+macro_rules! error {
+    ( $trace_type:expr, error = $error:expr, $($arg:tt)+ ) => {
+        tracing::error!(
+            r#type = $trace_type.to_string().as_str(),
+            error = format!("{:?}", $error).as_str(),
+            $($arg)*)
     };
+    ( $trace_type:expr, $($arg:tt)+ ) => {
+        tracing::error!(
+            r#type = $trace_type.to_string().as_str(),
+            $($arg)*)
+    };
+}
+
+/// TODO doc
+#[macro_export]
+macro_rules! info_and_incr {
+    ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
+        info!($trace_type.to_string().as_str(), $($arg)*);
+        $statsd_client.incr(&$trace_type, None);
+    }
+}
+
+/// TODO doc
+#[macro_export]
+macro_rules! error_and_incr {
+    ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
+        error!($trace_type.to_string().as_str(), $($arg)*);
+        $statsd_client.incr(&$trace_type, None);
+    }
 }
 
 pub struct StatsD {
@@ -112,43 +155,57 @@ impl StatsD {
             client: StatsdClient::from_sink("cjms", sink),
         }
     }
-    pub fn incr(&self, key: &TraceType, suffix: &str) {
-        let tag = format!("{}-{}", key, suffix.to_lowercase());
+    pub fn incr(&self, key: &TraceType, suffix: Option<&str>) {
+        let tag = match suffix {
+            Some(s) => format!("{}-{}", key, s.to_lowercase()),
+            None => key.to_string(),
+        };
         self.client
             .incr(&tag)
             .map_err(|e| {
-                error(
-                    &TraceType::StatsDError,
-                    &format!("Could not increment statsd tag {}", tag),
-                    Some(Box::new(e)),
+                error!(
+                    TraceType::StatsDError,
+                    error = e,
+                    tag = tag.as_str(),
+                    "Could not increment statsd tag"
                 );
             })
             .ok();
     }
-    pub fn gauge(&self, key: &TraceType, suffix: &str, v: usize) {
-        let tag = format!("{}-{}", key, suffix.to_lowercase());
+    pub fn gauge(&self, key: &TraceType, suffix: Option<&str>, v: usize) {
+        let tag = match suffix {
+            Some(s) => format!("{}-{}", key, s.to_lowercase()),
+            None => key.to_string(),
+        };
         let v = v as u64;
         self.client
             .gauge(&tag, v)
             .map_err(|e| {
-                error(
-                    &TraceType::StatsDError,
-                    &format!("Could not record value {:?} for statsd tag {}", v, tag),
-                    Some(Box::new(e)),
+                error!(
+                    TraceType::StatsDError,
+                    error = e,
+                    value = v,
+                    tag = tag.as_str(),
+                    "Could not record value for statsd tag"
                 );
             })
             .ok();
     }
-    pub fn time(&self, key: &TraceType, suffix: &str, t: Duration) {
-        let tag = format!("{}-{}", key, suffix.to_lowercase());
+    pub fn time(&self, key: &TraceType, suffix: Option<&str>, t: Duration) {
+        let tag = match suffix {
+            Some(s) => format!("{}-{}", key, s.to_lowercase()),
+            None => key.to_string(),
+        };
         let milliseconds = t.whole_milliseconds();
         self.client
             .time(&tag, milliseconds as u64)
             .map_err(|e| {
-                error(
-                    &TraceType::StatsDError,
-                    &format!("Could not record time {:?} for statsd tag {}", t, tag),
-                    Some(Box::new(e)),
+                error!(
+                    TraceType::StatsDError,
+                    error = e,
+                    time = format!("{:?}", t).as_str(),
+                    tag = tag.as_str(),
+                    "Could not record time for statsd tag"
                 );
             })
             .ok();

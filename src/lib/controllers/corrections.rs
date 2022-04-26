@@ -4,13 +4,16 @@ use sqlx::PgPool;
 use time::{Date, OffsetDateTime};
 
 use crate::{
+    error, info,
     models::{
         refunds::{Refund, RefundModel},
         subscriptions::SubscriptionModel,
     },
     settings::Settings,
+    telemetry::TraceType,
 };
 
+// TODO add statsd here
 async fn build_body_from_results(
     settings: &Settings,
     results: Vec<Refund>,
@@ -28,17 +31,20 @@ async fn build_body_from_results(
             .await
         {
             Ok(sub) => {
-                // TODO - LOGGING
-                println!(
-                    "Success fetching sub {} for refund {}",
-                    refund.subscription_id, refund.refund_id
+                info!(
+                    TraceType::CorrectionsSubscriptionFetch,
+                    subscription_id = refund.subscription_id.as_str(),
+                    refund_id = refund.refund_id.as_str(),
+                    "Success fetching sub for refund"
                 );
                 sub
             }
             Err(_) => {
-                println!(
-                    "Failed to fetch sub {} for refund {}. Continuing....",
-                    refund.subscription_id, refund.refund_id
+                error!(
+                    TraceType::CorrectionsSubscriptionFetchFailed,
+                    subscription_id = refund.subscription_id.as_str(),
+                    refund_id = refund.refund_id.as_str(),
+                    "Failed to fetch sub for refund. Continuing..."
                 );
                 continue;
             }
@@ -58,6 +64,7 @@ async fn get_results_for_day(db_pool: &PgPool, day: Date) -> Vec<Refund> {
     refunds
         .fetch_by_correction_file_day(&day)
         .await
+        // TODO isn't this construct redundant?
         .unwrap_or_else(|_| panic!("Could not fetch refunds for date: {}", day))
 }
 

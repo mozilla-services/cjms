@@ -22,7 +22,7 @@ pub async fn report_subscriptions_to_cj(
         .expect("Could not retrieve subscriptions from DB.");
     statsd.gauge(
         &TraceType::ReportSubscriptions,
-        "n-not-reported",
+        Some("n-not-reported"),
         not_reported_subscriptions.len(),
     );
     for sub in not_reported_subscriptions {
