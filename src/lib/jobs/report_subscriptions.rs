@@ -15,7 +15,7 @@ pub async fn report_subscriptions_to_cj(
     let subscriptions = SubscriptionModel { db_pool };
     // Intentional panic. Cannot continue if we can't retrieve subs.
     let not_reported_subscriptions = subscriptions
-        .fetch_all_not_reported()
+        .fetch_all_by_status(Status::NotReported)
         .await
         .expect("Could not retrieve subscriptions from DB.");
     statsd.gauge(

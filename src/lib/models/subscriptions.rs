@@ -229,10 +229,11 @@ impl SubscriptionModel<'_> {
             .await
     }
 
-    pub async fn fetch_all_not_reported(&self) -> Result<Vec<Subscription>, Error> {
+    pub async fn fetch_all_by_status(&self, status: Status) -> Result<Vec<Subscription>, Error> {
         query_as!(
             Subscription,
-            "SELECT * FROM subscriptions WHERE status = 'NotReported'"
+            "SELECT * FROM subscriptions WHERE status = $1",
+            status.to_string()
         )
         .fetch_all(self.db_pool)
         .await

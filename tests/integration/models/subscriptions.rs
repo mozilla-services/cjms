@@ -109,7 +109,7 @@ async fn test_subscription_model_fetch_ones_if_not_available() {
 }
 
 #[tokio::test]
-async fn test_subscription_model_get_all_not_reported() {
+async fn test_subscription_model_get_all_by_status() {
     let db_pool = get_test_db_pool().await;
     let model = SubscriptionModel { db_pool: &db_pool };
     let sub_1 = make_fake_sub();
@@ -124,13 +124,21 @@ async fn test_subscription_model_get_all_not_reported() {
 
     let all = model.fetch_all().await.unwrap();
     assert_eq!(all.len(), 3);
-    let result = model
-        .fetch_all_not_reported()
+
+    let not_reported = model
+        .fetch_all_by_status(Status::NotReported)
         .await
         .expect("Could not fetch from DB.");
-    assert_eq!(result.len(), 2);
-    assert!(result.contains(&sub_1));
-    assert!(result.contains(&sub_3));
+    assert_eq!(not_reported.len(), 2);
+    assert!(not_reported.contains(&sub_1));
+    assert!(not_reported.contains(&sub_3));
+
+    let reported = model
+        .fetch_all_by_status(Status::Reported)
+        .await
+        .expect("Could not fetch from DB.");
+    assert_eq!(reported.len(), 1);
+    assert!(reported.contains(&sub_2));
 }
 
 #[tokio::test]
