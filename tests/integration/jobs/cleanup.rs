@@ -1,5 +1,5 @@
-use lib::jobs::cleanup::archive_expired_aics;
 use lib::models::aic::AICModel;
+use lib::{jobs::cleanup::archive_expired_aics, settings::get_settings, telemetry::StatsD};
 use time::{Duration, OffsetDateTime};
 
 use crate::{models::aic::make_fake_aic, utils::get_test_db_pool};
@@ -7,6 +7,8 @@ use crate::{models::aic::make_fake_aic, utils::get_test_db_pool};
 #[tokio::test]
 async fn test_archive_expired_aics() {
     // SETUP
+    let settings = get_settings();
+    let statsd = StatsD::new(&settings);
     let db_pool = get_test_db_pool().await;
     let aic_model = AICModel { db_pool: &db_pool };
 
@@ -34,7 +36,7 @@ async fn test_archive_expired_aics() {
         .await
         .expect("Could not create pre-archived AIC.");
 
-    archive_expired_aics(&db_pool).await;
+    archive_expired_aics(&db_pool, &statsd).await;
 
     assert!(aic_model
         .fetch_one_by_id_from_archive(&aic_1.id)
