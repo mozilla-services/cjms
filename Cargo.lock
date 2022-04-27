@@ -465,6 +465,7 @@ dependencies = [
  "fake",
  "mockall",
  "pretty_assertions",
+ "rand 0.8.5",
  "reqwest",
  "sentry",
  "sentry-actix",
