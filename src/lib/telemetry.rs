@@ -16,10 +16,9 @@ use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 use crate::settings::Settings;
 use crate::version::{read_version, VERSION_FILE};
 
-// TODO - Rename to something more generic e.g. LoggingKey
 #[derive(Debug, EnumToString, PartialEq, Eq)]
 #[strum(serialize_all = "kebab_case")]
-pub enum TraceType {
+pub enum LogKey {
     AicRecordCreate,
     AicRecordCreateFailed,
     BatchRefunds,
@@ -159,7 +158,7 @@ impl StatsD {
             client: Arc::new(StatsdClient::from_sink("cjms", sink)),
         }
     }
-    pub fn incr(&self, key: &TraceType, suffix: Option<&str>) {
+    pub fn incr(&self, key: &LogKey, suffix: Option<&str>) {
         let tag = match suffix {
             Some(s) => format!("{}-{}", key, s.to_lowercase()),
             None => key.to_string(),
@@ -168,7 +167,7 @@ impl StatsD {
             .incr(&tag)
             .map_err(|e| {
                 error!(
-                    TraceType::StatsDError,
+                    LogKey::StatsDError,
                     error = e,
                     tag = tag.as_str(),
                     "Could not increment statsd tag"
@@ -176,7 +175,7 @@ impl StatsD {
             })
             .ok();
     }
-    pub fn gauge(&self, key: &TraceType, suffix: Option<&str>, v: usize) {
+    pub fn gauge(&self, key: &LogKey, suffix: Option<&str>, v: usize) {
         let tag = match suffix {
             Some(s) => format!("{}-{}", key, s.to_lowercase()),
             None => key.to_string(),
@@ -186,7 +185,7 @@ impl StatsD {
             .gauge(&tag, v)
             .map_err(|e| {
                 error!(
-                    TraceType::StatsDError,
+                    LogKey::StatsDError,
                     error = e,
                     value = v,
                     tag = tag.as_str(),
@@ -195,7 +194,7 @@ impl StatsD {
             })
             .ok();
     }
-    pub fn time(&self, key: &TraceType, suffix: Option<&str>, t: Duration) {
+    pub fn time(&self, key: &LogKey, suffix: Option<&str>, t: Duration) {
         let tag = match suffix {
             Some(s) => format!("{}-{}", key, s.to_lowercase()),
             None => key.to_string(),
@@ -205,7 +204,7 @@ impl StatsD {
             .time(&tag, milliseconds as u64)
             .map_err(|e| {
                 error!(
-                    TraceType::StatsDError,
+                    LogKey::StatsDError,
                     error = e,
                     time = format!("{:?}", t).as_str(),
                     tag = tag.as_str(),

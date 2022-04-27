@@ -1,16 +1,16 @@
 use lib::{
     appconfig::{run_server, CJ},
     info,
-    telemetry::TraceType,
+    telemetry::LogKey,
 };
 use std::net::TcpListener;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let cj = CJ::new(TraceType::WebApp).await;
+    let cj = CJ::new(LogKey::WebApp).await;
     let addr = cj.settings.server_address();
     info!(
-        TraceType::WebApp,
+        LogKey::WebApp,
         addr = format!("http://{}", addr).as_str(),
         "Server running"
     );

@@ -10,7 +10,7 @@ use crate::{
         subscriptions::SubscriptionModel,
     },
     settings::Settings,
-    telemetry::{StatsD, TraceType},
+    telemetry::{LogKey, StatsD},
 };
 
 // TODO add statsd here
@@ -32,7 +32,7 @@ async fn build_body_from_results(
         {
             Ok(sub) => {
                 info!(
-                    TraceType::CorrectionsSubscriptionFetch,
+                    LogKey::CorrectionsSubscriptionFetch,
                     subscription_id = refund.subscription_id.as_str(),
                     refund_id = refund.refund_id.as_str(),
                     "Success fetching sub for refund"
@@ -41,7 +41,7 @@ async fn build_body_from_results(
             }
             Err(_) => {
                 error!(
-                    TraceType::CorrectionsSubscriptionFetchFailed,
+                    LogKey::CorrectionsSubscriptionFetchFailed,
                     subscription_id = refund.subscription_id.as_str(),
                     refund_id = refund.refund_id.as_str(),
                     "Failed to fetch sub for refund. Continuing..."
@@ -94,7 +94,7 @@ pub async fn by_day(
     statsd: web::Data<StatsD>,
 ) -> HttpResponse {
     statsd.incr(
-        &TraceType::CorrectionsReport,
+        &LogKey::CorrectionsReport,
         Some(&format!("{}-accessed", path.day)),
     );
     let results = get_results_for_day(pool.as_ref(), path.day).await;
@@ -107,7 +107,7 @@ pub async fn today(
     settings: web::Data<Settings>,
     statsd: web::Data<StatsD>,
 ) -> HttpResponse {
-    statsd.incr(&TraceType::CorrectionsReport, Some("today-accessed"));
+    statsd.incr(&LogKey::CorrectionsReport, Some("today-accessed"));
     let today = OffsetDateTime::now_utc().date();
     let results = get_results_for_day(pool.as_ref(), today).await;
     let body = build_body_from_results(settings.as_ref(), results, pool.as_ref()).await;

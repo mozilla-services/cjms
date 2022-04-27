@@ -19,12 +19,12 @@ use crate::{
     cj::client::CJS2SClient,
     controllers, info,
     settings::{get_settings, Settings},
-    telemetry::{init_sentry, init_tracing, StatsD, TraceType},
+    telemetry::{init_sentry, init_tracing, LogKey, StatsD},
 };
 
 pub struct CJ {
     _guard: ClientInitGuard,
-    name: TraceType,
+    name: LogKey,
     start: OffsetDateTime,
     pub bq_client: BQClient,
     pub cj_client: CJS2SClient,
@@ -34,11 +34,11 @@ pub struct CJ {
 }
 
 impl CJ {
-    pub async fn new(name: TraceType) -> Self {
+    pub async fn new(name: LogKey) -> Self {
         let start = OffsetDateTime::now_utc();
         let settings = get_settings();
         let _guard = init_sentry(&settings);
-        if name != TraceType::Test {
+        if name != LogKey::Test {
             init_tracing(&name.to_string(), &settings.log_level, std::io::stdout);
         }
         let db_pool = connect_to_database_and_migrate(&settings.database_url).await;

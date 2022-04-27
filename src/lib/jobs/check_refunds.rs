@@ -9,7 +9,7 @@ use crate::{
         status_history::{Status, UpdateStatus},
         subscriptions::SubscriptionModel,
     },
-    telemetry::{StatsD, TraceType},
+    telemetry::{LogKey, StatsD},
 };
 
 fn make_refund_from_bq_row(rs: &ResultSet) -> Result<Refund, BQError> {
@@ -33,14 +33,14 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
     // Get all results from bigquery table that stores refunds reports
     let query = "SELECT * FROM `cjms_bigquery.refunds_v1`;";
     let mut rs = bq.get_bq_results(query).await;
-    rs.report_stats(statsd, &TraceType::CheckRefunds);
+    rs.report_stats(statsd, &LogKey::CheckRefunds);
     while rs.next_row() {
         // If can't deserialize e.g. required fields are not available log and move on.
         let r = match make_refund_from_bq_row(&rs) {
             Ok(r) => {
                 info_and_incr!(
                     statsd,
-                    TraceType::CheckRefundsDeserializeBigQuery,
+                    LogKey::CheckRefundsDeserializeBigQuery,
                     refund_id = r.refund_id.as_str(),
                     "Successfully deserialized refund from BigQuery row"
                 );
@@ -49,7 +49,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
             Err(e) => {
                 error_and_incr!(
                     statsd,
-                    TraceType::CheckRefundsDeserializeBigQueryFailed,
+                    LogKey::CheckRefundsDeserializeBigQueryFailed,
                     error = e,
                     "Failed to make refund for BigQuery result row. Continuing ...",
                 );
@@ -63,7 +63,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
             .is_ok();
         if !have_sub {
             error!(
-                TraceType::CheckRefundsSubscriptionMissingFromDatabase,
+                LogKey::CheckRefundsSubscriptionMissingFromDatabase,
                 subscription_id = r.subscription_id.as_str(),
                 refund_id = r.refund_id.as_str(),
             );
@@ -81,7 +81,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                 {
                     info_and_incr!(
                         statsd,
-                        TraceType::CheckRefundsRefundDataUnchanged,
+                        LogKey::CheckRefundsRefundDataUnchanged,
                         refund_id = refund.refund_id.as_str(),
                         "Data for refund is unchanged. Continuing..."
                     );
@@ -90,7 +90,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
 
                 info_and_incr!(
                     statsd,
-                    TraceType::CheckRefundsRefundDataChanged,
+                    LogKey::CheckRefundsRefundDataChanged,
                     refund_id = refund.refund_id.as_str(),
                     "Data for refund is changed. Continuing..."
                 );
@@ -105,7 +105,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                     Ok(_) => {
                         info_and_incr!(
                             statsd,
-                            TraceType::CheckRefundsRefundUpdate,
+                            LogKey::CheckRefundsRefundUpdate,
                             refund_id = refund.refund_id.as_str(),
                             "Refund updated. Continuing..."
                         );
@@ -113,7 +113,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                     Err(e) => {
                         error_and_incr!(
                             statsd,
-                            TraceType::CheckRefundsRefundUpdateFailed,
+                            LogKey::CheckRefundsRefundUpdateFailed,
                             error = e,
                             refund_id = r.refund_id.as_str(),
                             "Error updating refund. Continuing..."
@@ -128,7 +128,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                             Ok(r) => {
                                 info_and_incr!(
                                     statsd,
-                                    TraceType::CheckRefundsRefundCreate,
+                                    LogKey::CheckRefundsRefundCreate,
                                     refund_id = r.refund_id.as_str(),
                                     "Successfully created refund"
                                 );
@@ -140,15 +140,15 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                                         // TODO definitely need metrics here.
                                         error_and_incr!(
                                             statsd,
-                                            TraceType::CheckRefundsRefundCreateDuplicateKeyViolation,
+                                            LogKey::CheckRefundsRefundCreateDuplicateKeyViolation,
                                             error = e,
-                                            refund_id = &r.refund_id.as_str(),  // TODO will this actually work?
+                                            refund_id = &r.refund_id.as_str(), // TODO will this actually work?
                                             "Duplicate key violation"
                                         );
                                     } else {
                                         error_and_incr!(
                                             statsd,
-                                            TraceType::CheckRefundsRefundCreateDatabaseError,
+                                            LogKey::CheckRefundsRefundCreateDatabaseError,
                                             error = e,
                                             refund_id = &r.refund_id.as_str(), // TODO will this actually work?
                                             "Database error while creating refund. Continuing..."
@@ -159,7 +159,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                                 _ => {
                                     error_and_incr!(
                                         statsd,
-                                        TraceType::CheckRefundsRefundCreateFailed,
+                                        LogKey::CheckRefundsRefundCreateFailed,
                                         error = e,
                                         refund_id = &r.refund_id.as_str(), // TODO will this actually work?
                                         "Unexpected error while creating refund. Continuing..."
@@ -172,7 +172,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                     _ => {
                         error_and_incr!(
                             statsd,
-                            TraceType::CheckRefundsRefundFetchFailed,
+                            LogKey::CheckRefundsRefundFetchFailed,
                             error = e,
                             refund_id = r.refund_id.as_str(),
                             "Error while trying to retrieve refund. Continuing..."

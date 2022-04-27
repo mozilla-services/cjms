@@ -33,7 +33,7 @@ use time::OffsetDateTime;
 
 use crate::{
     error,
-    telemetry::{StatsD, TraceType},
+    telemetry::{LogKey, StatsD},
 };
 
 #[derive(Error, Debug)]
@@ -311,7 +311,7 @@ impl ResultSet {
         self.row_count as usize
     }
 
-    pub fn report_stats(&self, statsd: &StatsD, key: &TraceType) {
+    pub fn report_stats(&self, statsd: &StatsD, key: &LogKey) {
         statsd.gauge(key, Some("n-from-bq"), self.row_count());
         let total_rows = self
             .query_response
@@ -322,7 +322,7 @@ impl ResultSet {
             Ok(n) => {
                 statsd.gauge(key, Some("total-n-from-bq"), n);
             }
-            Err(e) => error!(TraceType::BigQuery, error = e, "Could not get total rows",),
+            Err(e) => error!(LogKey::BigQuery, error = e, "Could not get total rows",),
         };
         let bytes_processed = self
             .query_response
@@ -334,7 +334,7 @@ impl ResultSet {
                 statsd.gauge(key, Some("bytes-from-bq"), n);
             }
             Err(e) => error!(
-                TraceType::BigQuery,
+                LogKey::BigQuery,
                 error = e,
                 "Could not get total bytes processed",
             ),

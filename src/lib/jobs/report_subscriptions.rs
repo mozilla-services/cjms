@@ -3,7 +3,7 @@ use sqlx::{Pool, Postgres};
 use crate::{
     cj::client::CJS2SClient,
     models::{status_history::Status, subscriptions::SubscriptionModel},
-    telemetry::{StatsD, TraceType},
+    telemetry::{StatsD, LogKey},
 };
 
 // TODO - LOGGING
@@ -21,7 +21,7 @@ pub async fn report_subscriptions_to_cj(
         .await
         .expect("Could not retrieve subscriptions from DB.");
     statsd.gauge(
-        &TraceType::ReportSubscriptions,
+        &LogKey::ReportSubscriptions,
         Some("n-not-reported"),
         not_reported_subscriptions.len(),
     );

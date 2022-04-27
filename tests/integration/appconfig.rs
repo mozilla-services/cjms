@@ -1,6 +1,6 @@
 use lib::{
     appconfig::CJ,
-    telemetry::TraceType,
+    telemetry::LogKey,
     version::{write_version, VersionInfo, VERSION_FILE},
 };
 use serial_test::serial;
@@ -22,7 +22,7 @@ async fn test_creating_and_shutting_down_a_cj_object() {
     write_version(VERSION_FILE, &version_data);
     env::set_var("BQ_ACCESS_TOKEN", "a token");
 
-    let cj = CJ::new(TraceType::Test).await;
+    let cj = CJ::new(LogKey::Test).await;
     assert!(!cj.db_pool.is_closed());
     cj.shutdown().await.expect("Failed to complete shutdown");
     assert!(cj.db_pool.is_closed());

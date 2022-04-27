@@ -8,7 +8,7 @@ use crate::{
         aic::AICModel,
         subscriptions::{PartialSubscription, Subscription, SubscriptionModel},
     },
-    telemetry::{StatsD, TraceType},
+    telemetry::{LogKey, StatsD},
 };
 
 fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError> {
@@ -41,7 +41,7 @@ pub async fn fetch_and_process_new_subscriptions(
     // Get all results from bigquery table that stores new subscription reports
     let query = "SELECT * FROM `cjms_bigquery.subscriptions_v1`;";
     let mut rs = bq.get_bq_results(query).await;
-    rs.report_stats(statsd, &TraceType::CheckSubscriptions);
+    rs.report_stats(statsd, &LogKey::CheckSubscriptions);
     while rs.next_row() {
         // If can't deserialize e.g. required fields are not available log and move on.
         let mut sub = match make_subscription_from_bq_row(&rs) {

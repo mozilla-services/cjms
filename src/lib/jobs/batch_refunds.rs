@@ -7,7 +7,7 @@ use crate::{
         refunds::RefundModel,
         status_history::{Status, UpdateStatus},
     },
-    telemetry::{StatsD, TraceType},
+    telemetry::{LogKey, StatsD},
 };
 
 pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>, statsd: &StatsD) {
@@ -18,7 +18,7 @@ pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>, statsd: &StatsD) {
         .await
         .expect("Could not retrieve refunds from DB.");
     statsd.gauge(
-        &TraceType::BatchRefunds,
+        &LogKey::BatchRefunds,
         Some("n-not-reported"),
         not_reported_refunds.len(),
     );
@@ -41,7 +41,7 @@ pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>, statsd: &StatsD) {
             Ok(r) => {
                 info_and_incr!(
                     statsd,
-                    TraceType::BatchRefundsUpdate,
+                    LogKey::BatchRefundsUpdate,
                     refund_id = &r.refund_id.as_str(),
                     "Success updating refund"
                 );
@@ -49,7 +49,7 @@ pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>, statsd: &StatsD) {
             Err(e) => {
                 error_and_incr!(
                     statsd,
-                    TraceType::BatchRefundsUpdateFailed,
+                    LogKey::BatchRefundsUpdateFailed,
                     error = e,
                     refund_id = &refund.refund_id.as_str(),
                     "Could not update refund to be reported"
