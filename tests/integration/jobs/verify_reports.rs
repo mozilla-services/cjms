@@ -53,7 +53,7 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
     let mock_cj = MockServer::start().await;
     let required_query = r#"{
 advertiserCommissions(
-    forAdvertisers: ["6002970"],
+    forAdvertisers: ["123456"],
     sincePostingDate:"2022-04-22T00:00:00Z",
     beforePostingDate:"2022-05-22T00:00:00Z",
 ) {
