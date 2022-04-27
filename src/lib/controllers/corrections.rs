@@ -4,7 +4,7 @@ use sqlx::PgPool;
 use time::{Date, OffsetDateTime};
 
 use crate::{
-    error, info, info_and_incr,
+    error_and_incr, info_and_incr,
     models::{
         refunds::{Refund, RefundModel},
         subscriptions::SubscriptionModel,
@@ -13,11 +13,11 @@ use crate::{
     telemetry::{LogKey, StatsD},
 };
 
-// TODO add statsd here
 async fn build_body_from_results(
     settings: &Settings,
     results: Vec<Refund>,
     db_pool: &PgPool,
+    statsd: &StatsD,
 ) -> String {
     let mut body = format!(
         r#"&CID={}
@@ -31,7 +31,8 @@ async fn build_body_from_results(
             .await
         {
             Ok(sub) => {
-                info!(
+                info_and_incr!(
+                    statsd,
                     LogKey::CorrectionsSubscriptionFetch,
                     subscription_id = refund.subscription_id.as_str(),
                     refund_id = refund.refund_id.as_str(),
@@ -39,9 +40,11 @@ async fn build_body_from_results(
                 );
                 sub
             }
-            Err(_) => {
-                error!(
+            Err(e) => {
+                error_and_incr!(
+                    statsd,
                     LogKey::CorrectionsSubscriptionFetchFailed,
+                    error = e,
                     subscription_id = refund.subscription_id.as_str(),
                     refund_id = refund.refund_id.as_str(),
                     "Failed to fetch sub for refund. Continuing..."
@@ -93,13 +96,14 @@ pub async fn by_day(
     statsd: web::Data<StatsD>,
 ) -> HttpResponse {
     info_and_incr!(
-        statsd,
+        statsd.as_ref(),
         LogKey::CorrectionsReportByDayAccessed,
         day = path.day.to_string().as_str(),
         "Corrections report accessed by day"
     );
     let results = get_results_for_day(pool.as_ref(), path.day).await;
-    let body = build_body_from_results(settings.as_ref(), results, pool.as_ref()).await;
+    let body =
+        build_body_from_results(settings.as_ref(), results, pool.as_ref(), statsd.as_ref()).await;
     HttpResponse::Ok().body(body)
 }
 
@@ -109,12 +113,13 @@ pub async fn today(
     statsd: web::Data<StatsD>,
 ) -> HttpResponse {
     info_and_incr!(
-        statsd,
+        statsd.as_ref(),
         LogKey::CorrectionsReportTodayAccessed,
         "Corrections report accessed for today"
     );
     let today = OffsetDateTime::now_utc().date();
     let results = get_results_for_day(pool.as_ref(), today).await;
-    let body = build_body_from_results(settings.as_ref(), results, pool.as_ref()).await;
+    let body =
+        build_body_from_results(settings.as_ref(), results, pool.as_ref(), statsd.as_ref()).await;
     HttpResponse::Ok().body(body)
 }
