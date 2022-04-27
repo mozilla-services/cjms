@@ -4,8 +4,10 @@ use sentry_tracing::EventFilter;
 use std::borrow::Cow;
 use std::net::UdpSocket;
 use std::panic::RefUnwindSafe;
+use std::str::FromStr;
 use std::sync::Arc;
 use strum_macros::Display as EnumToString;
+use strum_macros::EnumString;
 use time::Duration;
 use tracing::subscriber::set_global_default;
 use tracing_actix_web_mozlog::{JsonStorageLayer, MozLogFormatLayer};
@@ -16,23 +18,111 @@ use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 use crate::settings::Settings;
 use crate::version::{read_version, VERSION_FILE};
 
-// TODO - Rename to something more generic e.g. LoggingKey
-#[derive(Debug, EnumToString, PartialEq, Eq)]
+#[derive(Debug, EnumToString, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "kebab_case")]
-pub enum TraceType {
+pub enum LogKey {
     AicRecordCreate,
     AicRecordCreateFailed,
     BatchRefunds,
+    BatchRefundsEnding,
+    BatchRefundsNNotReported,
+    BatchRefundsStarting,
+    BatchRefundsTimer,
+    BatchRefundsUpdate,
+    BatchRefundsUpdateFailed,
     BigQuery,
     CheckRefunds,
+    CheckRefundsBytesFromBq,
+    CheckRefundsDeserializeBigQuery,
+    CheckRefundsDeserializeBigQueryFailed,
+    CheckRefundsEnding,
+    CheckRefundsNFromBq,
+    CheckRefundsRefundCreate,
+    CheckRefundsRefundCreateDatabaseError,
+    CheckRefundsRefundCreateDuplicateKeyViolation,
+    CheckRefundsRefundCreateFailed,
+    CheckRefundsRefundDataChanged,
+    CheckRefundsRefundDataUnchanged,
+    CheckRefundsRefundFetchFailed,
+    CheckRefundsRefundUpdate,
+    CheckRefundsRefundUpdateFailed,
+    CheckRefundsStarting,
+    CheckRefundsSubscriptionMissingFromDatabase,
+    CheckRefundsTimer,
+    CheckRefundsTotalNFromBq,
     CheckSubscriptions,
+    CheckSubscriptionsAicArchive,
+    CheckSubscriptionsAicArchiveFailed,
+    CheckSubscriptionsAicFetch,
+    CheckSubscriptionsAicFetchFailed,
+    CheckSubscriptionsAicFetchFromArchive,
+    CheckSubscriptionsBytesFromBq,
+    CheckSubscriptionsDeserializeBigQuery,
+    CheckSubscriptionsDeserializeBigQueryFailed,
+    CheckSubscriptionsEnding,
+    CheckSubscriptionsNFromBq,
+    CheckSubscriptionsStarting,
+    CheckSubscriptionsSubscriptionCreate,
+    CheckSubscriptionsSubscriptionCreateDatabaseError,
+    CheckSubscriptionsSubscriptionCreateDuplicateKeyViolation,
+    CheckSubscriptionsSubscriptionCreateFailed,
+    CheckSubscriptionsTimer,
+    CheckSubscriptionsTotalNFromBq,
     Cleanup,
+    CleanupAicArchive,
+    CleanupAicArchiveFailed,
+    CleanupEnding,
+    CleanupStarting,
+    CleanupTimer,
     CorrectionsReport,
+    CorrectionsReportByDayAccessed,
+    CorrectionsReportTodayAccessed,
+    CorrectionsSubscriptionFetch,
+    CorrectionsSubscriptionFetchFailed,
+    ReportSubscriptionMarkNotReported,
+    ReportSubscriptionMarkNotReportedFailed,
+    ReportSubscriptionMarkWillNotReport,
+    ReportSubscriptionMarkWillNotReportFailed,
+    ReportSubscriptionReportToCj,
+    ReportSubscriptionReportToCjButCouldNotMarkReported,
+    ReportSubscriptionReportToCjFailed,
     ReportSubscriptions,
-    RequestIndexSuccess,
+    ReportSubscriptionsAicExpiredBeforeSubscriptionCreated,
+    ReportSubscriptionsEnding,
+    ReportSubscriptionsNNotReported,
+    ReportSubscriptionsStarting,
+    ReportSubscriptionsSubscriptionHasNoAicExpiry,
+    ReportSubscriptionsTimer,
+    RequestLogTest,
     StatsDError,
-    Test, // For test cases
+    StatusHistoryDeserializeError,
     WebApp,
+    WebAppEnding,
+    WebAppStarting,
+    WebAppTimer,
+
+    // For test cases
+    Test,
+    TestEnding,
+    TestErrorIncr,
+    TestGauge,
+    TestIncr,
+    TestInfoIncr,
+    TestStarting,
+    TestTime,
+    TestTimer,
+}
+
+impl LogKey {
+    pub fn add_suffix(&self, suffix: &str) -> LogKey {
+        let s = format!("{}-{}", &self.to_string(), suffix);
+        let s_str = s.as_str();
+
+        match LogKey::from_str(s_str) {
+            Ok(v) => v,
+            Err(_) => LogKey::from_str(&self.to_string()).unwrap(),
+        }
+    }
 }
 
 /// Creates a tracing subscriber and sets it as the global default.
@@ -84,20 +174,46 @@ pub fn init_sentry(settings: &Settings) -> ClientInitGuard {
     ))
 }
 
-pub fn info(trace_type: &TraceType, message: &str) {
-    tracing::info!(r#type = trace_type.to_string().as_str(), message);
+/// TODO doc
+#[macro_export]
+macro_rules! info {
+    ( $trace_type:expr, $($arg:tt)+ ) => {
+        tracing::info!(r#type = $trace_type.to_string().as_str(), $($arg)*)
+    }
 }
 
-pub fn error(trace_type: &TraceType, message: &str, error: Option<Box<dyn std::error::Error>>) {
-    match error {
-        Some(err) => tracing::error!(
-            r#type = trace_type.to_string().as_str(),
-            "Message: '{}'. Original error: {:?}",
-            message,
-            err
-        ),
-        None => tracing::error!(r#type = trace_type.to_string().as_str(), message),
+/// TODO doc
+#[macro_export]
+macro_rules! error {
+    ( $trace_type:expr, error = $error:expr, $($arg:tt)+ ) => {
+        tracing::error!(
+            r#type = $trace_type.to_string().as_str(),
+            error = format!("{:?}", $error).as_str(),
+            $($arg)*)
     };
+    ( $trace_type:expr, $($arg:tt)+ ) => {
+        tracing::error!(
+            r#type = $trace_type.to_string().as_str(),
+            $($arg)*)
+    };
+}
+
+/// TODO doc
+#[macro_export]
+macro_rules! info_and_incr {
+    ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
+        crate::info!($trace_type.to_string().as_str(), $($arg)*);
+        $statsd_client.incr(&$trace_type);
+    }
+}
+
+/// TODO doc
+#[macro_export]
+macro_rules! error_and_incr {
+    ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
+        crate::error!($trace_type.to_string().as_str(), $($arg)*);
+        $statsd_client.incr(&$trace_type);
+    }
 }
 
 #[derive(Clone)]
@@ -115,45 +231,69 @@ impl StatsD {
             client: Arc::new(StatsdClient::from_sink("cjms", sink)),
         }
     }
-    pub fn incr(&self, key: &TraceType, suffix: &str) {
-        let tag = format!("{}-{}", key, suffix.to_lowercase());
+    pub fn incr(&self, key: &LogKey) {
+        let k = key.to_string();
         self.client
-            .incr(&tag)
+            .incr(k.as_str())
             .map_err(|e| {
-                error(
-                    &TraceType::StatsDError,
-                    &format!("Could not increment statsd tag {}", tag),
-                    Some(Box::new(e)),
+                error!(
+                    LogKey::StatsDError,
+                    error = e,
+                    key = k.as_str(),
+                    "Could not increment statsd tag"
                 );
             })
             .ok();
     }
-    pub fn gauge(&self, key: &TraceType, suffix: &str, v: usize) {
-        let tag = format!("{}-{}", key, suffix.to_lowercase());
+    pub fn gauge(&self, key: &LogKey, v: usize) {
+        let k = key.to_string();
         let v = v as u64;
         self.client
-            .gauge(&tag, v)
+            .gauge(k.as_str(), v)
             .map_err(|e| {
-                error(
-                    &TraceType::StatsDError,
-                    &format!("Could not record value {:?} for statsd tag {}", v, tag),
-                    Some(Box::new(e)),
+                error!(
+                    LogKey::StatsDError,
+                    error = e,
+                    key = k.as_str(),
+                    value = v,
+                    "Could not record value for statsd tag"
                 );
             })
             .ok();
     }
-    pub fn time(&self, key: &TraceType, suffix: &str, t: Duration) {
-        let tag = format!("{}-{}", key, suffix.to_lowercase());
+    pub fn time(&self, key: &LogKey, t: Duration) {
+        let k = key.to_string();
         let milliseconds = t.whole_milliseconds();
         self.client
-            .time(&tag, milliseconds as u64)
+            .time(k.as_str(), milliseconds as u64)
             .map_err(|e| {
-                error(
-                    &TraceType::StatsDError,
-                    &format!("Could not record time {:?} for statsd tag {}", t, tag),
-                    Some(Box::new(e)),
+                error!(
+                    LogKey::StatsDError,
+                    error = e,
+                    key = k.as_str(),
+                    time = format!("{:?}", t).as_str(),
+                    "Could not record time for statsd tag"
                 );
             })
             .ok();
+    }
+}
+
+#[cfg(test)]
+pub mod test_telemetry {
+    use super::*;
+
+    #[test]
+    fn get_log_key_with_valid_suffix() {
+        let expected = LogKey::TestEnding;
+        let actual = LogKey::Test.add_suffix("ending");
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn get_log_key_with_invalid_suffix() {
+        let expected = LogKey::Test;
+        let actual = LogKey::Test.add_suffix("this-wont-work");
+        assert_eq!(expected, actual);
     }
 }

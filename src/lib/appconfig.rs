@@ -17,14 +17,14 @@ use tracing_actix_web_mozlog::MozLog;
 use crate::{
     bigquery::client::{get_bqclient, BQClient},
     cj::client::CJS2SClient,
-    controllers,
+    controllers, info_and_incr,
     settings::{get_settings, Settings},
-    telemetry::{info, init_sentry, init_tracing, StatsD, TraceType},
+    telemetry::{init_sentry, init_tracing, LogKey, StatsD},
 };
 
 pub struct CJ {
     _guard: ClientInitGuard,
-    name: TraceType,
+    name: LogKey,
     start: OffsetDateTime,
     pub bq_client: BQClient,
     pub cj_client: CJS2SClient,
@@ -34,19 +34,20 @@ pub struct CJ {
 }
 
 impl CJ {
-    pub async fn new(name: TraceType) -> Self {
+    pub async fn new(name: LogKey) -> Self {
         let start = OffsetDateTime::now_utc();
         let settings = get_settings();
         let _guard = init_sentry(&settings);
-        if name != TraceType::Test {
+        if name != LogKey::Test {
             init_tracing(&name.to_string(), &settings.log_level, std::io::stdout);
         }
         let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
         let bq_client = get_bqclient(&settings).await;
         let cj_client = CJS2SClient::new(&settings, None);
         let statsd = StatsD::new(&settings);
-        statsd.incr(&name, "starting");
-        info(&name, "Starting");
+
+        info_and_incr!(statsd, &name.add_suffix("starting"), "Application starting");
+
         CJ {
             _guard,
             name,
@@ -60,11 +61,17 @@ impl CJ {
     }
 
     pub async fn shutdown(&self) -> std::io::Result<()> {
-        self.statsd.incr(&self.name, "ending");
-        info(&self.name, "Ending");
+        info_and_incr!(
+            &self.statsd,
+            &self.name.add_suffix("ending"),
+            "Application ending"
+        );
+
         self.db_pool.close().await;
-        self.statsd
-            .time(&self.name, "timer", OffsetDateTime::now_utc() - self.start);
+        self.statsd.time(
+            &self.name.add_suffix("timer"),
+            OffsetDateTime::now_utc() - self.start,
+        );
         Ok(())
     }
 }
@@ -109,7 +116,7 @@ pub fn run_server(
                 resource("/__lbheartbeat__").route(get().to(controllers::custodial::heartbeat)),
             )
             .service(resource("/__version__").route(get().to(controllers::custodial::version)))
-            .service(resource("/__error_log__").route(get().to(controllers::custodial::error_log)))
+            .service(resource("/__log__").route(get().to(controllers::custodial::log)))
             .service(
                 resource("/__error_panic__").route(get().to(controllers::custodial::error_panic)),
             )

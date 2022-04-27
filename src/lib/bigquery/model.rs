@@ -31,7 +31,10 @@ use std::collections::HashMap;
 use thiserror::Error;
 use time::OffsetDateTime;
 
-use crate::telemetry::{error, StatsD, TraceType};
+use crate::{
+    error,
+    telemetry::{LogKey, StatsD},
+};
 
 #[derive(Error, Debug)]
 pub enum BQError {
@@ -291,7 +294,7 @@ impl ResultSet {
         }
     }
 
-    /// Moves the cursor froward one row from its current position.
+    /// Moves the cursor forward one row from its current position.
     /// A ResultSet cursor is initially positioned before the first row; the first call to the method next makes the
     /// first row the current row; the second call makes the second row the current row, and so on.
     pub fn next_row(&mut self) -> bool {
@@ -308,8 +311,8 @@ impl ResultSet {
         self.row_count as usize
     }
 
-    pub fn report_stats(&self, statsd: &StatsD, key: &TraceType) {
-        statsd.gauge(key, "n-from-bq", self.row_count());
+    pub fn report_stats(&self, statsd: &StatsD, key: &LogKey) {
+        statsd.gauge(&key.add_suffix("n-from-bq"), self.row_count());
         let total_rows = self
             .query_response
             .total_rows
@@ -317,13 +320,9 @@ impl ResultSet {
             .unwrap_or_else(|| "-1".to_string());
         match total_rows.parse::<usize>() {
             Ok(n) => {
-                statsd.gauge(key, "total-n-from-bq", n);
+                statsd.gauge(&key.add_suffix("total-n-from-bq"), n);
             }
-            Err(e) => error(
-                &TraceType::BigQuery,
-                "Could not get total rows",
-                Some(Box::new(e)),
-            ),
+            Err(e) => error!(LogKey::BigQuery, error = e, "Could not get total rows",),
         };
         let bytes_processed = self
             .query_response
@@ -332,12 +331,12 @@ impl ResultSet {
             .unwrap_or_else(|| "-1".to_string());
         match bytes_processed.parse::<usize>() {
             Ok(n) => {
-                statsd.gauge(key, "bytes-from-bq", n);
+                statsd.gauge(&key.add_suffix("bytes-from-bq"), n);
             }
-            Err(e) => error(
-                &TraceType::BigQuery,
+            Err(e) => error!(
+                LogKey::BigQuery,
+                error = e,
                 "Could not get total bytes processed",
-                Some(Box::new(e)),
             ),
         };
     }

@@ -2,11 +2,12 @@ use sqlx::{Pool, Postgres};
 use time::OffsetDateTime;
 
 use crate::{
+    error_and_incr, info_and_incr,
     models::{
         refunds::RefundModel,
         status_history::{Status, UpdateStatus},
     },
-    telemetry::{StatsD, TraceType},
+    telemetry::{LogKey, StatsD},
 };
 
 pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>, statsd: &StatsD) {
@@ -17,8 +18,7 @@ pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>, statsd: &StatsD) {
         .await
         .expect("Could not retrieve refunds from DB.");
     statsd.gauge(
-        &TraceType::BatchRefunds,
-        "n-not-reported",
+        &LogKey::BatchRefundsNNotReported,
         not_reported_refunds.len(),
     );
     for mut refund in not_reported_refunds {
@@ -38,12 +38,20 @@ pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>, statsd: &StatsD) {
         refund.update_status(next_state);
         match refunds.update_refund(&refund).await {
             Ok(r) => {
-                println!("Success updating refund: {}", &r.refund_id);
+                info_and_incr!(
+                    statsd,
+                    LogKey::BatchRefundsUpdate,
+                    refund_id = &r.refund_id.as_str(),
+                    "Success updating refund"
+                );
             }
             Err(e) => {
-                println!(
-                    "Could not update refund {} to be reported. {}",
-                    &refund.refund_id, e
+                error_and_incr!(
+                    statsd,
+                    LogKey::BatchRefundsUpdateFailed,
+                    error = e,
+                    refund_id = &refund.refund_id.as_str(),
+                    "Could not update refund to be reported"
                 );
             }
         };

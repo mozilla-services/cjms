@@ -1,8 +1,12 @@
 use sqlx::PgPool;
 
-use crate::models::aic::AICModel;
+use crate::{
+    error_and_incr, info_and_incr,
+    models::aic::AICModel,
+    telemetry::{LogKey, StatsD},
+};
 
-pub async fn archive_expired_aics(db_pool: &PgPool) {
+pub async fn archive_expired_aics(db_pool: &PgPool, statsd: &StatsD) {
     let aic_model = AICModel { db_pool };
     // Intentional expect. Cannot continue without
     let expired = aic_model
@@ -12,12 +16,20 @@ pub async fn archive_expired_aics(db_pool: &PgPool) {
     for aic in expired {
         match aic_model.archive_aic(&aic).await {
             Ok(_) => {
-                println!("Successfully archived aic: {}", &aic.id);
+                info_and_incr!(
+                    statsd,
+                    LogKey::CleanupAicArchive,
+                    aic_id = &aic.id.to_string().as_str(),
+                    "Successfully archived aic"
+                );
             }
             Err(e) => {
-                println!(
-                    "Could not archive aic: {}. Error: {}. Continuing...",
-                    &aic.id, e
+                error_and_incr!(
+                    statsd,
+                    LogKey::CleanupAicArchiveFailed,
+                    error = e,
+                    aic_id = &aic.id.to_string().as_str(),
+                    "Could not archive aic. Continuing..."
                 );
                 continue;
             }

@@ -5,6 +5,8 @@ use serde_json::{from_value, json, Value as JsonValue};
 use strum_macros::{Display as EnumToString, EnumString};
 use time::OffsetDateTime;
 
+use crate::{error, telemetry::LogKey};
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, EnumToString, EnumString)]
 pub enum Status {
     NotReported,
@@ -34,8 +36,12 @@ impl StatusHistory {
         let status_history: StatusHistory = match from_value(v.clone()) {
             Ok(v) => v,
             Err(e) => {
-                // TODO - LOGGING
-                println!("Error deserializing status_history: {:?} {}", v, e);
+                error!(
+                    LogKey::StatusHistoryDeserializeError,
+                    error = e,
+                    v = v.to_string().as_str(),
+                    "Error deserializing status_history"
+                );
                 StatusHistory { entries: vec![] }
             }
         };

@@ -4,11 +4,12 @@ use uuid::Uuid;
 
 use crate::{
     bigquery::client::{BQClient, BQError, ResultSet},
+    error_and_incr, info_and_incr,
     models::{
         aic::AICModel,
         subscriptions::{PartialSubscription, Subscription, SubscriptionModel},
     },
-    telemetry::{StatsD, TraceType},
+    telemetry::{LogKey, StatsD},
 };
 
 fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError> {
@@ -41,44 +42,55 @@ pub async fn fetch_and_process_new_subscriptions(
     // Get all results from bigquery table that stores new subscription reports
     let query = "SELECT * FROM `cjms_bigquery.subscriptions_v1`;";
     let mut rs = bq.get_bq_results(query).await;
-    rs.report_stats(statsd, &TraceType::CheckSubscriptions);
+    rs.report_stats(statsd, &LogKey::CheckSubscriptions);
     while rs.next_row() {
         // If can't deserialize e.g. required fields are not available log and move on.
         let mut sub = match make_subscription_from_bq_row(&rs) {
             Ok(sub) => {
-                // TODO - LOGGING
-                println!(
-                    "Successfully deserialized subscription from bq row: {}",
-                    sub.id
+                info_and_incr!(
+                    statsd,
+                    LogKey::CheckSubscriptionsDeserializeBigQuery,
+                    subscription_id = sub.id.to_string().as_str(),
+                    "Successfully deserialized subscription from BigQuery row",
                 );
                 sub
             }
             Err(e) => {
-                // TODO - LOGGING - Log information and get a metric
-                println!(
-                    "Failed to make subscription for bq result row. {:?}. Continuing...",
-                    e
+                error_and_incr!(
+                    statsd,
+                    LogKey::CheckSubscriptionsDeserializeBigQueryFailed,
+                    error = e,
+                    "Failed to make subscription for BigQuery result row. Continuing...",
                 );
                 continue;
             }
         };
         let (aic, aic_found_in_archive) = match aics.fetch_one_by_flow_id(&sub.flow_id).await {
             Ok(aic) => {
-                // TODO - LOGGING
-                println!("Succesfully fetched aic: {}.", aic.id);
+                info_and_incr!(
+                    statsd,
+                    LogKey::CheckSubscriptionsAicFetch,
+                    aic_id = aic.id.to_string().as_str(),
+                    "Successfully fetched aic",
+                );
                 (aic, false)
             }
             Err(_) => match aics.fetch_one_by_flow_id_from_archive(&sub.flow_id).await {
                 Ok(aic) => {
-                    // TODO - LOGGING - Note that we had to pull from archive table
-                    println!("AIC {} was retrieved from archive table.", aic.id);
+                    info_and_incr!(
+                        statsd,
+                        LogKey::CheckSubscriptionsAicFetchFromArchive,
+                        aic_id = aic.id.to_string().as_str(),
+                        "AIC was fetched from archive table.",
+                    );
                     (aic, true)
                 }
                 Err(e) => {
-                    // TODO - LOGGING
-                    println!(
-                        "Error getting aic for subscription: {:?}. Continuing....",
-                        e
+                    error_and_incr!(
+                        statsd,
+                        LogKey::CheckSubscriptionsAicFetchFailed,
+                        error = e,
+                        "Error getting aic for subscription. Continuing...",
                     );
                     continue;
                 }
@@ -92,12 +104,21 @@ pub async fn fetch_and_process_new_subscriptions(
         if !aic_found_in_archive {
             match aics.archive_aic(&aic).await {
                 Ok(_) => {
-                    // TODO - LOGGING
-                    println!("Successfully archived aic: {}.", aic.id);
+                    info_and_incr!(
+                        statsd,
+                        LogKey::CheckSubscriptionsAicArchive,
+                        aic_id = aic.id.to_string().as_str(),
+                        "Successfully archived aic",
+                    );
                 }
                 Err(e) => {
-                    // TODO - LOGGING
-                    println!("Failed to archive aic entry: {:?}. Continuing...", e);
+                    error_and_incr!(
+                        statsd,
+                        LogKey::CheckSubscriptionsAicArchiveFailed,
+                        error = e,
+                        aic_id = aic.id.to_string().as_str(),
+                        "Failed to archive aic entry. Continuing...",
+                    );
                     continue;
                 }
             };
@@ -105,27 +126,38 @@ pub async fn fetch_and_process_new_subscriptions(
         // Save the new subscription entry
         match subscriptions.create_from_sub(&sub).await {
             Ok(sub) => {
-                // TODO - LOGGING
-                println!("Successfully created sub: {}.", sub.id);
+                info_and_incr!(
+                    statsd,
+                    LogKey::CheckSubscriptionsSubscriptionCreate,
+                    sub_id = sub.id.to_string().as_str(),
+                    "Successfully created subscription"
+                );
             }
             Err(e) => match e {
                 sqlx::Error::Database(e) => {
                     // 23505 is the code for unique constraints e.g. duplicate flow id issues
                     if e.code() == Some(std::borrow::Cow::Borrowed("23505")) {
-                        // TODO - LOGGING - add some specific logging / metrics around duplicate key issues.
-                        // This could help us see that we have an ETL issue.
-                        println!("Duplicate Key Violation");
+                        error_and_incr!(
+                            statsd,
+                            LogKey::CheckSubscriptionsSubscriptionCreateDuplicateKeyViolation,
+                            error = e,
+                            "Duplicate key violation"
+                        );
                     }
-                    println!(
-                        "DatabaseError error while creating subscription {:?}. Continuing...",
-                        e
+                    error_and_incr!(
+                        statsd,
+                        LogKey::CheckSubscriptionsSubscriptionCreateDatabaseError,
+                        error = e,
+                        "Database error while creating subscription. Continuing..."
                     );
                     continue;
                 }
                 _ => {
-                    println!(
-                        "Unexpected error while creating subscription {:?}. Continuing...",
-                        e
+                    error_and_incr!(
+                        statsd,
+                        LogKey::CheckSubscriptionsSubscriptionCreateFailed,
+                        error = e,
+                        "Unexpected error while creating subscription. Continuing...",
                     );
                     continue;
                 }

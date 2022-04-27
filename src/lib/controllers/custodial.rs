@@ -1,5 +1,6 @@
 use crate::{
-    telemetry::{error, info, StatsD, TraceType},
+    error, error_and_incr, info, info_and_incr,
+    telemetry::{LogKey, StatsD},
     version::{read_version, VERSION_FILE},
 };
 use actix_web::{web, Error, HttpResponse};
@@ -16,7 +17,6 @@ use std::thread;
 
 #[tracing::instrument(name = "request-index")]
 pub async fn index() -> Result<HttpResponse, Error> {
-    info(&TraceType::RequestIndexSuccess, "");
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
 
@@ -31,30 +31,45 @@ pub async fn version() -> Result<HttpResponse, Error> {
 
 // Debug endpoints
 
+pub async fn log() -> Result<HttpResponse, Error> {
+    info!(LogKey::Test, "Trace test with message");
+    info!(
+        LogKey::Test,
+        key = "value",
+        "Trace test with keyword arguments"
+    );
+    info!(
+        LogKey::Test,
+        "Trace test with format string: {}", "Hello world"
+    );
+
+    let err = "NaN".parse::<usize>().unwrap_err();
+    error!(LogKey::Test, error = err, "Trace test error",);
+
+    Ok(HttpResponse::Ok().body("Log test"))
+}
+
 pub async fn metrics(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
-    statsd.incr(&TraceType::Test, "test-incr");
-    statsd.gauge(&TraceType::Test, "test-gauge", 5);
+    statsd.incr(&LogKey::TestIncr);
+    statsd.gauge(&LogKey::TestGauge, 5);
 
     let start = OffsetDateTime::now_utc();
     let hundred_millis = Duration::from_millis(100);
     thread::sleep(hundred_millis);
 
-    statsd.time(
-        &TraceType::Test,
-        "test-time",
-        OffsetDateTime::now_utc() - start,
-    );
-    Ok(HttpResponse::Ok().body("OK"))
-}
+    statsd.time(&LogKey::TestTime, OffsetDateTime::now_utc() - start);
 
-pub async fn error_log() -> Result<HttpResponse, Error> {
+    info_and_incr!(statsd.as_ref(), LogKey::TestInfoIncr, "Test info and incr");
+
     let err = "NaN".parse::<usize>().unwrap_err();
-    error(
-        &TraceType::Test,
-        "Test error log report",
-        Some(Box::new(err)),
+    error_and_incr!(
+        statsd.as_ref(),
+        LogKey::TestErrorIncr,
+        error = err,
+        "Test error and incr",
     );
-    Ok(HttpResponse::Ok().body("Error log test"))
+
+    Ok(HttpResponse::Ok().body("OK"))
 }
 
 pub async fn error_panic() -> Result<HttpResponse, Error> {
