@@ -1,5 +1,7 @@
 use crate::{models::subscriptions::Subscription, settings::Settings};
+use rand::{thread_rng, Rng};
 use reqwest::{Client, Error, Response, Url};
+use time::Duration;
 
 use super::country_codes::get_iso_code_3_from_iso_code_2;
 
@@ -23,9 +25,17 @@ impl CJS2SClient {
         }
     }
 
+    fn random_minutes(&self) -> Duration {
+        let mut rng = thread_rng();
+        let minutes = rng.gen_range(15..=60);
+        Duration::minutes(minutes)
+    }
+
     pub async fn report_subscription(&self, sub: &Subscription) -> Result<Response, Error> {
         let mut url_for_sub = self.url.clone();
-        let event_time = sub.subscription_created.format("%FT%H:00:00.000Z");
+        // Note this must be in the future or will fail CJ side
+        let randomized_event_time = sub.subscription_created + self.random_minutes();
+        let event_time = randomized_event_time.format("%FT%H:%M:00.000Z");
         url_for_sub
             .query_pairs_mut()
             .append_pair("CID", &self.cj_cid)
