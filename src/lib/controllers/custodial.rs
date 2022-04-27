@@ -1,9 +1,13 @@
 use crate::{
     error, info,
-    telemetry::TraceType,
+    telemetry::{StatsD, TraceType},
     version::{read_version, VERSION_FILE},
 };
-use actix_web::{Error, HttpResponse};
+use actix_web::{web, Error, HttpResponse};
+use std::time::Duration;
+use time::OffsetDateTime;
+
+use std::thread;
 
 /*
  * Custodial Helpers
@@ -16,9 +20,19 @@ pub async fn index() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
 
+pub async fn heartbeat() -> Result<HttpResponse, Error> {
+    Ok(HttpResponse::Ok().body("OK"))
+}
+
+pub async fn version() -> Result<HttpResponse, Error> {
+    let version_data = read_version(VERSION_FILE);
+    Ok(HttpResponse::Ok().json(version_data))
+}
+
+// Debug endpoints
+
 // TODO make sure info_and_incr and error_and_incr are used in one of these
 // endpoints
-
 pub async fn log() -> Result<HttpResponse, Error> {
     info!(TraceType::RequestLogTest, "Trace test with message");
     info!(
@@ -37,17 +51,24 @@ pub async fn log() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("Log test"))
 }
 
-pub async fn error_panic() -> Result<HttpResponse, Error> {
-    panic!("This is fine. :fire:");
-}
+pub async fn metrics(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
+    statsd.incr(&TraceType::Test, Some("test-incr"));
+    statsd.gauge(&TraceType::Test, Some("test-gauge"), 5);
 
-pub async fn heartbeat() -> Result<HttpResponse, Error> {
+    let start = OffsetDateTime::now_utc();
+    let hundred_millis = Duration::from_millis(100);
+    thread::sleep(hundred_millis);
+
+    statsd.time(
+        &TraceType::Test,
+        Some("test-time"),
+        OffsetDateTime::now_utc() - start,
+    );
     Ok(HttpResponse::Ok().body("OK"))
 }
 
-pub async fn version() -> Result<HttpResponse, Error> {
-    let version_data = read_version(VERSION_FILE);
-    Ok(HttpResponse::Ok().json(version_data))
+pub async fn error_panic() -> Result<HttpResponse, Error> {
+    panic!("This is fine. :fire:");
 }
 
 #[cfg(test)]

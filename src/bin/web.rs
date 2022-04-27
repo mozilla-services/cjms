@@ -18,6 +18,7 @@ async fn main() -> std::io::Result<()> {
         cj.settings.clone(),
         TcpListener::bind(addr)?,
         cj.db_pool.clone(),
+        cj.statsd.clone(),
     )?
     .await?;
     cj.shutdown().await

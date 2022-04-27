@@ -10,7 +10,7 @@ use crate::{
         subscriptions::SubscriptionModel,
     },
     settings::Settings,
-    telemetry::TraceType,
+    telemetry::{StatsD, TraceType},
 };
 
 // TODO add statsd here
@@ -91,14 +91,23 @@ pub async fn by_day(
     path: web::Path<CorrectionsByDayPath>,
     pool: web::Data<PgPool>,
     settings: web::Data<Settings>,
+    statsd: web::Data<StatsD>,
 ) -> HttpResponse {
+    statsd.incr(
+        &TraceType::CorrectionsReport,
+        Some(&format!("{}-accessed", path.day)),
+    );
     let results = get_results_for_day(pool.as_ref(), path.day).await;
     let body = build_body_from_results(settings.as_ref(), results, pool.as_ref()).await;
     HttpResponse::Ok().body(body)
 }
 
-pub async fn today(pool: web::Data<PgPool>, settings: web::Data<Settings>) -> HttpResponse {
-    // TODO - LOGGING - Add statsd metrics to see how often this is running
+pub async fn today(
+    pool: web::Data<PgPool>,
+    settings: web::Data<Settings>,
+    statsd: web::Data<StatsD>,
+) -> HttpResponse {
+    statsd.incr(&TraceType::CorrectionsReport, Some("today-accessed"));
     let today = OffsetDateTime::now_utc().date();
     let results = get_results_for_day(pool.as_ref(), today).await;
     let body = build_body_from_results(settings.as_ref(), results, pool.as_ref()).await;
