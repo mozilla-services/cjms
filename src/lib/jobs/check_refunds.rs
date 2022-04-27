@@ -138,12 +138,11 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                                 sqlx::Error::Database(e) => {
                                     // 23505 is the code for unique constraints e.g. duplicate flow id issues
                                     if e.code() == Some(std::borrow::Cow::Borrowed("23505")) {
-                                        // TODO definitely need metrics here.
                                         error_and_incr!(
                                             statsd,
                                             LogKey::CheckRefundsRefundCreateDuplicateKeyViolation,
                                             error = e,
-                                            refund_id = &r.refund_id.as_str(), // TODO will this actually work?
+                                            refund_id = &r.refund_id.as_str(),
                                             "Duplicate key violation"
                                         );
                                     } else {
@@ -151,7 +150,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                                             statsd,
                                             LogKey::CheckRefundsRefundCreateDatabaseError,
                                             error = e,
-                                            refund_id = &r.refund_id.as_str(), // TODO will this actually work?
+                                            refund_id = &r.refund_id.as_str(),
                                             "Database error while creating refund. Continuing..."
                                         );
                                     }
@@ -162,7 +161,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                                         statsd,
                                         LogKey::CheckRefundsRefundCreateFailed,
                                         error = e,
-                                        refund_id = &r.refund_id.as_str(), // TODO will this actually work?
+                                        refund_id = &r.refund_id.as_str(),
                                         "Unexpected error while creating refund. Continuing..."
                                     );
                                     continue;

@@ -27,7 +27,6 @@ pub async fn report_subscriptions_to_cj(
         let next_status = match sub.aic_expires {
             Some(aic_expires) => {
                 if aic_expires < sub.subscription_created {
-                    // TODO info or error?
                     error_and_incr!(
                         statsd,
                         LogKey::ReportSubscriptionsAicExpiredBeforeSubscriptionCreated,
@@ -40,7 +39,6 @@ pub async fn report_subscriptions_to_cj(
                 }
             }
             None => {
-                // TODO info or error?
                 error_and_incr!(
                     statsd,
                     LogKey::ReportSubscriptionsSubscriptionHasNoAicExpiry,

@@ -64,7 +64,6 @@ async fn get_results_for_day(db_pool: &PgPool, day: Date) -> Vec<Refund> {
     refunds
         .fetch_by_correction_file_day(&day)
         .await
-        // TODO isn't this construct redundant?
         .unwrap_or_else(|_| panic!("Could not fetch refunds for date: {}", day))
 }
 

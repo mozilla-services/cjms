@@ -24,96 +24,93 @@ pub enum LogKey {
     AicRecordCreate,
     AicRecordCreateFailed,
     BatchRefunds,
-    BigQuery,
-    CheckRefunds,
-    CheckSubscriptions,
-    Cleanup,
-    CorrectionsReport,
-    ReportSubscriptions,
-    RequestLogTest,
-    StatsDError,
-    Test, // For test cases
-    WebApp,
-
-    // TODO sort
-    CorrectionsSubscriptionFetch,
-    CorrectionsSubscriptionFetchFailed,
+    BatchRefundsEnding,
+    BatchRefundsNNotReported,
+    BatchRefundsStarting,
+    BatchRefundsTimer,
     BatchRefundsUpdate,
     BatchRefundsUpdateFailed,
+    BigQuery,
+    CheckRefunds,
+    CheckRefundsBytesFromBq,
     CheckRefundsDeserializeBigQuery,
     CheckRefundsDeserializeBigQueryFailed,
-    CheckRefundsSubscriptionMissingFromDatabase,
+    CheckRefundsEnding,
+    CheckRefundsNFromBq,
+    CheckRefundsRefundCreate,
+    CheckRefundsRefundCreateDatabaseError,
+    CheckRefundsRefundCreateDuplicateKeyViolation,
+    CheckRefundsRefundCreateFailed,
     CheckRefundsRefundDataChanged,
     CheckRefundsRefundDataUnchanged,
+    CheckRefundsRefundFetchFailed,
     CheckRefundsRefundUpdate,
     CheckRefundsRefundUpdateFailed,
-    CheckRefundsRefundCreate,
-    CheckRefundsRefundCreateDuplicateKeyViolation,
-    CheckRefundsRefundCreateDatabaseError,
-    CheckRefundsRefundCreateFailed,
-    CheckRefundsRefundFetchFailed,
-    CheckSubscriptionsDeserializeBigQuery,
-    BatchRefundsStarting,
-    BatchRefundsEnding,
-    BatchRefundsTimer,
     CheckRefundsStarting,
-    CheckRefundsEnding,
+    CheckRefundsSubscriptionMissingFromDatabase,
     CheckRefundsTimer,
-    CheckSubscriptionsStarting,
-    CheckSubscriptionsEnding,
-    CheckSubscriptionsTimer,
-    CleanupStarting,
-    CleanupEnding,
-    CleanupTimer,
-    ReportSubscriptionsStarting,
-    ReportSubscriptionsEnding,
-    ReportSubscriptionsTimer,
-    WebAppStarting,
-    WebAppEnding,
-    WebAppTimer,
-    TestStarting,
-    TestEnding,
-    TestTimer,
-    CheckRefundsNFromBq,
-    CheckSubscriptionsNFromBq,
     CheckRefundsTotalNFromBq,
-    CheckSubscriptionsTotalNFromBq,
-    CheckRefundsBytesFromBq,
-    CheckSubscriptionsBytesFromBq,
-    ReportSubscriptionsNNotReported,
-    TestIncr,
-    TestGauge,
-    TestTime,
-    BatchRefundsNNotReported,
-    CorrectionsReportByDayAccessed,
-    CorrectionsReportTodayAccessed,
-    CheckSubscriptionsDeserializeBigQueryFailed,
-    CheckSubscriptionsAicFetch,
-    CheckSubscriptionsAicFetchFromArchive,
-    CheckSubscriptionsAicFetchFailed,
+    CheckSubscriptions,
     CheckSubscriptionsAicArchive,
     CheckSubscriptionsAicArchiveFailed,
+    CheckSubscriptionsAicFetch,
+    CheckSubscriptionsAicFetchFailed,
+    CheckSubscriptionsAicFetchFromArchive,
+    CheckSubscriptionsBytesFromBq,
+    CheckSubscriptionsDeserializeBigQuery,
+    CheckSubscriptionsDeserializeBigQueryFailed,
+    CheckSubscriptionsEnding,
+    CheckSubscriptionsNFromBq,
+    CheckSubscriptionsStarting,
     CheckSubscriptionsSubscriptionCreate,
-    CheckSubscriptionsSubscriptionCreateDuplicateKeyViolation,
     CheckSubscriptionsSubscriptionCreateDatabaseError,
+    CheckSubscriptionsSubscriptionCreateDuplicateKeyViolation,
     CheckSubscriptionsSubscriptionCreateFailed,
+    CheckSubscriptionsTimer,
+    CheckSubscriptionsTotalNFromBq,
+    Cleanup,
     CleanupAicArchive,
     CleanupAicArchiveFailed,
-    ReportSubscriptionsAicExpiredBeforeSubscriptionCreated,
-    ReportSubscriptionsSubscriptionHasNoAicExpiry,
+    CleanupEnding,
+    CleanupStarting,
+    CleanupTimer,
+    CorrectionsReport,
+    CorrectionsReportByDayAccessed,
+    CorrectionsReportTodayAccessed,
+    CorrectionsSubscriptionFetch,
+    CorrectionsSubscriptionFetchFailed,
+    ReportSubscriptionMarkNotReported,
+    ReportSubscriptionMarkNotReportedFailed,
     ReportSubscriptionMarkWillNotReport,
     ReportSubscriptionMarkWillNotReportFailed,
     ReportSubscriptionReportToCj,
     ReportSubscriptionReportToCjButCouldNotMarkReported,
     ReportSubscriptionReportToCjFailed,
-    ReportSubscriptionMarkNotReported,
-    ReportSubscriptionMarkNotReportedFailed,
+    ReportSubscriptions,
+    ReportSubscriptionsAicExpiredBeforeSubscriptionCreated,
+    ReportSubscriptionsEnding,
+    ReportSubscriptionsNNotReported,
+    ReportSubscriptionsStarting,
+    ReportSubscriptionsSubscriptionHasNoAicExpiry,
+    ReportSubscriptionsTimer,
+    RequestLogTest,
+    StatsDError,
     StatusHistoryDeserializeError,
+    WebApp,
+    WebAppEnding,
+    WebAppStarting,
+    WebAppTimer,
+
+    // For test cases
+    Test,
+    TestEnding,
+    TestGauge,
+    TestIncr,
+    TestStarting,
+    TestTime,
+    TestTimer,
 }
 
-// TODO doc
-// TODO test
-// TODO doc weird nit about suffixes and what happens when they fail
 impl LogKey {
     pub fn add_suffix(&self, suffix: &str) -> LogKey {
         let s = format!("{}-{}", &self.to_string(), suffix);
@@ -121,8 +118,6 @@ impl LogKey {
 
         match LogKey::from_str(s_str) {
             Ok(v) => v,
-            // TODO why can't I just return self ...
-            // TODO do we need to deal with the unwrap? Hope not
             Err(_) => LogKey::from_str(&self.to_string()).unwrap(),
         }
     }
@@ -205,7 +200,6 @@ macro_rules! error {
 #[macro_export]
 macro_rules! info_and_incr {
     ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
-        // TODO is this the right way to handle this import?
         crate::info!($trace_type.to_string().as_str(), $($arg)*);
         $statsd_client.incr(&$trace_type);
     }
@@ -215,7 +209,6 @@ macro_rules! info_and_incr {
 #[macro_export]
 macro_rules! error_and_incr {
     ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
-        // TODO is this the right way to handle this import?
         crate::error!($trace_type.to_string().as_str(), $($arg)*);
         $statsd_client.incr(&$trace_type);
     }
