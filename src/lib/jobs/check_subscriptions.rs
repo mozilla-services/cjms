@@ -81,7 +81,7 @@ pub async fn fetch_and_process_new_subscriptions(
                         statsd,
                         LogKey::CheckSubscriptionsAicFetchFromArchive,
                         aic_id = aic.id.to_string().as_str(),
-                        "Successfully fetched aic from archive table",
+                        "AIC was fetched from archive table.",
                     );
                     (aic, true)
                 }

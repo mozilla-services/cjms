@@ -93,7 +93,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                     statsd,
                     LogKey::CheckRefundsRefundDataChanged,
                     refund_id = refund.refund_id.as_str(),
-                    "Data for refund is changed. Continuing..."
+                    "Data for refund is changed. Updating..."
                 );
                 refund.subscription_id = r.subscription_id;
                 refund.refund_created = r.refund_created;
