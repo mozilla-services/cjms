@@ -1,5 +1,5 @@
 use crate::{
-    error, info,
+    error, error_and_incr, info, info_and_incr,
     telemetry::{LogKey, StatsD},
     version::{read_version, VERSION_FILE},
 };
@@ -31,8 +31,6 @@ pub async fn version() -> Result<HttpResponse, Error> {
 
 // Debug endpoints
 
-// TODO make sure info_and_incr and error_and_incr are used in one of these
-// endpoints
 pub async fn log() -> Result<HttpResponse, Error> {
     info!(LogKey::Test, "Trace test with message");
     info!(
@@ -60,6 +58,17 @@ pub async fn metrics(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
     thread::sleep(hundred_millis);
 
     statsd.time(&LogKey::TestTime, OffsetDateTime::now_utc() - start);
+
+    info_and_incr!(statsd.as_ref(), LogKey::TestInfoIncr, "Test info and incr");
+
+    let err = "NaN".parse::<usize>().unwrap_err();
+    error_and_incr!(
+        statsd.as_ref(),
+        LogKey::TestErrorIncr,
+        error = err,
+        "Test error and incr",
+    );
+
     Ok(HttpResponse::Ok().body("OK"))
 }
 

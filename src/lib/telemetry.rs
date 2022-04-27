@@ -104,8 +104,10 @@ pub enum LogKey {
     // For test cases
     Test,
     TestEnding,
+    TestErrorIncr,
     TestGauge,
     TestIncr,
+    TestInfoIncr,
     TestStarting,
     TestTime,
     TestTimer,
