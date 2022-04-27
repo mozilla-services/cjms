@@ -134,6 +134,49 @@ async fn test_subscription_model_get_all_not_reported() {
 }
 
 #[tokio::test]
+async fn test_subscription_model_get_reported_date_range() {
+    let db_pool = get_test_db_pool().await;
+    let model = SubscriptionModel { db_pool: &db_pool };
+    // Sub 1 should not be included in the date range
+    let mut sub_1 = make_fake_sub();
+    sub_1.update_status(Status::NotReported);
+    sub_1.set_status_t(Some(sub_1.get_status_t().unwrap() - Duration::hours(100)));
+    // Sub 2 - this is the max
+    let mut sub_2 = make_fake_sub();
+    sub_2.update_status(Status::Reported);
+    // Sub 3 - this is the min
+    let mut sub_3 = make_fake_sub();
+    sub_3.update_status(Status::Reported);
+    sub_3.set_status_t(Some(sub_3.get_status_t().unwrap() - Duration::hours(10)));
+    // Sub 4 should not be included in the date range
+    let mut sub_4 = make_fake_sub();
+    sub_4.update_status(Status::NotReported);
+    sub_4.set_status_t(Some(sub_4.get_status_t().unwrap() + Duration::hours(100)));
+
+    for sub in [&sub_1, &sub_2, &sub_3, &sub_4] {
+        model
+            .create_from_sub(sub)
+            .await
+            .expect("Failed to create sub.");
+    }
+
+    let all = model.fetch_all().await.unwrap();
+    assert_eq!(all.len(), 4);
+    let result = model
+        .get_reported_date_range()
+        .await
+        .expect("Could not fetch from DB.");
+    assert_eq!(
+        result.max.unwrap().unix_timestamp(),
+        sub_2.get_status_t().unwrap().unix_timestamp()
+    );
+    assert_eq!(
+        result.min.unwrap().unix_timestamp(),
+        sub_3.get_status_t().unwrap().unix_timestamp()
+    );
+}
+
+#[tokio::test]
 async fn test_subscription_update_sub_status() {
     let db_pool = get_test_db_pool().await;
     let model = SubscriptionModel { db_pool: &db_pool };

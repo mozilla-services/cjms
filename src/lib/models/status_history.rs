@@ -7,6 +7,11 @@ use time::OffsetDateTime;
 
 use crate::{error, telemetry::LogKey};
 
+pub struct DateRange {
+    pub min: Option<OffsetDateTime>,
+    pub max: Option<OffsetDateTime>,
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, EnumToString, EnumString)]
 pub enum Status {
     NotReported,
