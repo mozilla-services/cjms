@@ -4,7 +4,7 @@ use lib::models::{
     status_history::{Status, UpdateStatus},
 };
 use pretty_assertions::assert_eq;
-use time::{date, OffsetDateTime};
+use time::{date, Duration, OffsetDateTime};
 use uuid::Uuid;
 
 pub fn make_fake_refund() -> Refund {
@@ -62,7 +62,7 @@ async fn test_refund_model_update_refund() {
 }
 
 #[tokio::test]
-async fn test_refund_model_fetch_not_reported() {
+async fn test_refund_model_fetch_all_by_status() {
     let db_pool = get_test_db_pool().await;
     let model = RefundModel { db_pool: &db_pool };
     let refund_1 = make_fake_refund();
@@ -77,13 +77,68 @@ async fn test_refund_model_fetch_not_reported() {
 
     let all = model.fetch_all().await.unwrap();
     assert_eq!(all.len(), 3);
-    let result = model
-        .fetch_not_reported()
+
+    let not_reported = model
+        .fetch_all_by_status(Status::NotReported)
         .await
         .expect("Could not fetch from DB.");
-    assert_eq!(result.len(), 2);
-    assert!(result.contains(&refund_1));
-    assert!(result.contains(&refund_3));
+    assert_eq!(not_reported.len(), 2);
+    assert!(not_reported.contains(&refund_1));
+    assert!(not_reported.contains(&refund_3));
+
+    let reported = model
+        .fetch_all_by_status(Status::Reported)
+        .await
+        .expect("Could not fetch from DB.");
+    assert_eq!(reported.len(), 1);
+    assert!(reported.contains(&refund_2));
+}
+
+#[tokio::test]
+async fn test_refundscription_model_get_reported_date_range() {
+    let db_pool = get_test_db_pool().await;
+    let model = RefundModel { db_pool: &db_pool };
+    // Refund 1 should not be included in the date range
+    let mut refund_1 = make_fake_refund();
+    refund_1.update_status(Status::NotReported);
+    refund_1.set_status_t(Some(
+        refund_1.get_status_t().unwrap() - Duration::hours(100),
+    ));
+    // refund 2 - this is the max
+    let mut refund_2 = make_fake_refund();
+    refund_2.update_status(Status::Reported);
+    // refund 3 - this is the min
+    let mut refund_3 = make_fake_refund();
+    refund_3.update_status(Status::Reported);
+    refund_3.set_status_t(Some(refund_3.get_status_t().unwrap() - Duration::hours(10)));
+    // refund 4 should not be included in the date range
+    let mut refund_4 = make_fake_refund();
+    refund_4.update_status(Status::NotReported);
+    refund_4.set_status_t(Some(
+        refund_4.get_status_t().unwrap() + Duration::hours(100),
+    ));
+
+    for refund in [&refund_1, &refund_2, &refund_3, &refund_4] {
+        model
+            .create_from_refund(refund)
+            .await
+            .expect("Failed to create refund.");
+    }
+
+    let all = model.fetch_all().await.unwrap();
+    assert_eq!(all.len(), 4);
+    let result = model
+        .get_reported_date_range()
+        .await
+        .expect("Could not fetch from DB.");
+    assert_eq!(
+        result.max.unwrap().unix_timestamp(),
+        refund_2.get_status_t().unwrap().unix_timestamp()
+    );
+    assert_eq!(
+        result.min.unwrap().unix_timestamp(),
+        refund_3.get_status_t().unwrap().unix_timestamp()
+    );
 }
 
 #[tokio::test]
