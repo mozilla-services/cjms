@@ -1,6 +1,6 @@
 use crate::{
     error, info,
-    telemetry::{StatsD, LogKey},
+    telemetry::{LogKey, StatsD},
     version::{read_version, VERSION_FILE},
 };
 use actix_web::{web, Error, HttpResponse};
@@ -34,36 +34,32 @@ pub async fn version() -> Result<HttpResponse, Error> {
 // TODO make sure info_and_incr and error_and_incr are used in one of these
 // endpoints
 pub async fn log() -> Result<HttpResponse, Error> {
-    info!(LogKey::RequestLogTest, "Trace test with message");
+    info!(LogKey::Test, "Trace test with message");
     info!(
-        LogKey::RequestLogTest,
+        LogKey::Test,
         key = "value",
         "Trace test with keyword arguments"
     );
     info!(
-        LogKey::RequestLogTest,
+        LogKey::Test,
         "Trace test with format string: {}", "Hello world"
     );
 
     let err = "NaN".parse::<usize>().unwrap_err();
-    error!(LogKey::RequestLogTest, error = err, "Trace test error",);
+    error!(LogKey::Test, error = err, "Trace test error",);
 
     Ok(HttpResponse::Ok().body("Log test"))
 }
 
 pub async fn metrics(statsd: web::Data<StatsD>) -> Result<HttpResponse, Error> {
-    statsd.incr(&LogKey::Test, Some("test-incr"));
-    statsd.gauge(&LogKey::Test, Some("test-gauge"), 5);
+    statsd.incr(&LogKey::TestIncr);
+    statsd.gauge(&LogKey::TestGauge, 5);
 
     let start = OffsetDateTime::now_utc();
     let hundred_millis = Duration::from_millis(100);
     thread::sleep(hundred_millis);
 
-    statsd.time(
-        &LogKey::Test,
-        Some("test-time"),
-        OffsetDateTime::now_utc() - start,
-    );
+    statsd.time(&LogKey::TestTime, OffsetDateTime::now_utc() - start);
     Ok(HttpResponse::Ok().body("OK"))
 }
 

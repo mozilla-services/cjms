@@ -17,7 +17,7 @@ use tracing_actix_web_mozlog::MozLog;
 use crate::{
     bigquery::client::{get_bqclient, BQClient},
     cj::client::CJS2SClient,
-    controllers, info,
+    controllers, info_and_incr,
     settings::{get_settings, Settings},
     telemetry::{init_sentry, init_tracing, LogKey, StatsD},
 };
@@ -46,8 +46,7 @@ impl CJ {
         let cj_client = CJS2SClient::new(&settings, None);
         let statsd = StatsD::new(&settings);
 
-        info!(name, "Starting");
-        statsd.incr(&name, Some("starting"));
+        info_and_incr!(statsd, &name.add_suffix("starting"), "Application starting");
 
         CJ {
             _guard,
@@ -62,13 +61,15 @@ impl CJ {
     }
 
     pub async fn shutdown(&self) -> std::io::Result<()> {
-        info!(self.name, "Ending");
-        self.statsd.incr(&self.name, Some("ending"));
+        info_and_incr!(
+            &self.statsd,
+            &self.name.add_suffix("ending"),
+            "Application ending"
+        );
 
         self.db_pool.close().await;
         self.statsd.time(
-            &self.name,
-            Some("timer"),
+            &self.name.add_suffix("timer"),
             OffsetDateTime::now_utc() - self.start,
         );
         Ok(())

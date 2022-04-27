@@ -2,7 +2,7 @@ use sqlx::{Pool, Postgres};
 use time::OffsetDateTime;
 
 use crate::{
-    error, error_and_incr, info, info_and_incr,
+    error_and_incr, info_and_incr,
     models::{
         refunds::RefundModel,
         status_history::{Status, UpdateStatus},
@@ -18,8 +18,7 @@ pub async fn batch_refunds_by_day(db_pool: &Pool<Postgres>, statsd: &StatsD) {
         .await
         .expect("Could not retrieve refunds from DB.");
     statsd.gauge(
-        &LogKey::BatchRefunds,
-        Some("n-not-reported"),
+        &LogKey::BatchRefundsNNotReported,
         not_reported_refunds.len(),
     );
     for mut refund in not_reported_refunds {

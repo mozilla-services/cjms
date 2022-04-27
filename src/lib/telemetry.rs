@@ -4,8 +4,10 @@ use sentry_tracing::EventFilter;
 use std::borrow::Cow;
 use std::net::UdpSocket;
 use std::panic::RefUnwindSafe;
+use std::str::FromStr;
 use std::sync::Arc;
 use strum_macros::Display as EnumToString;
+use strum_macros::EnumString;
 use time::Duration;
 use tracing::subscriber::set_global_default;
 use tracing_actix_web_mozlog::{JsonStorageLayer, MozLogFormatLayer};
@@ -16,7 +18,7 @@ use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 use crate::settings::Settings;
 use crate::version::{read_version, VERSION_FILE};
 
-#[derive(Debug, EnumToString, PartialEq, Eq)]
+#[derive(Debug, EnumToString, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "kebab_case")]
 pub enum LogKey {
     AicRecordCreate,
@@ -50,6 +52,74 @@ pub enum LogKey {
     CheckRefundsRefundCreateDatabaseError,
     CheckRefundsRefundCreateFailed,
     CheckRefundsRefundFetchFailed,
+    CheckSubscriptionsDeserializeBigQuery,
+    BatchRefundsStarting,
+    BatchRefundsEnding,
+    BatchRefundsTimer,
+    CheckRefundsStarting,
+    CheckRefundsEnding,
+    CheckRefundsTimer,
+    CheckSubscriptionsStarting,
+    CheckSubscriptionsEnding,
+    CheckSubscriptionsTimer,
+    CleanupStarting,
+    CleanupEnding,
+    CleanupTimer,
+    ReportSubscriptionsStarting,
+    ReportSubscriptionsEnding,
+    ReportSubscriptionsTimer,
+    WebAppStarting,
+    WebAppEnding,
+    WebAppTimer,
+    TestStarting,
+    TestEnding,
+    TestTimer,
+    CheckRefundsNFromBq,
+    CheckSubscriptionsNFromBq,
+    CheckRefundsTotalNFromBq,
+    CheckSubscriptionsTotalNFromBq,
+    CheckRefundsBytesFromBq,
+    CheckSubscriptionsBytesFromBq,
+    ReportSubscriptionsNNotReported,
+    TestIncr,
+    TestGauge,
+    TestTime,
+    BatchRefundsNNotReported,
+    CorrectionsReportByDayAccessed,
+    CorrectionsReportTodayAccessed,
+    CheckSubscriptionsDeserializeBigQueryFailed,
+    CheckSubscriptionsAicFetch,
+    CheckSubscriptionsAicFetchFromArchive,
+    CheckSubscriptionsAicFetchFailed,
+    CheckSubscriptionsAicArchive,
+    CheckSubscriptionsAicArchiveFailed,
+    CheckSubscriptionsSubscriptionCreate,
+    CheckSubscriptionsSubscriptionCreateDuplicateKeyViolation,
+    CheckSubscriptionsSubscriptionCreateDatabaseError,
+    CheckSubscriptionsSubscriptionCreateFailed,
+    CleanupAicArchive,
+    CleanupAicArchiveFailed,
+    ReportSubscriptionsAicExpiredBeforeSubscriptionCreated,
+    ReportSubscriptionsSubscriptionHasNoAicExpiry,
+    ReportSubscriptionMarkWillNotReport,
+    ReportSubscriptionMarkWillNotReportFailed,
+}
+
+// TODO doc
+// TODO test
+// TODO doc weird nit about suffixes and what happens when they fail
+impl LogKey {
+    pub fn add_suffix(&self, suffix: &str) -> LogKey {
+        let s = format!("{}-{}", &self.to_string(), suffix);
+        let s_str = s.as_str();
+
+        match LogKey::from_str(s_str) {
+            Ok(v) => v,
+            // TODO why can't I just return self ...
+            // TODO do we need to deal with the unwrap? Hope not
+            Err(_) => LogKey::from_str(&self.to_string()).unwrap(),
+        }
+    }
 }
 
 /// Creates a tracing subscriber and sets it as the global default.
@@ -129,8 +199,9 @@ macro_rules! error {
 #[macro_export]
 macro_rules! info_and_incr {
     ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
-        info!($trace_type.to_string().as_str(), $($arg)*);
-        $statsd_client.incr(&$trace_type, None);
+        // TODO is this the right way to handle this import?
+        crate::info!($trace_type.to_string().as_str(), $($arg)*);
+        $statsd_client.incr(&$trace_type);
     }
 }
 
@@ -138,8 +209,9 @@ macro_rules! info_and_incr {
 #[macro_export]
 macro_rules! error_and_incr {
     ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
-        error!($trace_type.to_string().as_str(), $($arg)*);
-        $statsd_client.incr(&$trace_type, None);
+        // TODO is this the right way to handle this import?
+        crate::error!($trace_type.to_string().as_str(), $($arg)*);
+        $statsd_client.incr(&$trace_type);
     }
 }
 
@@ -158,56 +230,47 @@ impl StatsD {
             client: Arc::new(StatsdClient::from_sink("cjms", sink)),
         }
     }
-    pub fn incr(&self, key: &LogKey, suffix: Option<&str>) {
-        let tag = match suffix {
-            Some(s) => format!("{}-{}", key, s.to_lowercase()),
-            None => key.to_string(),
-        };
+    pub fn incr(&self, key: &LogKey) {
+        let k = key.to_string();
         self.client
-            .incr(&tag)
+            .incr(k.as_str())
             .map_err(|e| {
                 error!(
                     LogKey::StatsDError,
                     error = e,
-                    tag = tag.as_str(),
+                    key = k.as_str(),
                     "Could not increment statsd tag"
                 );
             })
             .ok();
     }
-    pub fn gauge(&self, key: &LogKey, suffix: Option<&str>, v: usize) {
-        let tag = match suffix {
-            Some(s) => format!("{}-{}", key, s.to_lowercase()),
-            None => key.to_string(),
-        };
+    pub fn gauge(&self, key: &LogKey, v: usize) {
+        let k = key.to_string();
         let v = v as u64;
         self.client
-            .gauge(&tag, v)
+            .gauge(k.as_str(), v)
             .map_err(|e| {
                 error!(
                     LogKey::StatsDError,
                     error = e,
+                    key = k.as_str(),
                     value = v,
-                    tag = tag.as_str(),
                     "Could not record value for statsd tag"
                 );
             })
             .ok();
     }
-    pub fn time(&self, key: &LogKey, suffix: Option<&str>, t: Duration) {
-        let tag = match suffix {
-            Some(s) => format!("{}-{}", key, s.to_lowercase()),
-            None => key.to_string(),
-        };
+    pub fn time(&self, key: &LogKey, t: Duration) {
+        let k = key.to_string();
         let milliseconds = t.whole_milliseconds();
         self.client
-            .time(&tag, milliseconds as u64)
+            .time(k.as_str(), milliseconds as u64)
             .map_err(|e| {
                 error!(
                     LogKey::StatsDError,
                     error = e,
+                    key = k.as_str(),
                     time = format!("{:?}", t).as_str(),
-                    tag = tag.as_str(),
                     "Could not record time for statsd tag"
                 );
             })

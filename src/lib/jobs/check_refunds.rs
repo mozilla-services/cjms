@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
     bigquery::client::{BQClient, BQError, ResultSet},
-    error, error_and_incr, info, info_and_incr,
+    error_and_incr, info_and_incr,
     models::{
         refunds::{PartialRefund, Refund, RefundModel},
         status_history::{Status, UpdateStatus},
@@ -62,7 +62,8 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
             .await
             .is_ok();
         if !have_sub {
-            error!(
+            error_and_incr!(
+                statsd,
                 LogKey::CheckRefundsSubscriptionMissingFromDatabase,
                 subscription_id = r.subscription_id.as_str(),
                 refund_id = r.refund_id.as_str(),

@@ -4,7 +4,7 @@ use sqlx::PgPool;
 use time::{Date, OffsetDateTime};
 
 use crate::{
-    error, info,
+    error, info, info_and_incr,
     models::{
         refunds::{Refund, RefundModel},
         subscriptions::SubscriptionModel,
@@ -93,9 +93,11 @@ pub async fn by_day(
     settings: web::Data<Settings>,
     statsd: web::Data<StatsD>,
 ) -> HttpResponse {
-    statsd.incr(
-        &LogKey::CorrectionsReport,
-        Some(&format!("{}-accessed", path.day)),
+    info_and_incr!(
+        statsd,
+        LogKey::CorrectionsReportByDayAccessed,
+        day = path.day.to_string().as_str(),
+        "Corrections report accessed by day"
     );
     let results = get_results_for_day(pool.as_ref(), path.day).await;
     let body = build_body_from_results(settings.as_ref(), results, pool.as_ref()).await;
@@ -107,7 +109,11 @@ pub async fn today(
     settings: web::Data<Settings>,
     statsd: web::Data<StatsD>,
 ) -> HttpResponse {
-    statsd.incr(&LogKey::CorrectionsReport, Some("today-accessed"));
+    info_and_incr!(
+        statsd,
+        LogKey::CorrectionsReportTodayAccessed,
+        "Corrections report accessed for today"
+    );
     let today = OffsetDateTime::now_utc().date();
     let results = get_results_for_day(pool.as_ref(), today).await;
     let body = build_body_from_results(settings.as_ref(), results, pool.as_ref()).await;

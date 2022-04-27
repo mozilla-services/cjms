@@ -2,12 +2,10 @@ use sqlx::{Pool, Postgres};
 
 use crate::{
     cj::client::CJS2SClient,
+    error_and_incr, info_and_incr,
     models::{status_history::Status, subscriptions::SubscriptionModel},
-    telemetry::{StatsD, LogKey},
+    telemetry::{LogKey, StatsD},
 };
-
-// TODO - LOGGING
-// Need logging through out all these possible match conditions. Marking each println with the tag seemed redundant.
 
 pub async fn report_subscriptions_to_cj(
     db_pool: &Pool<Postgres>,
@@ -21,17 +19,20 @@ pub async fn report_subscriptions_to_cj(
         .await
         .expect("Could not retrieve subscriptions from DB.");
     statsd.gauge(
-        &LogKey::ReportSubscriptions,
-        Some("n-not-reported"),
+        &LogKey::ReportSubscriptionsNNotReported,
         not_reported_subscriptions.len(),
     );
+
     for sub in not_reported_subscriptions {
         let next_status = match sub.aic_expires {
             Some(aic_expires) => {
                 if aic_expires < sub.subscription_created {
-                    println!(
-                        "Affiliate cookie expired before subscription {} created. Will not report.",
-                        &sub.id
+                    // TODO info or error?
+                    error_and_incr!(
+                        statsd,
+                        LogKey::ReportSubscriptionsAicExpiredBeforeSubscriptionCreated,
+                        sub_id = &sub.id.to_string().as_str(),
+                        "AIC expired before subscription created. Will not report."
                     );
                     Status::WillNotReport
                 } else {
@@ -39,9 +40,12 @@ pub async fn report_subscriptions_to_cj(
                 }
             }
             None => {
-                println!(
-                    "Sub {} does not have an aic expires. Will not report.",
-                    &sub.id
+                // TODO info or error?
+                error_and_incr!(
+                    statsd,
+                    LogKey::ReportSubscriptionsSubscriptionHasNoAicExpiry,
+                    sub_id = &sub.id.to_string().as_str(),
+                    "Subscription does not have an AIC expiry. Will not report."
                 );
                 Status::WillNotReport
             }
@@ -52,12 +56,20 @@ pub async fn report_subscriptions_to_cj(
                 .await
             {
                 Ok(_) => {
-                    println!("Successfully marked as WillNotReport.");
+                    info_and_incr!(
+                        statsd,
+                        LogKey::ReportSubscriptionMarkWillNotReport,
+                        sub_id = &sub.id.to_string().as_str(),
+                        "Successfully marked as WillNotReport"
+                    );
                 }
                 Err(e) => {
-                    println!(
-                        "Could not mark subscription {} as WillNotReport. {}",
-                        &sub.id, e
+                    error_and_incr!(
+                        statsd,
+                        LogKey::ReportSubscriptionMarkWillNotReportFailed,
+                        error = e,
+                        sub_id = &sub.id.to_string().as_str(),
+                        "Could not mark subscription as WillNotReport."
                     );
                 }
             };

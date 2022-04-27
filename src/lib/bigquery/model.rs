@@ -312,7 +312,7 @@ impl ResultSet {
     }
 
     pub fn report_stats(&self, statsd: &StatsD, key: &LogKey) {
-        statsd.gauge(key, Some("n-from-bq"), self.row_count());
+        statsd.gauge(&key.add_suffix("n-from-bq"), self.row_count());
         let total_rows = self
             .query_response
             .total_rows
@@ -320,7 +320,7 @@ impl ResultSet {
             .unwrap_or_else(|| "-1".to_string());
         match total_rows.parse::<usize>() {
             Ok(n) => {
-                statsd.gauge(key, Some("total-n-from-bq"), n);
+                statsd.gauge(&key.add_suffix("total-n-from-bq"), n);
             }
             Err(e) => error!(LogKey::BigQuery, error = e, "Could not get total rows",),
         };
@@ -331,7 +331,7 @@ impl ResultSet {
             .unwrap_or_else(|| "-1".to_string());
         match bytes_processed.parse::<usize>() {
             Ok(n) => {
-                statsd.gauge(key, Some("bytes-from-bq"), n);
+                statsd.gauge(&key.add_suffix("bytes-from-bq"), n);
             }
             Err(e) => error!(
                 LogKey::BigQuery,
