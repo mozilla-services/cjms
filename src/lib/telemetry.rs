@@ -278,3 +278,22 @@ impl StatsD {
             .ok();
     }
 }
+
+#[cfg(test)]
+pub mod test_telemetry {
+    use super::*;
+
+    #[test]
+    fn get_log_key_with_valid_suffix() {
+        let expected = LogKey::TestEnding;
+        let actual = LogKey::Test.add_suffix("ending");
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn get_log_key_with_invalid_suffix() {
+        let expected = LogKey::Test;
+        let actual = LogKey::Test.add_suffix("this-wont-work");
+        assert_eq!(expected, actual);
+    }
+}
