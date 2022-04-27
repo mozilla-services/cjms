@@ -103,6 +103,12 @@ pub enum LogKey {
     ReportSubscriptionsSubscriptionHasNoAicExpiry,
     ReportSubscriptionMarkWillNotReport,
     ReportSubscriptionMarkWillNotReportFailed,
+    ReportSubscriptionReportToCj,
+    ReportSubscriptionReportToCjButCouldNotMarkReported,
+    ReportSubscriptionReportToCjFailed,
+    ReportSubscriptionMarkNotReported,
+    ReportSubscriptionMarkNotReportedFailed,
+    StatusHistoryDeserializeError,
 }
 
 // TODO doc

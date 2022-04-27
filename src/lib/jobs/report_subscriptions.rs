@@ -84,28 +84,41 @@ pub async fn report_subscriptions_to_cj(
                         .await
                     {
                         Ok(_) => {
-                            println!("200 Success for sub: {}", &sub.id);
+                            info_and_incr!(
+                                statsd,
+                                LogKey::ReportSubscriptionReportToCj,
+                                sub_id = &sub.id.to_string().as_str(),
+                                "Successfully reported sub to CJ; received 200 status"
+                            );
                         }
                         Err(e) => {
-                            println!(
-                                "Could not mark subscription {} as reported. But it has been. {}",
-                                &sub.id, e
+                            error_and_incr!(
+                                statsd,
+                                LogKey::ReportSubscriptionReportToCjButCouldNotMarkReported,
+                                error = e,
+                                sub_id = &sub.id.to_string().as_str(),
+                                "Successfully reported sub to CJ; received 200 status, but could not mark the sub as reported locally."
                             );
                         }
                     };
                     false
                 } else {
-                    println!(
-                        "Not 200 Success for sub: {}. Marking Not Reported.",
-                        &sub.id
+                    error_and_incr!(
+                        statsd,
+                        LogKey::ReportSubscriptionReportToCjFailed,
+                        sub_id = &sub.id.to_string().as_str(),
+                        "Could not report sub to CJ; received non-200 status."
                     );
                     true
                 }
             }
             Err(e) => {
-                println!(
-                    "Report_subscription errored. Marking sub {} not reported. {}",
-                    &sub.id, e
+                error_and_incr!(
+                    statsd,
+                    LogKey::ReportSubscriptionReportToCjFailed,
+                    error = e,
+                    sub_id = &sub.id.to_string().as_str(),
+                    "Could not report sub to CJ; unknown application failure."
                 );
                 true
             }
@@ -116,12 +129,20 @@ pub async fn report_subscriptions_to_cj(
                 .await
             {
                 Ok(_) => {
-                    println!("Successfully marked as NotReported.");
+                    info_and_incr!(
+                        statsd,
+                        LogKey::ReportSubscriptionMarkNotReported,
+                        sub_id = &sub.id.to_string().as_str(),
+                        "Successfully marked as NotReported."
+                    );
                 }
                 Err(e) => {
-                    println!(
-                        "Could not mark subscription {} as not_reported. {}",
-                        &sub.id, e
+                    error_and_incr!(
+                        statsd,
+                        LogKey::ReportSubscriptionMarkNotReportedFailed,
+                        error = e,
+                        sub_id = &sub.id.to_string().as_str(),
+                        "Could not mark subscription as NotReported."
                     );
                 }
             }
