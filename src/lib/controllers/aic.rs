@@ -4,7 +4,12 @@ use sqlx::PgPool;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-use crate::{models::aic::AICModel, settings::Settings};
+use crate::{
+    error_and_incr, info_and_incr,
+    models::aic::AICModel,
+    settings::Settings,
+    telemetry::{LogKey, StatsD},
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AICResponse {
@@ -49,6 +54,7 @@ pub async fn update(
     data: web::Json<AICRequest>,
     pool: web::Data<PgPool>,
     settings: web::Data<Settings>,
+    statsd: web::Data<StatsD>,
 ) -> HttpResponse {
     let aic = AICModel {
         db_pool: pool.as_ref(),
@@ -67,19 +73,51 @@ pub async fn update(
             }
         }
         Err(e) => match e {
-            sqlx::Error::RowNotFound => return HttpResponse::NotFound().finish(),
-            _ => return HttpResponse::InternalServerError().finish(),
+            sqlx::Error::RowNotFound => {
+                error_and_incr!(
+                    statsd,
+                    LogKey::AicRecordUpdateFailedNotFound,
+                    aic_id = &aic_id.to_string().as_str(),
+                    "AIC could not be found."
+                );
+                return HttpResponse::NotFound().finish();
+            }
+            _ => {
+                error_and_incr!(
+                    statsd,
+                    LogKey::AicRecordUpdateFailed,
+                    error = e,
+                    aic_id = &aic_id.to_string().as_str(),
+                    "AIC update failed."
+                );
+                return HttpResponse::InternalServerError().finish();
+            }
         },
     };
 
     match updated {
         Ok(updated) => {
+            info_and_incr!(
+                statsd,
+                LogKey::AicRecordUpdate,
+                aic_id = &aic_id.to_string().as_str(),
+                "AIC updated."
+            );
             let response = AICResponse {
                 aic_id: updated.id,
                 expires: updated.expires,
             };
             HttpResponse::Created().json(response)
         }
-        Err(_) => HttpResponse::InternalServerError().finish(),
+        Err(e) => {
+            error_and_incr!(
+                statsd,
+                LogKey::AicRecordUpdateFailed,
+                error = e,
+                aic_id = &aic_id.to_string().as_str(),
+                "AIC update failed."
+            );
+            HttpResponse::InternalServerError().finish()
+        }
     }
 }

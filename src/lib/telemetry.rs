@@ -23,6 +23,9 @@ use crate::version::{read_version, VERSION_FILE};
 pub enum LogKey {
     AicRecordCreate,
     AicRecordCreateFailed,
+    AicRecordUpdate,
+    AicRecordUpdateFailed,
+    AicRecordUpdateFailedNotFound,
     BatchRefunds,
     BatchRefundsEnding,
     BatchRefundsNNotReported,
