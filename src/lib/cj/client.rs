@@ -1,8 +1,8 @@
 use crate::{models::subscriptions::Subscription, settings::Settings};
 use rand::{thread_rng, Rng};
 use reqwest::{Client, Error, Response, Url};
-use time::Duration;
 use serde::{Deserialize, Serialize};
+use time::Duration;
 use time::OffsetDateTime;
 
 use super::country_codes::get_iso_code_3_from_iso_code_2;
