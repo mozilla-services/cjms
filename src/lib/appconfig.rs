@@ -43,7 +43,7 @@ impl CJ {
         }
         let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
         let bq_client = get_bqclient(&settings).await;
-        let cj_client = CJS2SClient::new(&settings, None);
+        let cj_client = CJS2SClient::new(&settings, None, None);
         let statsd = StatsD::new(&settings);
 
         info_and_incr!(statsd, &name.add_suffix("starting"), "Application starting");
