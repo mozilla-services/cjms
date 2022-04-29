@@ -1,7 +1,10 @@
+use crate::error;
+use crate::telemetry::LogKey;
 use crate::{models::subscriptions::Subscription, settings::Settings};
 use rand::{thread_rng, Rng};
 use reqwest::{Client, Error, Response, Url};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use time::Duration;
 use time::OffsetDateTime;
 
@@ -16,12 +19,12 @@ pub struct CJClient {
     s2s_endpoint: Url,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct CommissionDetailItem {
     sku: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CommissionDetailRecord {
     original: bool,
@@ -29,6 +32,18 @@ pub struct CommissionDetailRecord {
     correction_reason: Option<String>,
     sale_amount_pub_currency: f64,
     items: Vec<CommissionDetailItem>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CommissionDetailRecordSet {
+    count: i64,
+    records: Vec<CommissionDetailRecord>
+}
+
+#[derive(Debug, Deserialize)]
+struct CommissionDetailQueryResponse {
+    data: Option<Value>,
+    errors: Option<Value>
 }
 
 impl CJClient {
@@ -89,7 +104,7 @@ impl CJClient {
         &self,
         min: OffsetDateTime,
         max: OffsetDateTime,
-    ) -> Result<Response, Error> {
+    ) -> CommissionDetailRecordSet {
         let query = format!(
             r#"
 advertiserCommissions(
@@ -102,10 +117,52 @@ advertiserCommissions(
 "#,
             min, max
         );
-        self.client
+
+        let resp = self.client
             .post(self.commission_detail_endpoint.clone())
             .json(&query)
             .send()
             .await
+            .expect("Did not successfully query CJ");
+
+        if resp.status() != 200 {
+            panic!("Did not successfully query CJ. {:?}", resp)
+        }
+
+        let query_result: CommissionDetailQueryResponse = resp.json().await.expect("Couldn't extract body.");
+        match query_result.data {
+            Some(data) => {
+                match serde_json::from_value::<CommissionDetailRecordSet>(data) {
+                    Ok(data) => data,
+                    Err(e) => {
+                        error!(
+                            LogKey::VerifyReportsFailedDeserialization,
+                            error = e,
+                            "Could not deserialize data from CJ call."
+                        );
+                        panic!("Could not deserialize data from CJ call.");
+                    }
+                }
+            },
+            None => {
+                match query_result.errors {
+                    Some(error) => {
+                        error!(
+                            LogKey::VerifyReportsFailed,
+                            error_json = error.to_string().as_str(),
+                            "Got no data and no errors from CJ."
+                        );
+                        panic!("Got no data and no errors from CJ.");
+                    },
+                    None => {
+                        error!(
+                            LogKey::VerifyReportsFailedUnknown,
+                            "Got no data and no errors from CJ."
+                        );
+                        panic!("Got no data and no errors from CJ.");
+                    }
+                }
+            }
+        }
     }
 }

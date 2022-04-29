@@ -34,8 +34,7 @@ pub async fn verify_reports_with_cj(
     // Query CJ
     let _cj_query_result = cj_client
         .query_comission_detail_api_between_dates(min, max)
-        .await
-        .expect("Could not make request to CJ.");
+        .await;
 
     // Get from result to processed data
 
