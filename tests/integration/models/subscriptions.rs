@@ -122,8 +122,13 @@ async fn test_subscription_model_get_all_by_status() {
     let sub_3 = make_fake_sub();
     save_sub(&model, &sub_3).await;
 
+    // Null status_t should not be returned
+    let mut sub_4 = make_fake_sub();
+    sub_4.set_status_t(None);
+    save_sub(&model, &sub_4).await;
+
     let all = model.fetch_all().await.unwrap();
-    assert_eq!(all.len(), 3);
+    assert_eq!(all.len(), 4);
 
     let not_reported = model
         .fetch_all_by_status(Status::NotReported)

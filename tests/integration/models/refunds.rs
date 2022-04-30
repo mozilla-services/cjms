@@ -75,8 +75,13 @@ async fn test_refund_model_fetch_all_by_status() {
     let refund_3 = make_fake_refund();
     save_refund(&model, &refund_3).await;
 
+    // Null status_t should not be returned
+    let mut refund_4 = make_fake_refund();
+    refund_4.set_status_t(None);
+    save_refund(&model, &refund_4).await;
+
     let all = model.fetch_all().await.unwrap();
-    assert_eq!(all.len(), 3);
+    assert_eq!(all.len(), 4);
 
     let not_reported = model
         .fetch_all_by_status(Status::NotReported)

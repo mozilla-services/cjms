@@ -230,9 +230,14 @@ impl SubscriptionModel<'_> {
     }
 
     pub async fn fetch_all_by_status(&self, status: Status) -> Result<Vec<Subscription>, Error> {
+        // Note that users of this function rely on status_t being available
         query_as!(
             Subscription,
-            "SELECT * FROM subscriptions WHERE status = $1",
+            r#"
+            SELECT *
+            FROM subscriptions
+            WHERE status = $1
+            AND status_t IS NOT NULL"#,
             status.to_string()
         )
         .fetch_all(self.db_pool)

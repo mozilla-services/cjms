@@ -1,10 +1,10 @@
-use crate::error;
 use crate::telemetry::LogKey;
+use crate::{error, info};
 use crate::{models::subscriptions::Subscription, settings::Settings};
 use rand::{thread_rng, Rng};
 use reqwest::{Client, Error, Response, Url};
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde::Deserialize;
+use serde_json::{json, Value};
 use time::Duration;
 use time::OffsetDateTime;
 
@@ -16,34 +16,45 @@ pub struct CJClient {
     cj_type: String,
     cj_signature: String,
     commission_detail_endpoint: Url,
+    commission_detail_api_token: String,
     s2s_endpoint: Url,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct CommissionDetailItem {
-    sku: String,
+    pub sku: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CommissionDetailRecord {
-    original: bool,
-    order_id: String,
-    correction_reason: Option<String>,
-    sale_amount_pub_currency: f64,
-    items: Vec<CommissionDetailItem>,
+    pub original: bool,
+    pub order_id: String,
+    pub correction_reason: Option<String>,
+    pub sale_amount_pub_currency: f32,
+    pub items: Vec<CommissionDetailItem>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct CommissionDetailRecordSet {
-    count: i64,
-    records: Vec<CommissionDetailRecord>
+    pub count: usize,
+    pub records: Vec<CommissionDetailRecord>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AdvertiserCommissions {
+    pub advertiser_commissions: CommissionDetailRecordSet,
 }
 
 #[derive(Debug, Deserialize)]
 struct CommissionDetailQueryResponse {
-    data: Option<Value>,
-    errors: Option<Value>
+    data: Option<AdvertiserCommissions>,
+    errors: Option<Value>,
+}
+
+pub fn convert_plan_amount_to_decimal(plan_amount: i32) -> f32 {
+    plan_amount as f32 / 100.0
 }
 
 impl CJClient {
@@ -62,6 +73,7 @@ impl CJClient {
             cj_signature: settings.cj_signature.clone(),
             commission_detail_endpoint: Url::parse(commission_detail_endpoint)
                 .expect("Could not parse commission_detail_endpoint"),
+            commission_detail_api_token: settings.cj_api_access_token.clone(),
             s2s_endpoint: Url::parse(s2s_endpoint).expect("Could not parse s2s_endpoint"),
         }
     }
@@ -91,7 +103,10 @@ impl CJClient {
             .append_pair("OID", &sub.id.to_string())
             .append_pair("CURRENCY", &sub.plan_currency)
             .append_pair("ITEM1", &sub.plan_id)
-            .append_pair("AMT1", &format!("{}", sub.plan_amount as f32 / 100.0))
+            .append_pair(
+                "AMT1",
+                &format!("{}", convert_plan_amount_to_decimal(sub.plan_amount)),
+            )
             .append_pair("QTY1", &format!("{}", sub.quantity))
             .append_pair(
                 "CUST_COUNTRY",
@@ -105,64 +120,94 @@ impl CJClient {
         min: OffsetDateTime,
         max: OffsetDateTime,
     ) -> CommissionDetailRecordSet {
+        // We format to the beginning of the day of min and the beginning of the next day of max
+        let format_string = "%FT00:00:00Z";
+        let since = min.format(format_string);
+        let before = (max + Duration::days(1)).format(format_string);
+        // Format query
         let query = format!(
-            r#"
-advertiserCommissions(
-    forAdvertisers: ["123456"],
-    sincePostingDate:"{}",
-    beforePostingDate:"{}",
-) {{
-    count
-}})
-"#,
-            min, max
+            r#"{{
+        advertiserCommissions(
+            forAdvertisers: ["123456"],
+            sincePostingDate:"{}",
+            beforePostingDate:"{}",
+        ) {{
+            count
+            records {{
+                original
+                orderId
+                correctionReason
+                saleAmountPubCurrency
+                items {{
+                    sku
+                }}
+            }}
+        }}}}"#,
+            since, before
         );
-
-        let resp = self.client
+        // Make request
+        let resp = self
+            .client
             .post(self.commission_detail_endpoint.clone())
-            .json(&query)
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.commission_detail_api_token),
+            )
+            .json(&json!({ "query": query }))
             .send()
             .await
-            .expect("Did not successfully query CJ");
-
+            .expect("Call to CJ failed.");
         if resp.status() != 200 {
-            panic!("Did not successfully query CJ. {:?}", resp)
+            panic!("CJ did not return a 200. {:?}", resp)
         }
-
-        let query_result: CommissionDetailQueryResponse = resp.json().await.expect("Couldn't extract body.");
+        // Parse and handle the response
+        let query_result: CommissionDetailQueryResponse = match resp.json().await {
+            Ok(data) => data,
+            Err(e) => {
+                error!(
+                    LogKey::VerifyReportsFailedDeserialization,
+                    error = e,
+                    "Could not deserialize data from CJ call."
+                );
+                panic!("Could not deserialize data from CJ call. {}", e);
+            }
+        };
         match query_result.data {
             Some(data) => {
-                match serde_json::from_value::<CommissionDetailRecordSet>(data) {
-                    Ok(data) => data,
-                    Err(e) => {
-                        error!(
-                            LogKey::VerifyReportsFailedDeserialization,
-                            error = e,
-                            "Could not deserialize data from CJ call."
-                        );
-                        panic!("Could not deserialize data from CJ call.");
-                    }
+                info!(
+                    LogKey::VerifyReports,
+                    "Successfully received data from CommissionDetail API."
+                );
+                data.advertiser_commissions
+            }
+            None => match query_result.errors {
+                Some(error) => {
+                    error!(
+                        LogKey::VerifyReportsFailed,
+                        error_json = error.to_string().as_str(),
+                        "Got no data from CJ."
+                    );
+                    panic!("Got no data from CJ.");
+                }
+                None => {
+                    error!(
+                        LogKey::VerifyReportsFailedUnknown,
+                        "Got no data and no errors from CJ."
+                    );
+                    panic!("Got no data and no errors from CJ.");
                 }
             },
-            None => {
-                match query_result.errors {
-                    Some(error) => {
-                        error!(
-                            LogKey::VerifyReportsFailed,
-                            error_json = error.to_string().as_str(),
-                            "Got no data and no errors from CJ."
-                        );
-                        panic!("Got no data and no errors from CJ.");
-                    },
-                    None => {
-                        error!(
-                            LogKey::VerifyReportsFailedUnknown,
-                            "Got no data and no errors from CJ."
-                        );
-                        panic!("Got no data and no errors from CJ.");
-                    }
-                }
-            }
         }
+    }
+}
+
+#[cfg(test)]
+pub mod test_telemetry {
+    use super::*;
+
+    #[test]
+    fn test_convert_plan_amount_to_decimal() {
+        assert_eq!(convert_plan_amount_to_decimal(999), 9.99);
+        assert_eq!(convert_plan_amount_to_decimal(5988), 59.88);
     }
 }

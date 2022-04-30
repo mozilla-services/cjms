@@ -178,9 +178,15 @@ impl RefundModel<'_> {
     }
 
     pub async fn fetch_all_by_status(&self, status: Status) -> Result<Vec<Refund>, Error> {
+        // Note that users of this function rely on status_t being available
         query_as!(
             Refund,
-            "SELECT * FROM refunds WHERE status = $1",
+            r#"
+            SELECT *
+            FROM refunds
+            WHERE status = $1
+            AND status_t IS NOT NULL
+            "#,
             status.to_string()
         )
         .fetch_all(self.db_pool)

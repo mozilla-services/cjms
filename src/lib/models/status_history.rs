@@ -12,7 +12,7 @@ pub struct DateRange {
     pub max: Option<OffsetDateTime>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, EnumToString, EnumString)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, EnumToString, EnumString)]
 pub enum Status {
     NotReported,
     Reported,
