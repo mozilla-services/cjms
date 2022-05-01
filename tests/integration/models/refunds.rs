@@ -177,3 +177,47 @@ async fn test_refund_model_get_by_correction_file_day() {
     assert!(result.contains(&refund_1));
     assert!(result.contains(&refund_3));
 }
+
+#[tokio::test]
+async fn test_refund_update_sub_status() {
+    let db_pool = get_test_db_pool().await;
+    let model = RefundModel { db_pool: &db_pool };
+    let refund = make_fake_refund();
+    save_refund(&model, &refund).await;
+    assert_eq!(refund.get_status_history().unwrap().entries.len(), 1);
+    model
+        .update_refund_status(&refund.refund_id, Status::CJReceived)
+        .await
+        .expect("Should not fail.");
+    let result = model
+        .fetch_one_by_refund_id(&refund.refund_id)
+        .await
+        .unwrap();
+    assert_eq!(result.get_status().unwrap(), Status::CJReceived);
+    let result_status_history = result.get_status_history().unwrap();
+    assert_eq!(result_status_history.entries.len(), 2);
+    assert_eq!(result_status_history.entries[1].status, Status::CJReceived);
+    // This won't pass if the test is slower than a second to process
+    assert_eq!(
+        result_status_history.entries[1].t.unix_timestamp(),
+        OffsetDateTime::now_utc().unix_timestamp()
+    );
+    // Go again after a delay updating to Reported
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    model
+        .update_refund_status(&refund.refund_id, Status::Reported)
+        .await
+        .expect("Should not fail.");
+    let result = model
+        .fetch_one_by_refund_id(&refund.refund_id)
+        .await
+        .unwrap();
+    assert_eq!(result.get_status().unwrap(), Status::Reported);
+    let result_status_history = result.get_status_history().unwrap();
+    assert_eq!(result_status_history.entries.len(), 3);
+    assert_eq!(result_status_history.entries[2].status, Status::Reported);
+    assert_eq!(
+        result_status_history.entries[2].t.unix_timestamp(),
+        OffsetDateTime::now_utc().unix_timestamp()
+    );
+}

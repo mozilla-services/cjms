@@ -171,6 +171,31 @@ impl RefundModel<'_> {
         .await
     }
 
+    pub async fn update_refund_status(
+        &self,
+        refund_id: &str,
+        new_status: Status,
+    ) -> Result<Refund, Error> {
+        let mut refund = self.fetch_one_by_refund_id(refund_id).await?;
+        refund.update_status(new_status);
+        query_as!(
+            Refund,
+            r#"UPDATE refunds
+            SET
+                status = $1,
+                status_t = $2,
+                status_history = $3
+            WHERE refund_id = $4
+			RETURNING *"#,
+            refund.status,
+            refund.status_t,
+            refund.status_history,
+            refund_id,
+        )
+        .fetch_one(self.db_pool)
+        .await
+    }
+
     pub async fn fetch_all(&self) -> Result<Vec<Refund>, Error> {
         query_as!(Refund, "SELECT * FROM refunds")
             .fetch_all(self.db_pool)
