@@ -100,7 +100,7 @@ async fn test_refund_model_fetch_all_by_status() {
 }
 
 #[tokio::test]
-async fn test_refundscription_model_get_reported_date_range() {
+async fn test_refund_model_get_reported_date_range() {
     let db_pool = get_test_db_pool().await;
     let model = RefundModel { db_pool: &db_pool };
     // Refund 1 should not be included in the date range
@@ -132,6 +132,8 @@ async fn test_refundscription_model_get_reported_date_range() {
 
     let all = model.fetch_all().await.unwrap();
     assert_eq!(all.len(), 4);
+
+    // Main test
     let result = model
         .get_reported_date_range()
         .await
