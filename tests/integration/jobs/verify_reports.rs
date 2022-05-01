@@ -44,8 +44,8 @@ async fn setup_test(
     refund_model: &RefundModel<'_>,
 ) -> VerifyReportsTestSetup {
     let now = OffsetDateTime::now_utc();
-    let min_sub = now - Duration::hours(72);
-    let min_refund = now - Duration::hours(48);
+    let min_sub = now - Duration::hours(48);
+    let min_refund = now - Duration::hours(72);
 
     // Sub 1 - Reported, expect to have been recieved by CJ
     let mut sub_1 = make_fake_sub();
@@ -154,6 +154,7 @@ async fn setup_test(
         min_refund.format("%F"), // because that's the furthest away
         (now + Duration::days(1)).format("%F")
     );
+    println!("Expected query: {}", required_query);
     let response_body = json!(
         {"data":
             {"advertiserCommissions":

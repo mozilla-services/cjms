@@ -265,9 +265,8 @@ pub async fn verify_reports_with_cj(
                 continue;
             }
         };
-        /*
         match refunds
-            .update_refund_status(&refund.id, next_status.clone())
+            .update_refund_status(&refund.refund_id, next_status.clone())
             .await
         {
             Ok(_) => {
@@ -290,6 +289,5 @@ pub async fn verify_reports_with_cj(
                 );
             }
         };
-        */
     }
 }

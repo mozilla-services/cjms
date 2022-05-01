@@ -155,6 +155,11 @@ impl CJClient {
         }}}}"#,
             since, before
         );
+        info!(
+            LogKey::VerifyReportsQuery,
+            query = query.as_str(),
+            "Query sent to CommissionDetail API"
+        );
         // Make request
         let resp = self
             .client
