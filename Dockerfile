@@ -17,5 +17,6 @@ COPY --from=build /app/target/release/check_subscriptions /
 COPY --from=build /app/target/release/check_refunds /
 COPY --from=build /app/target/release/cleanup /
 COPY --from=build /app/target/release/report_subscriptions /
+COPY --from=build /app/target/release/verify_reports /verify_reports
 COPY --from=build /app/version.yaml /
 CMD ["./web"]
