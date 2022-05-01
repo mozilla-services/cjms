@@ -3,7 +3,7 @@ use crate::{
     utils::get_test_db_pool,
 };
 use lib::{
-    cj::client::{convert_plan_amount_to_decimal, CJClient},
+    cj::client::{convert_amount_to_decimal, CJClient},
     jobs::verify_reports::verify_reports_with_cj,
     models::{
         refunds::{Refund, RefundModel},
@@ -36,7 +36,7 @@ struct VerifyReportsTestSetup {
 }
 
 fn make_refund_amount(amount: i32) -> f32 {
-    (-1.00 * convert_plan_amount_to_decimal(amount)) as f32
+    (-1.00 * convert_amount_to_decimal(amount)) as f32
 }
 
 async fn setup_test(
@@ -44,7 +44,8 @@ async fn setup_test(
     refund_model: &RefundModel<'_>,
 ) -> VerifyReportsTestSetup {
     let now = OffsetDateTime::now_utc();
-    let min = now - Duration::hours(48);
+    let min_sub = now - Duration::hours(72);
+    let min_refund = now - Duration::hours(48);
 
     // Sub 1 - Reported, expect to have been recieved by CJ
     let mut sub_1 = make_fake_sub();
@@ -52,15 +53,15 @@ async fn setup_test(
     // Sub 2 - Reported 48 hours ago, CJ has the wrong amount
     let mut sub_2 = make_fake_sub();
     sub_2.update_status(Status::Reported);
-    sub_2.set_status_t(Some(min));
+    sub_2.set_status_t(Some(min_sub));
     // Sub 3 - Reported 48 hours ago, CJ has the wrong sku
     let mut sub_3 = make_fake_sub();
     sub_3.update_status(Status::Reported);
-    sub_3.set_status_t(Some(min));
+    sub_3.set_status_t(Some(min_sub));
     // Sub 4 - Reported 48 hours ago (> 36 hours ago), CJ has the wrong id - mark CJNotReceived
     let mut sub_4 = make_fake_sub();
     sub_4.update_status(Status::Reported);
-    sub_4.set_status_t(Some(min));
+    sub_4.set_status_t(Some(min_sub));
     // Sub 5 - Reported < 36 hours ago, CJ has the wrong id - leave as Reported for now
     let mut sub_5 = make_fake_sub();
     sub_5.update_status(Status::Reported);
@@ -83,21 +84,21 @@ async fn setup_test(
     // Refund 2 - Reported 48 hours ago, CJ has the wrong amount
     let mut refund_2 = make_fake_refund();
     refund_2.update_status(Status::Reported);
-    refund_2.set_status_t(Some(min));
+    refund_2.set_status_t(Some(min_refund));
     let mut refund_2_sub = make_fake_sub();
     refund_2_sub.subscription_id = refund_2.subscription_id.clone();
     refund_2_sub.plan_amount = refund_2.refund_amount;
     // Refund 3 - Reported 48 hours ago, CJ has the wrong sku
     let mut refund_3 = make_fake_refund();
     refund_3.update_status(Status::Reported);
-    refund_3.set_status_t(Some(min));
+    refund_3.set_status_t(Some(min_refund));
     let mut refund_3_sub = make_fake_sub();
     refund_3_sub.subscription_id = refund_3.subscription_id.clone();
     refund_3_sub.plan_amount = refund_3.refund_amount;
     // Refund 4 - Reported 48 hours ago (> 36 hours ago), CJ has the wrong id - mark CJNotReceived
     let mut refund_4 = make_fake_refund();
     refund_4.update_status(Status::Reported);
-    refund_4.set_status_t(Some(min));
+    refund_4.set_status_t(Some(min_refund));
     let mut refund_4_sub = make_fake_sub();
     refund_4_sub.subscription_id = refund_4.subscription_id.clone();
     refund_4_sub.plan_amount = refund_4.refund_amount;
@@ -150,7 +151,7 @@ async fn setup_test(
                 }}
             }}
         }}}}"#,
-        min.format("%F"),
+        min_refund.format("%F"), // because that's the furthest away
         (now + Duration::days(1)).format("%F")
     );
     let response_body = json!(
@@ -163,7 +164,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": sub_1.id,
                             "correctionReason": null,
-                            "saleAmountPubCurrency": convert_plan_amount_to_decimal(sub_1.plan_amount),
+                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_1.plan_amount),
                             "items": [
                                 {
                                     "sku": sub_1.plan_id
@@ -197,7 +198,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": sub_3.id,
                             "correctionReason": null,
-                            "saleAmountPubCurrency": convert_plan_amount_to_decimal(sub_3.plan_amount),
+                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_3.plan_amount),
                             "items": [
                                 {
                                     "sku": "WRONG SKU"
@@ -208,7 +209,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": "WRONGID",
                             "correctionReason": null,
-                            "saleAmountPubCurrency": convert_plan_amount_to_decimal(sub_4.plan_amount),
+                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_4.plan_amount),
                             "items": [
                                 {
                                     "sku": sub_4.plan_id
@@ -219,7 +220,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": "WRONGID",
                             "correctionReason": null,
-                            "saleAmountPubCurrency": convert_plan_amount_to_decimal(sub_5.plan_amount),
+                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_5.plan_amount),
                             "items": [
                                 {
                                     "sku": sub_5.plan_id
@@ -235,7 +236,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": refund_1_sub.id,
                             "correctionReason": null,
-                            "saleAmountPubCurrency": convert_plan_amount_to_decimal(refund_1_sub.plan_amount),
+                            "saleAmountPubCurrency": convert_amount_to_decimal(refund_1_sub.plan_amount),
                             "items": [
                                 {
                                     "sku": refund_1_sub.plan_id

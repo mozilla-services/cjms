@@ -51,7 +51,7 @@ struct CommissionDetailQueryResponse {
     errors: Option<Value>,
 }
 
-pub fn convert_plan_amount_to_decimal(plan_amount: i32) -> f32 {
+pub fn convert_amount_to_decimal(plan_amount: i32) -> f32 {
     plan_amount as f32 / 100.0
 }
 
@@ -110,7 +110,7 @@ impl CJClient {
             .append_pair("ITEM1", &sub.plan_id)
             .append_pair(
                 "AMT1",
-                &format!("{}", convert_plan_amount_to_decimal(sub.plan_amount)),
+                &format!("{}", convert_amount_to_decimal(sub.plan_amount)),
             )
             .append_pair("QTY1", &format!("{}", sub.quantity))
             .append_pair(
@@ -203,8 +203,8 @@ pub mod test_telemetry {
 
     #[test]
     fn test_convert_plan_amount_to_decimal() {
-        assert_eq!(convert_plan_amount_to_decimal(999), 9.99);
-        assert_eq!(convert_plan_amount_to_decimal(5988), 59.88);
+        assert_eq!(convert_amount_to_decimal(999), 9.99);
+        assert_eq!(convert_amount_to_decimal(5988), 59.88);
     }
 }
 
