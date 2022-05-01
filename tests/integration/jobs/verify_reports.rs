@@ -654,3 +654,32 @@ async fn test_correct_when_only_one_refund() {
         .expect("Could not get refund");
     assert_eq!(refund_1_updated.get_status().unwrap(), Status::CJReceived);
 }
+
+#[tokio::test]
+async fn test_graceful_exit_when_nothing_to_check() {
+    // SETUP
+    let settings = get_settings();
+    let mock_statsd = StatsD::new(&settings);
+    let db_pool = get_test_db_pool().await;
+    let response_body = json!(
+        {"data":
+            {"advertiserCommissions":
+                {
+                    "count": 0,
+                    "records": []
+                }
+            }
+        }
+    );
+    let mock_cj = MockServer::start().await;
+    let response = ResponseTemplate::new(200).set_body_json(response_body);
+    Mock::given(path("/"))
+        .respond_with(response)
+        .expect(0)
+        .mount(&mock_cj)
+        .await;
+    let mock_cj_client = CJClient::new(&settings, None, Some(&mock_cj.uri()), None);
+
+    // GO
+    verify_reports_with_cj(&db_pool, &mock_cj_client, &mock_statsd).await;
+}
