@@ -179,7 +179,7 @@ async fn test_refund_model_get_by_correction_file_day() {
 }
 
 #[tokio::test]
-async fn test_refund_update_sub_status() {
+async fn test_refund_update_refund_status() {
     let db_pool = get_test_db_pool().await;
     let model = RefundModel { db_pool: &db_pool };
     let refund = make_fake_refund();
