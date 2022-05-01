@@ -58,11 +58,6 @@ pub async fn verify_reports_with_cj(
                 let time_since_subscription_reported =
                     // It's ok to use unwrap, because the select does not return null status_t
                     OffsetDateTime::now_utc() - sub.get_status_t().unwrap();
-                println!(
-                    "sub {} duration {}",
-                    sub.id,
-                    time_since_subscription_reported.whole_hours()
-                );
                 match time_since_subscription_reported.whole_hours() > 36 {
                     true => {
                         error_and_incr!(
