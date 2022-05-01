@@ -1,5 +1,4 @@
 use sqlx::{Pool, Postgres};
-use std::cmp;
 use time::OffsetDateTime;
 
 use crate::{
@@ -21,30 +20,6 @@ pub async fn verify_reports_with_cj(
     let subscriptions = SubscriptionModel { db_pool };
     let refunds = RefundModel { db_pool };
 
-    // Get the date range with which to query cj
-    let subscription_date_range = subscriptions
-        .get_reported_date_range()
-        .await
-        .expect("Could not retrieve date range.");
-    let min_sub = subscription_date_range
-        .min
-        .expect("No minimum date was returned.");
-    let max_sub = subscription_date_range
-        .max
-        .expect("No minimum date was returned.");
-    let refund_date_range = refunds
-        .get_reported_date_range()
-        .await
-        .expect("Could not retrieve date range.");
-    let min_refund = refund_date_range
-        .min
-        .expect("No minimum date was returned.");
-    let max_refund = refund_date_range
-        .max
-        .expect("No minimum date was returned.");
-    let min = cmp::min(min_sub, min_refund);
-    let max = cmp::max(max_sub, max_refund);
-
     // Get the list of subscriptions and the list of refunds we're looking for
     let reported_subscriptions = subscriptions
         .fetch_all_by_status(Status::Reported)
@@ -54,6 +29,73 @@ pub async fn verify_reports_with_cj(
         .fetch_all_by_status(Status::Reported)
         .await
         .expect("Could not retrieve refunds from DB.");
+
+    // Get the date range with which to query cj
+    let mut min_sub = None;
+    let mut max_sub = None;
+    let mut min_refund = None;
+    let mut max_refund = None;
+
+    if !reported_subscriptions.is_empty() {
+        let subscription_date_range = subscriptions
+            .get_reported_date_range()
+            .await
+            .expect("Could not retrieve date range.");
+        min_sub = Some(
+            subscription_date_range
+                .min
+                .expect("No minimum date was returned."),
+        );
+        max_sub = Some(
+            subscription_date_range
+                .max
+                .expect("No minimum date was returned."),
+        );
+    }
+    if !reported_refunds.is_empty() {
+        let refund_date_range = refunds
+            .get_reported_date_range()
+            .await
+            .expect("Could not retrieve date range.");
+        min_refund = Some(
+            refund_date_range
+                .min
+                .expect("No minimum date was returned."),
+        );
+        max_refund = Some(
+            refund_date_range
+                .max
+                .expect("No minimum date was returned."),
+        );
+    }
+    let mins: Vec<OffsetDateTime> = [min_sub, min_refund].iter().cloned().flatten().collect();
+    let maxs: Vec<OffsetDateTime> = [max_sub, max_refund].iter().cloned().flatten().collect();
+    let min = match mins.iter().cloned().min() {
+        Some(t) => t,
+        None => {
+            info_and_incr!(
+                statsd,
+                LogKey::VerifyReportsNoCount,
+                n_subscriptions = reported_subscriptions.len(),
+                n_refunds = reported_refunds.len(),
+                "No maximum date. So nothing to check. Aborting..."
+            );
+            return;
+        }
+    };
+    let max = match maxs.iter().cloned().max() {
+        Some(t) => t,
+        None => {
+            info_and_incr!(
+                statsd,
+                LogKey::VerifyReportsNoCount,
+                n_subscriptions = reported_subscriptions.len(),
+                n_refunds = reported_refunds.len(),
+                "No maximum date. So nothing to check. Aborting..."
+            );
+            return;
+        }
+    };
 
     // Query CJ
     let cj_query_result = cj_client

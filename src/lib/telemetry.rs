@@ -98,6 +98,7 @@ pub enum LogKey {
     StatusHistoryDeserializeError,
     VerifyReports,
     VerifyReportsCount,
+    VerifyReportsNoCount,
     VerifyReportsQuery,
     VerifyReportsRefundFound,
     VerifyReportsRefundNotFound,
