@@ -1,6 +1,4 @@
-use crate::telemetry::LogKey;
-use crate::{error, info};
-use crate::{models::subscriptions::Subscription, settings::Settings};
+use crate::{info, models::subscriptions::Subscription, settings::Settings, telemetry::LogKey};
 use rand::{thread_rng, Rng};
 use reqwest::{Client, Error, Response, Url};
 use serde::Deserialize;
@@ -176,11 +174,6 @@ impl CJClient {
         let query_result: CommissionDetailQueryResponse = match resp.json().await {
             Ok(data) => data,
             Err(e) => {
-                error!(
-                    LogKey::VerifyReportsFailedDeserialization,
-                    error = e,
-                    "Could not deserialize data from CJ call."
-                );
                 panic!("Could not deserialize data from CJ call. {}", e);
             }
         };
@@ -194,18 +187,9 @@ impl CJClient {
             }
             None => match query_result.errors {
                 Some(error) => {
-                    error!(
-                        LogKey::VerifyReportsFailed,
-                        error_json = error.to_string().as_str(),
-                        "Got no data from CJ."
-                    );
-                    panic!("Got no data from CJ.");
+                    panic!("Got no data from CJ. {}", error);
                 }
                 None => {
-                    error!(
-                        LogKey::VerifyReportsFailedUnknown,
-                        "Got no data and no errors from CJ."
-                    );
                     panic!("Got no data and no errors from CJ.");
                 }
             },

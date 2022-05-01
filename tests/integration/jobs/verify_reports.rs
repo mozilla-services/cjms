@@ -4,7 +4,7 @@ use lib::{
     jobs::verify_reports::verify_reports_with_cj,
     models::{
         status_history::{Status, StatusHistoryEntry, UpdateStatus},
-        subscriptions::SubscriptionModel,
+        subscriptions::{Subscription, SubscriptionModel},
     },
     settings::get_settings,
     telemetry::StatsD,
@@ -16,14 +16,16 @@ use wiremock::{
     Mock, MockServer, ResponseTemplate,
 };
 
-#[tokio::test]
-async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correctly() {
-    // SETUP
-    let settings = get_settings();
-    let mock_statsd = StatsD::new(&settings);
-    let db_pool = get_test_db_pool().await;
-    let sub_model = SubscriptionModel { db_pool: &db_pool };
+struct VerifyReportsTestSetup {
+    sub_1: Subscription,
+    sub_2: Subscription,
+    sub_3: Subscription,
+    sub_4: Subscription,
+    sub_5: Subscription,
+    required_query: String,
+}
 
+async fn setup_test(sub_model: &SubscriptionModel<'_>) -> VerifyReportsTestSetup {
     let now = OffsetDateTime::now_utc();
     let min = now - Duration::hours(48);
 
@@ -54,7 +56,6 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
             .await
             .expect("Failed to create sub.");
     }
-    let mock_cj = MockServer::start().await;
     let required_query = format!(
         r#"{{
         advertiserCommissions(
@@ -76,6 +77,68 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
         min.format("%F"),
         (now + Duration::days(1)).format("%F")
     );
+    VerifyReportsTestSetup {
+        sub_1,
+        sub_2,
+        sub_3,
+        sub_4,
+        sub_5,
+        required_query,
+    }
+}
+
+#[tokio::test]
+#[should_panic(expected = "Got no data from CJ. [{\"locations\":[{\"colu")]
+async fn test_when_cj_sends_errors() {
+    let settings = get_settings();
+    let mock_statsd = StatsD::new(&settings);
+    let db_pool = get_test_db_pool().await;
+    let sub_model = SubscriptionModel { db_pool: &db_pool };
+    let _ = setup_test(&sub_model).await;
+    let mock_cj = MockServer::start().await;
+    let response_body = json!({
+      "data": null,
+      "errors": [
+        {
+          "message": "Read timed out",
+          "path": [
+            "advertiserCommissions"
+          ],
+          "locations": [
+            {
+              "line": 32,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    });
+    let response = ResponseTemplate::new(200).set_body_json(response_body);
+    Mock::given(path("/"))
+        .respond_with(response)
+        .expect(1)
+        .mount(&mock_cj)
+        .await;
+    let mock_cj_client = CJClient::new(&settings, None, Some(&mock_cj.uri()), None);
+
+    // GO
+    verify_reports_with_cj(&db_pool, &mock_cj_client, &mock_statsd).await;
+}
+
+#[tokio::test]
+async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correctly() {
+    // SETUP
+    let settings = get_settings();
+    let mock_statsd = StatsD::new(&settings);
+    let db_pool = get_test_db_pool().await;
+    let sub_model = SubscriptionModel { db_pool: &db_pool };
+    let test_setup = setup_test(&sub_model).await;
+    let sub_1 = test_setup.sub_1;
+    let sub_2 = test_setup.sub_2;
+    let sub_3 = test_setup.sub_3;
+    let sub_4 = test_setup.sub_4;
+    let sub_5 = test_setup.sub_5;
+    let mock_cj = MockServer::start().await;
     let response_body = json!(
         {"data":
             {"advertiserCommissions":
@@ -160,7 +223,7 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
             "Authorization",
             format!("Bearer {}", settings.cj_api_access_token).as_str(),
         ))
-        .and(body_json(&json!({ "query": required_query })))
+        .and(body_json(&json!({ "query": test_setup.required_query })))
         .respond_with(response)
         .expect(1)
         .mount(&mock_cj)
