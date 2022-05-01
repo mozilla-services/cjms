@@ -8,6 +8,7 @@ use time::{Duration, OffsetDateTime};
 use super::country_codes::get_iso_code_3_from_iso_code_2;
 
 pub struct CJClient {
+    advertiser_id: String,
     client: reqwest::Client,
     cj_cid: String,
     cj_type: String,
@@ -72,6 +73,7 @@ impl CJClient {
         let commission_detail_endpoint =
             commission_detail_endpoint.unwrap_or("https://commissions.api.cj.com/query");
         CJClient {
+            advertiser_id: settings.cj_sftp_user.clone(),
             client: Client::new(),
             cj_cid: settings.cj_cid.clone(),
             cj_type: settings.cj_type.clone(),
@@ -138,7 +140,7 @@ impl CJClient {
         let query = format!(
             r#"{{
         advertiserCommissions(
-            forAdvertisers: ["123456"],
+            forAdvertisers: ["{}"],
             sincePostingDate:"{}",
             beforePostingDate:"{}",
         ) {{
@@ -153,7 +155,7 @@ impl CJClient {
                 }}
             }}
         }}}}"#,
-            since, before
+            self.advertiser_id, since, before
         );
         info!(
             LogKey::VerifyReportsQuery,

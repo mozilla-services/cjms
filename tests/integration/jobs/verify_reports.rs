@@ -10,7 +10,7 @@ use lib::{
         status_history::{Status, StatusHistoryEntry, UpdateStatus},
         subscriptions::{Subscription, SubscriptionModel},
     },
-    settings::get_settings,
+    settings::{get_settings, Settings},
     telemetry::StatsD,
 };
 use serde_json::{json, Value};
@@ -40,6 +40,7 @@ fn make_refund_amount(amount: i32) -> f32 {
 }
 
 async fn setup_test(
+    settings: &Settings,
     sub_model: &SubscriptionModel<'_>,
     refund_model: &RefundModel<'_>,
 ) -> VerifyReportsTestSetup {
@@ -136,7 +137,7 @@ async fn setup_test(
     let required_query = format!(
         r#"{{
         advertiserCommissions(
-            forAdvertisers: ["123456"],
+            forAdvertisers: ["{}"],
             sincePostingDate:"{}T00:00:00Z",
             beforePostingDate:"{}T00:00:00Z",
         ) {{
@@ -151,6 +152,7 @@ async fn setup_test(
                 }}
             }}
         }}}}"#,
+        settings.cj_sftp_user,
         min_refund.format("%F"), // because that's the furthest away
         (now + Duration::days(1)).format("%F")
     );
@@ -328,7 +330,7 @@ async fn test_when_cj_sends_errors() {
     let db_pool = get_test_db_pool().await;
     let sub_model = SubscriptionModel { db_pool: &db_pool };
     let refund_model = RefundModel { db_pool: &db_pool };
-    let _ = setup_test(&sub_model, &refund_model).await;
+    let _ = setup_test(&settings, &sub_model, &refund_model).await;
     let mock_cj = MockServer::start().await;
     let response_body = json!({
       "data": null,
@@ -367,7 +369,7 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
     let db_pool = get_test_db_pool().await;
     let sub_model = SubscriptionModel { db_pool: &db_pool };
     let refund_model = RefundModel { db_pool: &db_pool };
-    let test_setup = setup_test(&sub_model, &refund_model).await;
+    let test_setup = setup_test(&settings, &sub_model, &refund_model).await;
     let sub_1 = test_setup.sub_1;
     let sub_2 = test_setup.sub_2;
     let sub_3 = test_setup.sub_3;
@@ -453,7 +455,7 @@ async fn test_correct_and_incorrectly_received_refunds_are_handled_correctly() {
     let db_pool = get_test_db_pool().await;
     let sub_model = SubscriptionModel { db_pool: &db_pool };
     let refund_model = RefundModel { db_pool: &db_pool };
-    let test_setup = setup_test(&sub_model, &refund_model).await;
+    let test_setup = setup_test(&settings, &sub_model, &refund_model).await;
     let refund_1 = test_setup.refund_1;
     let refund_2 = test_setup.refund_2;
     let refund_3 = test_setup.refund_3;
@@ -532,4 +534,123 @@ async fn test_correct_and_incorrectly_received_refunds_are_handled_correctly() {
     assert_eq!(refund_5_updated.get_status().unwrap(), Status::Reported);
     let updated_history = refund_5_updated.get_status_history().unwrap();
     assert_eq!(updated_history.entries.len(), 2);
+}
+
+#[tokio::test]
+async fn test_correct_when_only_one_sub() {
+    // SETUP
+    let settings = get_settings();
+    let mock_statsd = StatsD::new(&settings);
+    let db_pool = get_test_db_pool().await;
+    let sub_model = SubscriptionModel { db_pool: &db_pool };
+
+    let mut sub_1 = make_fake_sub();
+    sub_1.update_status(Status::Reported);
+    sub_model
+        .create_from_sub(&sub_1)
+        .await
+        .expect("Failed to create sub.");
+    let response_body = json!(
+        {"data":
+            {"advertiserCommissions":
+                {
+                    "count": 1,
+                    "records": [
+                        {
+                            "original": true,
+                            "orderId": sub_1.id,
+                            "correctionReason": null,
+                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_1.plan_amount),
+                            "items": [
+                                {
+                                    "sku": sub_1.plan_id
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    );
+    let mock_cj = MockServer::start().await;
+    let response = ResponseTemplate::new(200).set_body_json(response_body);
+    Mock::given(path("/"))
+        .respond_with(response)
+        .expect(1)
+        .mount(&mock_cj)
+        .await;
+    let mock_cj_client = CJClient::new(&settings, None, Some(&mock_cj.uri()), None);
+
+    // GO
+    verify_reports_with_cj(&db_pool, &mock_cj_client, &mock_statsd).await;
+
+    // ASSERT
+    let sub_1_updated = sub_model
+        .fetch_one_by_id(&sub_1.id)
+        .await
+        .expect("Could not get sub");
+    assert_eq!(sub_1_updated.get_status().unwrap(), Status::CJReceived);
+}
+
+#[tokio::test]
+async fn test_correct_when_only_one_refund() {
+    // SETUP
+    let settings = get_settings();
+    let mock_statsd = StatsD::new(&settings);
+    let db_pool = get_test_db_pool().await;
+    let sub_model = SubscriptionModel { db_pool: &db_pool };
+    let refund_model = RefundModel { db_pool: &db_pool };
+
+    let mut refund_1 = make_fake_refund();
+    refund_1.update_status(Status::Reported);
+    let mut related_sub = make_fake_sub();
+    related_sub.subscription_id = refund_1.subscription_id.clone();
+    refund_model
+        .create_from_refund(&refund_1)
+        .await
+        .expect("Failed to create refund.");
+    sub_model
+        .create_from_sub(&related_sub)
+        .await
+        .expect("Failed to create sub.");
+    let response_body = json!(
+        {"data":
+            {"advertiserCommissions":
+                {
+                    "count": 1,
+                    "records": [
+                        {
+                            "original": false,
+                            "orderId": related_sub.id,
+                            "correctionReason": "RETURNED_MERCHANDISE",
+                            "saleAmountPubCurrency": make_refund_amount(refund_1.refund_amount),
+                            "items": [
+                                {
+                                    "sku": related_sub.plan_id
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    );
+    let mock_cj = MockServer::start().await;
+    let response = ResponseTemplate::new(200).set_body_json(response_body);
+    Mock::given(path("/"))
+        .respond_with(response)
+        .expect(1)
+        .mount(&mock_cj)
+        .await;
+    let mock_cj_client = CJClient::new(&settings, None, Some(&mock_cj.uri()), None);
+
+    // GO
+    verify_reports_with_cj(&db_pool, &mock_cj_client, &mock_statsd).await;
+
+    // ASSERT
+    let refund_1_updated = refund_model
+        .fetch_one_by_refund_id(&refund_1.refund_id)
+        .await
+        .expect("Could not get refund");
+    assert_eq!(refund_1_updated.get_status().unwrap(), Status::CJReceived);
 }
