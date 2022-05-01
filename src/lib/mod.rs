@@ -14,10 +14,27 @@ pub mod test_utils {
 
     use crate::settings::Settings;
 
+    pub fn random_ascii_string() -> String {
+        const ASCII: &str =
+            "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@";
+        let f = StringFaker::with(Vec::from(ASCII), 8..90);
+        f.fake()
+    }
+
     pub fn random_simple_ascii_string() -> String {
         const ASCII: &str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ._-";
         let f = StringFaker::with(Vec::from(ASCII), 8..90);
         f.fake()
+    }
+
+    pub fn random_currency_or_country() -> String {
+        const LETTERS: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        let f = StringFaker::with(Vec::from(LETTERS), 1..5);
+        f.fake()
+    }
+
+    pub fn random_price() -> i32 {
+        (99..7899).fake()
     }
 
     pub fn empty_settings() -> Settings {

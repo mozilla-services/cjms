@@ -5,8 +5,7 @@ use rand::{thread_rng, Rng};
 use reqwest::{Client, Error, Response, Url};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use time::Duration;
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 
 use super::country_codes::get_iso_code_3_from_iso_code_2;
 
@@ -18,6 +17,7 @@ pub struct CJClient {
     commission_detail_endpoint: Url,
     commission_detail_api_token: String,
     s2s_endpoint: Url,
+    random_minutes: Duration,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -57,11 +57,18 @@ pub fn convert_plan_amount_to_decimal(plan_amount: i32) -> f32 {
     plan_amount as f32 / 100.0
 }
 
+fn get_random_minutes() -> Duration {
+    let mut rng = thread_rng();
+    let minutes = rng.gen_range(15..=60);
+    Duration::minutes(minutes)
+}
+
 impl CJClient {
     pub fn new(
         settings: &Settings,
         s2s_endpoint: Option<&str>,
         commission_detail_endpoint: Option<&str>,
+        random_minutes: Option<Duration>,
     ) -> CJClient {
         let s2s_endpoint = s2s_endpoint.unwrap_or("https://www.emjcd.com/u");
         let commission_detail_endpoint =
@@ -75,20 +82,20 @@ impl CJClient {
                 .expect("Could not parse commission_detail_endpoint"),
             commission_detail_api_token: settings.cj_api_access_token.clone(),
             s2s_endpoint: Url::parse(s2s_endpoint).expect("Could not parse s2s_endpoint"),
+            random_minutes: random_minutes.unwrap_or_else(get_random_minutes),
         }
     }
 
-    fn random_minutes(&self) -> Duration {
-        let mut rng = thread_rng();
-        let minutes = rng.gen_range(15..=60);
-        Duration::minutes(minutes)
+    fn randomize_and_format_event_time(&self, original_event_time: OffsetDateTime) -> String {
+        // Note this must be in the future or will fail CJ side
+        // We add a random number of minutes and remove seconds and microseconds to enhance privacy
+        let randomized_event_time = original_event_time + self.random_minutes;
+        randomized_event_time.format("%FT%H:%M:00.000Z")
     }
 
-    pub async fn report_subscription(&self, sub: &Subscription) -> Result<Response, Error> {
+    fn get_url_for_sub(&self, sub: &Subscription) -> Url {
+        let event_time = self.randomize_and_format_event_time(sub.subscription_created);
         let mut url_for_sub = self.s2s_endpoint.clone();
-        // Note this must be in the future or will fail CJ side
-        let randomized_event_time = sub.subscription_created + self.random_minutes();
-        let event_time = randomized_event_time.format("%FT%H:%M:00.000Z");
         url_for_sub
             .query_pairs_mut()
             .append_pair("CID", &self.cj_cid)
@@ -112,6 +119,11 @@ impl CJClient {
                 "CUST_COUNTRY",
                 get_iso_code_3_from_iso_code_2(sub.country.as_ref().unwrap_or(&String::from(""))),
             );
+        url_for_sub
+    }
+
+    pub async fn report_subscription(&self, sub: &Subscription) -> Result<Response, Error> {
+        let url_for_sub = self.get_url_for_sub(sub);
         self.client.get(url_for_sub).send().await
     }
 
@@ -209,5 +221,68 @@ pub mod test_telemetry {
     fn test_convert_plan_amount_to_decimal() {
         assert_eq!(convert_plan_amount_to_decimal(999), 9.99);
         assert_eq!(convert_plan_amount_to_decimal(5988), 59.88);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use time::{date, time, PrimitiveDateTime};
+
+    use super::*;
+    use crate::{
+        models::subscriptions::test_subscriptions::make_fake_sub, test_utils::empty_settings,
+    };
+
+    #[test]
+    fn random_minutes_should_be_set_on_cjclient_if_passed() {
+        // This is used for tests settings
+        let settings = empty_settings();
+        let cj = CJClient::new(&settings, None, None, Some(Duration::minutes(88)));
+        assert_eq!(cj.random_minutes.whole_minutes(), 88);
+    }
+
+    #[test]
+    fn random_minutes_should_be_greated_than_15_and_less_than_60_if_on_cjclient_if_not_passed() {
+        let settings = empty_settings();
+        for _ in 0..10 {
+            let cj = CJClient::new(&settings, None, None, None);
+            let minutes = cj.random_minutes.whole_minutes();
+            assert!(
+                minutes >= 15,
+                "minutes was {} - should be greater than 15",
+                minutes
+            );
+            assert!(
+                minutes <= 60,
+                "minutes was {} - should be less than 60",
+                minutes
+            );
+        }
+    }
+
+    #[test]
+    fn randomize_and_format_event_time_adds_minutes_and_formats_string_correctly() {
+        let settings = empty_settings();
+        let cj = CJClient::new(&settings, None, None, Some(Duration::minutes(9)));
+        let event_time =
+            PrimitiveDateTime::new(date!(2019 - 01 - 01), time!(11:11:11.111111)).assume_utc();
+        let result = cj.randomize_and_format_event_time(event_time);
+        assert_eq!(result, "2019-01-01T11:20:00.000Z");
+    }
+
+    #[test]
+    fn event_time_in_url_should_by_randomized_by_duration() {
+        let mut sub = make_fake_sub();
+        sub.subscription_created =
+            PrimitiveDateTime::new(date!(2021 - 12 - 31), time!(23:59:59.999999)).assume_utc();
+        let settings = empty_settings();
+        let cj = CJClient::new(&settings, None, None, Some(Duration::minutes(44)));
+        let url = cj.get_url_for_sub(&sub);
+        for (key, value) in url.query_pairs() {
+            if key == "EVENTTIME" {
+                assert_eq!(value, "2022-01-01T00:43:00.000Z");
+            }
+        }
     }
 }

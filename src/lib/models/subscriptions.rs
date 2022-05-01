@@ -283,9 +283,32 @@ impl SubscriptionModel<'_> {
 }
 
 #[cfg(test)]
-mod test {
+pub mod test_subscriptions {
+
     use super::*;
-    use crate::test_utils::random_simple_ascii_string;
+    use crate::test_utils::{
+        random_ascii_string, random_currency_or_country, random_price, random_simple_ascii_string,
+    };
+    use time::Duration;
+
+    pub fn make_fake_sub() -> Subscription {
+        Subscription::new(PartialSubscription {
+            id: Uuid::new_v4(),
+            flow_id: random_simple_ascii_string(),
+            subscription_id: random_simple_ascii_string(),
+            report_timestamp: OffsetDateTime::now_utc(),
+            subscription_created: OffsetDateTime::now_utc() - Duration::hours(35),
+            fxa_uid: random_ascii_string(),
+            quantity: 1,
+            plan_id: random_simple_ascii_string(),
+            plan_currency: random_currency_or_country(),
+            plan_amount: random_price(),
+            country: Some(random_currency_or_country()),
+            aic_id: Some(Uuid::new_v4()),
+            aic_expires: Some(OffsetDateTime::now_utc()),
+            cj_event_value: Some(random_ascii_string()),
+        })
+    }
 
     #[test]
     fn test_new_sets_not_reported_status_and_history() {

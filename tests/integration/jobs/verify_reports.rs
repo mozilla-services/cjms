@@ -165,7 +165,7 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
         .expect(1)
         .mount(&mock_cj)
         .await;
-    let mock_cj_client = CJClient::new(&settings, None, Some(&mock_cj.uri()));
+    let mock_cj_client = CJClient::new(&settings, None, Some(&mock_cj.uri()), None);
 
     // GO
     let now = OffsetDateTime::now_utc();

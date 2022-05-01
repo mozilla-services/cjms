@@ -71,11 +71,17 @@ async fn report_subscriptions() {
     }
 
     let mock_cj = MockServer::start().await;
-    // TODO In Part 2 - Fix this
-    //let format_str = "%FT%H:00:00.000Z";
+    let random_minutes = Duration::minutes(19);
+    let format_str = "%FT%H:%M:00.000Z";
     when_sending_to_cj(&settings)
         .and(query_param("CJEVENT", sub_1.cj_event_value.unwrap()))
-        //.and(query_param("EVENTTIME", "2021-12-25T14:00:00.000Z"))
+        .and(query_param(
+            "EVENTTIME",
+            format!(
+                "2021-12-25T14:{}:00.000Z",
+                22 + random_minutes.whole_minutes()
+            ),
+        ))
         .and(query_param("OID", sub_1.id.to_string()))
         .and(query_param("CURRENCY", sub_1.plan_currency))
         .and(query_param("ITEM1", sub_1.plan_id))
@@ -92,7 +98,10 @@ async fn report_subscriptions() {
         .await;
     when_sending_to_cj(&settings)
         .and(query_param("CJEVENT", sub_3.cj_event_value.unwrap()))
-        //.and(query_param( "EVENTTIME", sub_3.subscription_created.format(format_str),))
+        .and(query_param(
+            "EVENTTIME",
+            (sub_3.subscription_created + random_minutes).format(format_str),
+        ))
         .and(query_param("OID", sub_3.id.to_string()))
         .and(query_param("CURRENCY", sub_3.plan_currency))
         .and(query_param("ITEM1", sub_3.plan_id))
@@ -112,7 +121,10 @@ async fn report_subscriptions() {
         .await;
     when_sending_to_cj(&settings)
         .and(query_param("CJEVENT", sub_4.cj_event_value.unwrap()))
-        //.and(query_param( "EVENTTIME", sub_4.subscription_created.format(format_str),))
+        .and(query_param(
+            "EVENTTIME",
+            (sub_4.subscription_created + random_minutes).format(format_str),
+        ))
         .and(query_param("OID", sub_4.id.to_string()))
         .and(query_param("CURRENCY", sub_4.plan_currency))
         .and(query_param("ITEM1", sub_4.plan_id))
@@ -127,7 +139,7 @@ async fn report_subscriptions() {
         .expect(1)
         .mount(&mock_cj)
         .await;
-    let mock_cj_client = CJClient::new(&settings, Some(&mock_cj.uri()), None);
+    let mock_cj_client = CJClient::new(&settings, Some(&mock_cj.uri()), None, Some(random_minutes));
 
     // GO
     std::thread::sleep(std::time::Duration::from_secs(2));
@@ -158,7 +170,7 @@ async fn report_subscriptions() {
         .expect("Could not get sub");
 
     for report_sub in [&sub_1_updated, &sub_4_updated] {
-        println!("Testing sub: {}", report_sub.id);
+        println!("Testing sub: {}", report_sub.flow_id);
         assert_eq!(report_sub.get_status().unwrap(), Status::Reported);
         let updated_history = report_sub.get_status_history().unwrap();
         assert_eq!(updated_history.entries.len(), 2);
@@ -183,7 +195,7 @@ async fn report_subscriptions() {
     );
 
     for will_not_report_sub in [&sub_2_updated, &sub_5_updated] {
-        println!("Testing sub: {}", will_not_report_sub.id);
+        println!("Testing sub: {}", will_not_report_sub.flow_id);
         assert_eq!(
             will_not_report_sub.get_status().unwrap(),
             Status::WillNotReport
