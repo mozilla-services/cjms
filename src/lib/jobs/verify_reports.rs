@@ -65,7 +65,7 @@ pub async fn verify_reports_with_cj(
         max_refund = Some(
             refund_date_range
                 .max
-                .expect("No minimum date was returned."),
+                .expect("No maximum date was returned."),
         );
     }
     let mins: Vec<OffsetDateTime> = [min_sub, min_refund].iter().cloned().flatten().collect();
