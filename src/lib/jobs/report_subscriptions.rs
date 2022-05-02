@@ -1,7 +1,7 @@
 use sqlx::{Pool, Postgres};
 
 use crate::{
-    cj::client::CJS2SClient,
+    cj::client::CJClient,
     error_and_incr, info_and_incr,
     models::{status_history::Status, subscriptions::SubscriptionModel},
     telemetry::{LogKey, StatsD},
@@ -9,13 +9,13 @@ use crate::{
 
 pub async fn report_subscriptions_to_cj(
     db_pool: &Pool<Postgres>,
-    cj_client: &CJS2SClient,
+    cj_client: &CJClient,
     statsd: &StatsD,
 ) {
     let subscriptions = SubscriptionModel { db_pool };
     // Intentional panic. Cannot continue if we can't retrieve subs.
     let not_reported_subscriptions = subscriptions
-        .fetch_all_not_reported()
+        .fetch_all_by_status(Status::NotReported)
         .await
         .expect("Could not retrieve subscriptions from DB.");
     statsd.gauge(

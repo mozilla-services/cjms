@@ -1,9 +1,9 @@
 use serde_json::Value as JsonValue;
-use sqlx::{query_as, Error, PgPool};
+use sqlx::{query, query_as, Error, PgPool};
 use time::{Date, OffsetDateTime};
 use uuid::Uuid;
 
-use super::status_history::{Status, UpdateStatus};
+use super::status_history::{DateRange, Status, UpdateStatus};
 
 pub struct PartialRefund {
     pub id: Uuid,
@@ -171,16 +171,51 @@ impl RefundModel<'_> {
         .await
     }
 
+    pub async fn update_refund_status(
+        &self,
+        refund_id: &str,
+        new_status: Status,
+    ) -> Result<Refund, Error> {
+        let mut refund = self.fetch_one_by_refund_id(refund_id).await?;
+        refund.update_status(new_status);
+        query_as!(
+            Refund,
+            r#"UPDATE refunds
+            SET
+                status = $1,
+                status_t = $2,
+                status_history = $3
+            WHERE refund_id = $4
+			RETURNING *"#,
+            refund.status,
+            refund.status_t,
+            refund.status_history,
+            refund_id,
+        )
+        .fetch_one(self.db_pool)
+        .await
+    }
+
     pub async fn fetch_all(&self) -> Result<Vec<Refund>, Error> {
         query_as!(Refund, "SELECT * FROM refunds")
             .fetch_all(self.db_pool)
             .await
     }
 
-    pub async fn fetch_not_reported(&self) -> Result<Vec<Refund>, Error> {
-        query_as!(Refund, "SELECT * FROM refunds WHERE status = 'NotReported'")
-            .fetch_all(self.db_pool)
-            .await
+    pub async fn fetch_all_by_status(&self, status: Status) -> Result<Vec<Refund>, Error> {
+        // Note that users of this function rely on status_t being available
+        query_as!(
+            Refund,
+            r#"
+            SELECT *
+            FROM refunds
+            WHERE status = $1
+            AND status_t IS NOT NULL
+            "#,
+            status.to_string()
+        )
+        .fetch_all(self.db_pool)
+        .await
     }
 
     pub async fn fetch_by_correction_file_day(&self, day: &Date) -> Result<Vec<Refund>, Error> {
@@ -191,6 +226,18 @@ impl RefundModel<'_> {
         )
         .fetch_all(self.db_pool)
         .await
+    }
+
+    pub async fn get_reported_date_range(&self) -> Result<DateRange, Error> {
+        let result = query!(
+            "SELECT MIN(status_t), MAX(status_t) FROM refunds WHERE status = 'Reported' AND status_t IS NOT NULL",
+        )
+        .fetch_one(self.db_pool)
+        .await?;
+        Ok(DateRange {
+            min: result.min,
+            max: result.max,
+        })
     }
 }
 

@@ -5,6 +5,7 @@ use std::fs;
 pub struct Settings {
     pub aic_expiration_days: u64,
     pub authentication: String,
+    pub cj_api_access_token: String,
     pub cj_cid: String,
     pub cj_sftp_user: String,
     pub cj_signature: String,
@@ -77,6 +78,7 @@ pub mod test_settings {
         let mut file = NamedTempFile::new().unwrap();
         writeln!(file, "aic_expiration_days: 22222").unwrap();
         writeln!(file, "authentication: auth a pass").unwrap();
+        writeln!(file, "cj_api_access_token: api_access_token").unwrap();
         writeln!(file, "cj_cid: cid").unwrap();
         writeln!(file, "cj_sftp_user: sftp_user").unwrap();
         writeln!(file, "cj_signature: signature").unwrap();
@@ -136,6 +138,7 @@ pub mod test_settings {
     fn get_settings_with_envvars() {
         env::set_var("AIC_EXPIRATION_DAYS", "121212");
         env::set_var("AUTHENTICATION", "auth pass");
+        env::set_var("CJ_API_ACCESS_TOKEN", "test cj api access token");
         env::set_var("CJ_CID", "test cj cid");
         env::set_var("CJ_SFTP_USER", "test cj sftp user");
         env::set_var("CJ_SIGNATURE", "test cj signature");
@@ -160,6 +163,7 @@ pub mod test_settings {
         let expected = Settings {
             aic_expiration_days: 121212,
             authentication: "auth pass".to_string(),
+            cj_api_access_token: "test cj api access token".to_string(),
             cj_cid: "test cj cid".to_string(),
             cj_sftp_user: "test cj sftp user".to_string(),
             cj_signature: "test cj signature".to_string(),
@@ -179,6 +183,7 @@ pub mod test_settings {
         assert_eq!(expected, actual);
         env::remove_var("AIC_EXPIRATION_DAYS");
         env::remove_var("AUTHENTICATION");
+        env::remove_var("CJ_API_ACCESS_TOKEN");
         env::remove_var("CJ_CID");
         env::remove_var("CJ_SFTP_USER");
         env::remove_var("CJ_SIGNATURE");
@@ -202,6 +207,7 @@ pub mod test_settings {
         let expected = Settings {
             aic_expiration_days: 22222,
             authentication: "auth a pass".to_string(),
+            cj_api_access_token: "api_access_token".to_string(),
             cj_cid: "cid".to_string(),
             cj_sftp_user: "sftp_user".to_string(),
             cj_signature: "signature".to_string(),

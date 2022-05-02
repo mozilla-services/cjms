@@ -1,5 +1,5 @@
 use lib::{
-    cj::{client::CJS2SClient, country_codes::get_iso_code_3_from_iso_code_2},
+    cj::{client::CJClient, country_codes::get_iso_code_3_from_iso_code_2},
     jobs::report_subscriptions::report_subscriptions_to_cj,
     models::{
         status_history::{Status, StatusHistoryEntry, UpdateStatus},
@@ -139,7 +139,7 @@ async fn report_subscriptions() {
         .expect(1)
         .mount(&mock_cj)
         .await;
-    let mock_cj_client = CJS2SClient::new(&settings, Some(&mock_cj.uri()), Some(random_minutes));
+    let mock_cj_client = CJClient::new(&settings, Some(&mock_cj.uri()), None, Some(random_minutes));
 
     // GO
     std::thread::sleep(std::time::Duration::from_secs(2));

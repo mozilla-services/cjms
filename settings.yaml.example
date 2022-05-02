@@ -1,5 +1,6 @@
 aic_expiration_days: 2
 authentication: authpass
+cj_api_access_token: cj_api_access_token
 cj_cid: cj_cid
 cj_sftp_user: cj_sftp_user
 cj_signature: cj_signature

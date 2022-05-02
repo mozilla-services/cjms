@@ -16,7 +16,7 @@ use tracing_actix_web_mozlog::MozLog;
 
 use crate::{
     bigquery::client::{get_bqclient, BQClient},
-    cj::client::CJS2SClient,
+    cj::client::CJClient,
     controllers, info_and_incr,
     settings::{get_settings, Settings},
     telemetry::{init_sentry, init_tracing, LogKey, StatsD},
@@ -27,7 +27,7 @@ pub struct CJ {
     name: LogKey,
     start: OffsetDateTime,
     pub bq_client: BQClient,
-    pub cj_client: CJS2SClient,
+    pub cj_client: CJClient,
     pub db_pool: PgPool,
     pub settings: Settings,
     pub statsd: StatsD,
@@ -43,7 +43,7 @@ impl CJ {
         }
         let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
         let bq_client = get_bqclient(&settings).await;
-        let cj_client = CJS2SClient::new(&settings, None, None);
+        let cj_client = CJClient::new(&settings, None, None, None);
         let statsd = StatsD::new(&settings);
 
         info_and_incr!(statsd, &name.add_suffix("starting"), "Application starting");

@@ -1,9 +1,11 @@
 use serde_json::Value as JsonValue;
-use sqlx::{query_as, Error, PgPool};
+use sqlx::{query, query_as, Error, PgPool};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::models::status_history::{Status, UpdateStatus};
+
+use super::status_history::DateRange;
 
 // All the public fields of Subscription for clean construction
 pub struct PartialSubscription {
@@ -227,10 +229,16 @@ impl SubscriptionModel<'_> {
             .await
     }
 
-    pub async fn fetch_all_not_reported(&self) -> Result<Vec<Subscription>, Error> {
+    pub async fn fetch_all_by_status(&self, status: Status) -> Result<Vec<Subscription>, Error> {
+        // Note that users of this function rely on status_t being available
         query_as!(
             Subscription,
-            "SELECT * FROM subscriptions WHERE status = 'NotReported'"
+            r#"
+            SELECT *
+            FROM subscriptions
+            WHERE status = $1
+            AND status_t IS NOT NULL"#,
+            status.to_string()
         )
         .fetch_all(self.db_pool)
         .await
@@ -259,6 +267,18 @@ impl SubscriptionModel<'_> {
         )
         .fetch_one(self.db_pool)
         .await
+    }
+
+    pub async fn get_reported_date_range(&self) -> Result<DateRange, Error> {
+        let result = query!(
+            "SELECT MIN(status_t), MAX(status_t) FROM subscriptions WHERE status = 'Reported' AND status_t IS NOT NULL",
+        )
+        .fetch_one(self.db_pool)
+        .await?;
+        Ok(DateRange {
+            min: result.min,
+            max: result.max,
+        })
     }
 }
 

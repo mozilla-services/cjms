@@ -684,85 +684,7 @@
     },
     "query": "SELECT * FROM aic_archive WHERE id = $1"
   },
-  "7a28b3ca3c6a97ff814f2a637848a3078ec881ea724b1e312ca9817cf1f9a397": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "refund_id",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "subscription_id",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "refund_created",
-          "ordinal": 3,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "refund_amount",
-          "ordinal": 4,
-          "type_info": "Int4"
-        },
-        {
-          "name": "refund_status",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "refund_reason",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "status",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "status_t",
-          "ordinal": 8,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "status_history",
-          "ordinal": 9,
-          "type_info": "Json"
-        },
-        {
-          "name": "correction_file_date",
-          "ordinal": 10,
-          "type_info": "Date"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true
-      ],
-      "parameters": {
-        "Left": []
-      }
-    },
-    "query": "SELECT * FROM refunds"
-  },
-  "91a8f7715d3c9f86252e1e47158ac0e7926a38cf7a6fadb445d26d3f9717fdde": {
+  "76f3a395a77c66e6cdfb53a5bd31bd8afd5ca139c8068433989308687e57143a": {
     "describe": {
       "columns": [
         {
@@ -871,10 +793,197 @@
         true
       ],
       "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            SELECT *\n            FROM subscriptions\n            WHERE status = $1\n            AND status_t IS NOT NULL"
+  },
+  "7a103567f397531eaa31bc21bee3a5f99192cd21f997e1ed6be990145e67c635": {
+    "describe": {
+      "columns": [
+        {
+          "name": "min",
+          "ordinal": 0,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "max",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
         "Left": []
       }
     },
-    "query": "SELECT * FROM subscriptions WHERE status = 'NotReported'"
+    "query": "SELECT MIN(status_t), MAX(status_t) FROM subscriptions WHERE status = 'Reported' AND status_t IS NOT NULL"
+  },
+  "7a28b3ca3c6a97ff814f2a637848a3078ec881ea724b1e312ca9817cf1f9a397": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "refund_id",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "subscription_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "refund_created",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "refund_amount",
+          "ordinal": 4,
+          "type_info": "Int4"
+        },
+        {
+          "name": "refund_status",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "refund_reason",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "status",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "status_t",
+          "ordinal": 8,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "status_history",
+          "ordinal": 9,
+          "type_info": "Json"
+        },
+        {
+          "name": "correction_file_date",
+          "ordinal": 10,
+          "type_info": "Date"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT * FROM refunds"
+  },
+  "86fb413fc5c09193df79742d108e8eb5dfd0e19bd7c76aa9d52137b9ee2e1c2e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "refund_id",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "subscription_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "refund_created",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "refund_amount",
+          "ordinal": 4,
+          "type_info": "Int4"
+        },
+        {
+          "name": "refund_status",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "refund_reason",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "status",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "status_t",
+          "ordinal": 8,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "status_history",
+          "ordinal": 9,
+          "type_info": "Json"
+        },
+        {
+          "name": "correction_file_date",
+          "ordinal": 10,
+          "type_info": "Date"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Timestamptz",
+          "Json",
+          "Text"
+        ]
+      }
+    },
+    "query": "UPDATE refunds\n            SET\n                status = $1,\n                status_t = $2,\n                status_history = $3\n            WHERE refund_id = $4\n\t\t\tRETURNING *"
   },
   "96166be684b0dfc0468398eb1d67b0db85855f623d4fda4ae4e5a5e158b949a4": {
     "describe": {
@@ -1012,6 +1121,86 @@
       }
     },
     "query": "UPDATE aic\n            SET\n                cj_event_value = $1,\n                flow_id = $2,\n                created = $3,\n                expires = $4\n            WHERE id = $5\n\t\t\tRETURNING *"
+  },
+  "a044fc47f34129ca0d039785f6859b5b503263f62aa818a146cfa01cd995dca4": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "refund_id",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "subscription_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "refund_created",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "refund_amount",
+          "ordinal": 4,
+          "type_info": "Int4"
+        },
+        {
+          "name": "refund_status",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "refund_reason",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "status",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "status_t",
+          "ordinal": 8,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "status_history",
+          "ordinal": 9,
+          "type_info": "Json"
+        },
+        {
+          "name": "correction_file_date",
+          "ordinal": 10,
+          "type_info": "Date"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            SELECT *\n            FROM refunds\n            WHERE status = $1\n            AND status_t IS NOT NULL\n            "
   },
   "a2c083881c209a0fe248ebeee11d8a412c67dbffa0c76d69f7b07554b7af0e3d": {
     "describe": {
@@ -1581,6 +1770,30 @@
     },
     "query": "INSERT INTO aic (id, cj_event_value, flow_id, created, expires)\n\t\t\tVALUES ($1, $2, $3, $4, $5)\n\t\t\tRETURNING *"
   },
+  "c8c0b6eac640dcdc8f0ce14e65f53910c1b823e4e7a3b3e68b93165700f691c9": {
+    "describe": {
+      "columns": [
+        {
+          "name": "min",
+          "ordinal": 0,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "max",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT MIN(status_t), MAX(status_t) FROM refunds WHERE status = 'Reported' AND status_t IS NOT NULL"
+  },
   "ca7bc483fe886f022665dcb137b33bf0e5e96bce3c39e7ffea6121861944f85d": {
     "describe": {
       "columns": [
@@ -1660,84 +1873,6 @@
       }
     },
     "query": "SELECT * FROM refunds WHERE correction_file_date = $1"
-  },
-  "cfbae38ac14e6b4a68193533315314f64b7c3525f78ffb9eaa3b0700af6c8d0f": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "refund_id",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "subscription_id",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "refund_created",
-          "ordinal": 3,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "refund_amount",
-          "ordinal": 4,
-          "type_info": "Int4"
-        },
-        {
-          "name": "refund_status",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "refund_reason",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "status",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "status_t",
-          "ordinal": 8,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "status_history",
-          "ordinal": 9,
-          "type_info": "Json"
-        },
-        {
-          "name": "correction_file_date",
-          "ordinal": 10,
-          "type_info": "Date"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true
-      ],
-      "parameters": {
-        "Left": []
-      }
-    },
-    "query": "SELECT * FROM refunds WHERE status = 'NotReported'"
   },
   "d8188ef1269dd87d8b804cef756bf64f238cf2ccb2971d50e1c3561b0279e0ec": {
     "describe": {
