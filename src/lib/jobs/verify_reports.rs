@@ -49,7 +49,7 @@ pub async fn verify_reports_with_cj(
         max_sub = Some(
             subscription_date_range
                 .max
-                .expect("No minimum date was returned."),
+                .expect("No maximum date was returned."),
         );
     }
     if !reported_refunds.is_empty() {
