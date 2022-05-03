@@ -243,7 +243,7 @@ mod tests {
             "items": vec![json!({"sku": "abc123"})],
         });
         let result = serde_json::from_value::<CommissionDetailRecord>(json).unwrap();
-        assert_eq!(result.sale_amount_pub_currency, 9.99 as f32)
+        assert_eq!(result.sale_amount_pub_currency, 9.99f32)
     }
 
     #[test]
