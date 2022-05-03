@@ -332,6 +332,17 @@ impl ResultSet {
         match bytes_processed.parse::<usize>() {
             Ok(n) => {
                 statsd.gauge(&key.add_suffix("bytes-from-bq"), n);
+                // Alert if we are at 50% of the total allowable bytes or
+                // greater.
+                let soft_limit = 5 * 1024usize.pow(2); // 5 MiB
+                if n > soft_limit {
+                    error!(
+                        &key.add_suffix("bytes-from-bq-limit-warning"),
+                        n = n,
+                        soft_limit = soft_limit,
+                        "Total bytes received from BigQuery approaching limit"
+                    )
+                }
             }
             Err(e) => error!(
                 LogKey::BigQuery,
