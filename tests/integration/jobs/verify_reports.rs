@@ -167,7 +167,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": sub_1.id,
                             "correctionReason": null,
-                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_1.plan_amount),
+                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_1.plan_amount).to_string(),
                             "items": [
                                 {
                                     "sku": sub_1.plan_id
@@ -179,7 +179,7 @@ async fn setup_test(
                             "original": false,
                             "orderId": sub_1.id,
                             "correctionReason": "RETURNED_MERCHANDISE",
-                            "saleAmountPubCurrency": make_refund_amount(sub_1.plan_amount),
+                            "saleAmountPubCurrency": make_refund_amount(sub_1.plan_amount).to_string(),
                             "items": [
                                 {
                                     "sku": sub_1.plan_id
@@ -190,7 +190,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": sub_2.id,
                             "correctionReason": null,
-                            "saleAmountPubCurrency": -999.99,
+                            "saleAmountPubCurrency": "-999.99",
                             "items": [
                                 {
                                     "sku": sub_2.plan_id
@@ -201,7 +201,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": sub_3.id,
                             "correctionReason": null,
-                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_3.plan_amount),
+                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_3.plan_amount).to_string(),
                             "items": [
                                 {
                                     "sku": "WRONG SKU"
@@ -212,7 +212,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": "WRONGID",
                             "correctionReason": null,
-                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_4.plan_amount),
+                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_4.plan_amount).to_string(),
                             "items": [
                                 {
                                     "sku": sub_4.plan_id
@@ -223,7 +223,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": "WRONGID",
                             "correctionReason": null,
-                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_5.plan_amount),
+                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_5.plan_amount).to_string(),
                             "items": [
                                 {
                                     "sku": sub_5.plan_id
@@ -239,7 +239,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": refund_1_sub.id,
                             "correctionReason": null,
-                            "saleAmountPubCurrency": convert_amount_to_decimal(refund_1_sub.plan_amount),
+                            "saleAmountPubCurrency": convert_amount_to_decimal(refund_1_sub.plan_amount).to_string(),
                             "items": [
                                 {
                                     "sku": refund_1_sub.plan_id
@@ -250,7 +250,7 @@ async fn setup_test(
                             "original": false,
                             "orderId": refund_1_sub.id,
                             "correctionReason": "RETURNED_MERCHANDISE",
-                            "saleAmountPubCurrency": make_refund_amount(refund_1.refund_amount),
+                            "saleAmountPubCurrency": make_refund_amount(refund_1.refund_amount).to_string(),
                             "items": [
                                 {
                                     "sku": refund_1_sub.plan_id
@@ -261,7 +261,7 @@ async fn setup_test(
                             "original": false,
                             "orderId": refund_2_sub.id,
                             "correctionReason": "RETURNED_MERCHANDISE",
-                            "saleAmountPubCurrency": 999.99,
+                            "saleAmountPubCurrency": "999.99",
                             "items": [
                                 {
                                     "sku": refund_2_sub.plan_id
@@ -272,7 +272,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": refund_3_sub.id,
                             "correctionReason": "RETURNED_MERCHANDISE",
-                            "saleAmountPubCurrency": make_refund_amount(refund_3.refund_amount),
+                            "saleAmountPubCurrency": make_refund_amount(refund_3.refund_amount).to_string(),
                             "items": [
                                 {
                                     "sku": "WRONG SKU"
@@ -283,7 +283,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": "WRONGID",
                             "correctionReason": "RETURNED_MERCHANDISE",
-                            "saleAmountPubCurrency": make_refund_amount(refund_4.refund_amount),
+                            "saleAmountPubCurrency": make_refund_amount(refund_4.refund_amount).to_string(),
                             "items": [
                                 {
                                     "sku": refund_4_sub.plan_id
@@ -294,7 +294,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": "WRONGID",
                             "correctionReason": "RETURNED_MERCHANDISE",
-                            "saleAmountPubCurrency": make_refund_amount(refund_5.refund_amount),
+                            "saleAmountPubCurrency": make_refund_amount(refund_5.refund_amount).to_string(),
                             "items": [
                                 {
                                     "sku": refund_5_sub.plan_id
@@ -560,7 +560,7 @@ async fn test_correct_when_only_one_sub() {
                             "original": true,
                             "orderId": sub_1.id,
                             "correctionReason": null,
-                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_1.plan_amount),
+                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_1.plan_amount).to_string(),
                             "items": [
                                 {
                                     "sku": sub_1.plan_id
@@ -623,7 +623,7 @@ async fn test_correct_when_only_one_refund() {
                             "original": false,
                             "orderId": related_sub.id,
                             "correctionReason": "RETURNED_MERCHANDISE",
-                            "saleAmountPubCurrency": make_refund_amount(refund_1.refund_amount),
+                            "saleAmountPubCurrency": make_refund_amount(refund_1.refund_amount).to_string(),
                             "items": [
                                 {
                                     "sku": related_sub.plan_id
