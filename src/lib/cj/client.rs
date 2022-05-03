@@ -1,7 +1,7 @@
 use crate::{info, models::subscriptions::Subscription, settings::Settings, telemetry::LogKey};
 use rand::{thread_rng, Rng};
 use reqwest::{Client, Error, Response, Url};
-use serde::Deserialize;
+use serde::{de, Deserialize, Deserializer};
 use serde_json::{json, Value};
 use time::{Duration, OffsetDateTime};
 
@@ -30,6 +30,7 @@ pub struct CommissionDetailRecord {
     pub original: bool,
     pub order_id: String,
     pub correction_reason: Option<String>,
+    #[serde(deserialize_with = "f32_from_str")]
     pub sale_amount_pub_currency: f32,
     pub items: Vec<CommissionDetailItem>,
 }
@@ -54,6 +55,14 @@ struct CommissionDetailQueryResponse {
 
 pub fn convert_amount_to_decimal(plan_amount: i32) -> f32 {
     plan_amount as f32 / 100.0
+}
+
+fn f32_from_str<'de, D>(deserializer: D) -> Result<f32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    s.parse::<f32>().map_err(de::Error::custom)
 }
 
 fn get_random_minutes() -> Duration {
@@ -224,6 +233,30 @@ mod tests {
     use crate::{
         models::subscriptions::test_subscriptions::make_fake_sub, test_utils::empty_settings,
     };
+
+    #[test]
+    fn commission_detail_record_parses_f32() {
+        let json = json!({
+            "original": true,
+            "orderId": "abc123",
+            "saleAmountPubCurrency": "9.99",
+            "items": vec![json!({"sku": "abc123"})],
+        });
+        let result = serde_json::from_value::<CommissionDetailRecord>(json).unwrap();
+        assert_eq!(result.sale_amount_pub_currency, 9.99 as f32)
+    }
+
+    #[test]
+    fn commission_detail_record_parses_f32_err_on_invalid_value() {
+        let json = json!({
+            "original": true,
+            "orderId": "abc123",
+            "saleAmountPubCurrency": "notgood",
+            "items": vec![json!({"sku": "abc123"})],
+        });
+        let result = serde_json::from_value::<CommissionDetailRecord>(json);
+        assert!(result.is_err());
+    }
 
     #[test]
     fn random_minutes_should_be_set_on_cjclient_if_passed() {
