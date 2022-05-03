@@ -99,7 +99,7 @@ pub async fn verify_reports_with_cj(
 
     // Query CJ
     let cj_query_result = cj_client
-        .query_comission_detail_api_between_dates(min, max)
+        .query_commission_detail_api_between_dates(min, max)
         .await;
     statsd.gauge(&LogKey::VerifyReportsCount, cj_query_result.count);
 

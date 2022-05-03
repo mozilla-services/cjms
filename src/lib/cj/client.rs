@@ -136,7 +136,7 @@ impl CJClient {
         self.client.get(url_for_sub).send().await
     }
 
-    pub async fn query_comission_detail_api_between_dates(
+    pub async fn query_commission_detail_api_between_dates(
         &self,
         min: OffsetDateTime,
         max: OffsetDateTime,
