@@ -137,7 +137,7 @@ pub enum LogKey {
 impl LogKey {
     pub fn add_suffix(&self, suffix: &str) -> LogKey {
         let mut s = self.to_string();
-        s.push_str("-");
+        s.push('-');
         s.push_str(suffix);
 
         match LogKey::from_str(&s) {
