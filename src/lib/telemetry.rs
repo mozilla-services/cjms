@@ -124,12 +124,12 @@ pub enum LogKey {
 
     // For test cases
     Test,
+    TestEnding,
     TestErrorIncr,
     TestGauge,
     TestIncr,
     TestInfoIncr,
     TestStarting,
-    TestSuffix,
     TestTime,
     TestTimer,
 }
@@ -408,8 +408,8 @@ pub mod test_telemetry {
 
     #[test]
     fn get_log_key_with_valid_suffix() {
-        let expected = LogKey::TestSuffix;
-        let actual = LogKey::Test.add_suffix("suffix");
+        let expected = LogKey::TestStarting;
+        let actual = LogKey::Test.add_suffix("starting");
         assert_eq!(expected, actual);
     }
 
