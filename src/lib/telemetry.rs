@@ -140,7 +140,7 @@ impl LogKey {
         s.push_str("-");
         s.push_str(suffix);
 
-        match LogKey::from_str(&*s) {
+        match LogKey::from_str(&s) {
             Ok(v) => v,
             Err(_) => *self,
         }
