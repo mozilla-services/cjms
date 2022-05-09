@@ -18,7 +18,7 @@ use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 use crate::settings::Settings;
 use crate::version::{read_version, VERSION_FILE};
 
-#[derive(Debug, EnumToString, EnumString, PartialEq, Eq)]
+#[derive(Debug, EnumToString, EnumString, PartialEq, Eq, Clone, Copy)]
 #[strum(serialize_all = "kebab_case")]
 pub enum LogKey {
     AicRecordCreate,
@@ -136,12 +136,13 @@ pub enum LogKey {
 
 impl LogKey {
     pub fn add_suffix(&self, suffix: &str) -> LogKey {
-        let s = format!("{}-{}", &self.to_string(), suffix);
-        let s_str = s.as_str();
+        let mut s = self.to_string();
+        s.push_str("-");
+        s.push_str(suffix);
 
-        match LogKey::from_str(s_str) {
+        match LogKey::from_str(&*s) {
             Ok(v) => v,
-            Err(_) => LogKey::from_str(&self.to_string()).unwrap(),
+            Err(_) => *self,
         }
     }
 }
