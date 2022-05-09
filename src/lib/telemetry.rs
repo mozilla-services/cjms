@@ -124,17 +124,42 @@ pub enum LogKey {
 
     // For test cases
     Test,
-    TestEnding,
     TestErrorIncr,
     TestGauge,
     TestIncr,
     TestInfoIncr,
     TestStarting,
+    TestSuffix,
     TestTime,
     TestTimer,
 }
 
 impl LogKey {
+    /// Use a string-based suffix to produce a related enum value.
+    ///
+    /// This is useful, for example, in situations where an abstract function is
+    /// used in different contexts, but needs to log to different keys depending
+    /// on the context. In this situation the abstract function can accept a
+    /// "base key" as an argument, and the function can produce new Enum values
+    /// by adding a known suffix to the base value.
+    ///
+    /// Note that the value produced by the method must be a valid Enum value.
+    /// If the stringified value is invalid, the original enum value will be
+    /// returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// pub fn abstract_logger(base_key: &LogKey) {
+    ///     // Do some important work here
+    ///
+    ///     info!(&key.add_suffix("starting"), "Message");
+    /// }
+    ///
+    /// abstract_logger(statsd, &LogKey::Cleanup);  // Logs to "CleanupStarting"
+    /// abstract_logger(statsd, &LogKey::ReportSubscriptions);  // Logs to "ReportSubscriptionsStarting"
+    ///
+    /// ```
     pub fn add_suffix(&self, suffix: &str) -> LogKey {
         let s = format!("{}-{}", &self.to_string(), suffix);
         let s_str = s.as_str();
@@ -147,6 +172,7 @@ impl LogKey {
 }
 
 /// Creates a tracing subscriber and sets it as the global default.
+/// For app initialization purposes.
 pub fn init_tracing<Sink>(service_name: &str, log_level: &str, sink: Sink)
 where
     Sink: for<'a> MakeWriter<'a> + Send + Sync + 'static,
@@ -173,6 +199,8 @@ where
     set_global_default(subscriber).expect("Failed to set subscriber");
 }
 
+/// Initialize a connection to Sentry.
+/// For app initialization purposes.
 pub fn init_sentry(settings: &Settings) -> ClientInitGuard {
     let version_data = read_version(VERSION_FILE);
 
@@ -195,7 +223,16 @@ pub fn init_sentry(settings: &Settings) -> ClientInitGuard {
     ))
 }
 
-/// TODO doc
+/// Create an info-level log trace.
+///
+/// The macro expects a `LogKey` enum value as its first argument. Aside from
+/// this, the macro behaves exactly like the `tracing::info!` macro that it wraps.
+///
+/// # Examples
+///
+/// ```
+/// info!(LogKey::CleanupAicArchive, key = "value", "Some log message")
+/// ```
 #[macro_export]
 macro_rules! info {
     ( $trace_type:expr, $($arg:tt)+ ) => {
@@ -203,7 +240,28 @@ macro_rules! info {
     }
 }
 
-/// TODO doc
+/// Create an error-level log trace.
+///
+/// The macro expects a `LogKey` enum value as its first argument. If the second
+/// argument is a keyword argument with the name `error`, it will be assumed
+/// that the argument an Error that implements Debug, which will be parsed and
+/// formatted before being passed to the macro. Aside from these differences,
+/// the macro behaves exactly like the `tracing::error!` macro that it wraps.
+///
+/// Note that the `error` keyword argument must be the second argument, directly
+/// after the trace type. If it is not passed as the second argument, it will be
+/// interpreted as a normal keyword argument and will not be formatted.
+///
+/// # Examples
+///
+/// ```
+/// use std::error::Error;
+///
+/// error!(LogKey::CleanupAicArchiveFailed, key = "value", "Some log message")
+///
+/// error!(LogKey::CleanupAicArchiveFailed, error = Error, key = "value", "Some log message")
+///
+/// ```
 #[macro_export]
 macro_rules! error {
     ( $trace_type:expr, error = $error:expr, $($arg:tt)+ ) => {
@@ -219,7 +277,23 @@ macro_rules! error {
     };
 }
 
-/// TODO doc
+/// Create an info-level log trace and increment a statsd counter with the same
+/// name.
+///
+/// The macro expects a `StatsD` client as its first argument, followed by a
+/// `LogKey` enum value. Aside from this, the macro behaves exactly like the
+/// `info!` macro.
+///
+/// # Examples
+///
+/// ```
+/// info_and_incr!(
+///     StatsD::new(&settings),
+///     LogKey::CleanupAicArchive,
+///     key = "value",
+///     "Some log message"
+/// )
+/// ```
 #[macro_export]
 macro_rules! info_and_incr {
     ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
@@ -228,7 +302,35 @@ macro_rules! info_and_incr {
     }
 }
 
-/// TODO doc
+/// Create an error-level log trace and increment a statsd counter with the same
+/// name.
+///
+/// The macro expects a `StatsD` client as its first argument, followed by a
+/// `LogKey` enum value. Aside from this, the macro behaves exactly like the
+/// `error!` macro.
+///
+/// # Examples
+///
+/// ```
+/// use std::error::Error;
+///
+/// let statsd = StatsD::new(&settings);
+///
+/// error_and_incr!(
+///     statsd,
+///     LogKey::CleanupAicArchiveFailed,
+///     key = "value",
+///     "Some log message"
+/// )
+///
+/// error_and_incr!(
+///     statsd,
+///     Error,
+///     LogKey::CleanupAicArchiveFailed,
+///     key = "value",
+///     "Some log message"
+/// )
+/// ```
 #[macro_export]
 macro_rules! error_and_incr {
     ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
@@ -306,8 +408,8 @@ pub mod test_telemetry {
 
     #[test]
     fn get_log_key_with_valid_suffix() {
-        let expected = LogKey::TestEnding;
-        let actual = LogKey::Test.add_suffix("ending");
+        let expected = LogKey::TestSuffix;
+        let actual = LogKey::Test.add_suffix("suffix");
         assert_eq!(expected, actual);
     }
 

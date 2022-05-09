@@ -67,6 +67,7 @@ pub async fn fetch_and_process_refunds(bq: &BQClient, db_pool: &Pool<Postgres>, 
                 LogKey::CheckRefundsSubscriptionMissingFromDatabase,
                 subscription_id = r.subscription_id.as_str(),
                 refund_id = r.refund_id.as_str(),
+                "Subscription related to refund missing from database",
             );
             continue;
         }
