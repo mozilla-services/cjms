@@ -150,15 +150,8 @@ impl LogKey {
     /// # Examples
     ///
     /// ```
-    /// pub fn abstract_logger(base_key: &LogKey) {
-    ///     // Do some important work here
-    ///
-    ///     info!(&key.add_suffix("starting"), "Message");
-    /// }
-    ///
-    /// abstract_logger(statsd, &LogKey::Cleanup);  // Logs to "CleanupStarting"
-    /// abstract_logger(statsd, &LogKey::ReportSubscriptions);  // Logs to "ReportSubscriptionsStarting"
-    ///
+    /// LogKey::Cleanup.add_suffix("starting"); // returns LogKey::CleanupStarting
+    /// LogKey::Cleanup.add_suffix("invalid"); // produces an invalid enum value; returns LogKey::Cleanup
     /// ```
     pub fn add_suffix(&self, suffix: &str) -> LogKey {
         let s = format!("{}-{}", &self.to_string(), suffix);
@@ -281,8 +274,9 @@ macro_rules! error {
 /// name.
 ///
 /// The macro expects a `StatsD` client as its first argument, followed by a
-/// `LogKey` enum value. Aside from this, the macro behaves exactly like the
-/// `info!` macro.
+/// `LogKey` enum value. The name of the log trace and the statsd counter will
+/// be the stringified form of the LogKey enum value. Aside from this, the macro
+/// behaves exactly like the `info!` macro.
 ///
 /// # Examples
 ///
