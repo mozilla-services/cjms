@@ -222,7 +222,24 @@ magically compatible.
 In both cases the reason was because the versions of `time` and `uuid` that I had installed were ahead of what sqlx
 currently supports. This meant that the, I think, trait implementations for them to interoperate weren't present.
 
-### Working with statsd
+### Working with logs and metrics
+
+The telemetry module contains utilities for writing out logs and metrics. The most common pattern we use it to use a macro that writes out a log with a pre-defined key, while at the same time incrementing a statsd counter with the same name. The name of the log key should be a known value in the `LogKey` macro.
+
+For example:
+
+```rust
+info_and_incr!(
+    StatsD::new(&settings),
+    LogKey::CleanupAicArchive,
+    key = "value",
+    "Some log message"
+)
+```
+
+The value of the `LogKey` enum will be stringified to kebab case before it is sent to the logger and statsd. Additionally statsd adds a project prefix. So for this example, the final result will be to write a Mozlog-compatible log message to stdout with a `type` value of `cleanup-aic-archive`, and increment a statsd counter with the name `cjms.cleanup-aic-archive`.
+
+#### Running a local statsd client
 
 If configured using the defaults from settings.yaml.example, the statsd client
 will send metrics to a statsd server on localhost at UDP port 8125. Since statsd
