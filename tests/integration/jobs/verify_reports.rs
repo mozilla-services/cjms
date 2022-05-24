@@ -80,7 +80,10 @@ async fn setup_test(
     sub_6.plan_amount = 5988;
     sub_6.plan_currency = "eur".to_string();
 
-    for (i, sub) in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5, &sub_6].iter().enumerate() {
+    for (i, sub) in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5, &sub_6]
+        .iter()
+        .enumerate()
+    {
         println!("Sub {} - {}", i + 1, sub.id);
         sub_model
             .create_from_sub(sub)
@@ -136,7 +139,9 @@ async fn setup_test(
     refund_6_sub.plan_amount = refund_6.refund_amount;
     refund_6_sub.plan_currency = "eur".to_string();
 
-    for refund in [&refund_1, &refund_2, &refund_3, &refund_4, &refund_5, &refund_6] {
+    for refund in [
+        &refund_1, &refund_2, &refund_3, &refund_4, &refund_5, &refund_6,
+    ] {
         refund_model
             .create_from_refund(refund)
             .await

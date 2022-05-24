@@ -152,8 +152,9 @@ pub async fn verify_reports_with_cj(
                 let plan_id_correct = record.items[0].sku == sub.plan_id;
                 let amount_correct = match sub.plan_currency.to_lowercase().as_str() {
                     "usd" => {
-                        record.sale_amount_pub_currency == convert_amount_to_decimal(sub.plan_amount)
-                    },
+                        record.sale_amount_pub_currency
+                            == convert_amount_to_decimal(sub.plan_amount)
+                    }
                     _ => {
                         // We do not check in non-USD cases because CJ sends us back an amount that
                         // they've converted from our amount to USD at an unknown
