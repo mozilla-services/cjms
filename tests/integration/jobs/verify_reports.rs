@@ -26,11 +26,13 @@ struct VerifyReportsTestSetup {
     sub_3: Subscription,
     sub_4: Subscription,
     sub_5: Subscription,
+    sub_6: Subscription,
     refund_1: Refund,
     refund_2: Refund,
     refund_3: Refund,
     refund_4: Refund,
     refund_5: Refund,
+    refund_6: Refund,
     required_query: String,
     response_body: Value,
 }
@@ -51,24 +53,34 @@ async fn setup_test(
     // Sub 1 - Reported, expect to have been recieved by CJ
     let mut sub_1 = make_fake_sub();
     sub_1.update_status(Status::Reported);
+    sub_1.plan_currency = "usd".to_string();
     // Sub 2 - Reported 48 hours ago, CJ has the wrong amount
     let mut sub_2 = make_fake_sub();
     sub_2.update_status(Status::Reported);
     sub_2.set_status_t(Some(min_sub));
+    sub_2.plan_currency = "usd".to_string();
     // Sub 3 - Reported 48 hours ago, CJ has the wrong sku
     let mut sub_3 = make_fake_sub();
     sub_3.update_status(Status::Reported);
     sub_3.set_status_t(Some(min_sub));
+    sub_3.plan_currency = "usd".to_string();
     // Sub 4 - Reported 48 hours ago (> 36 hours ago), CJ has the wrong id - mark CJNotReceived
     let mut sub_4 = make_fake_sub();
     sub_4.update_status(Status::Reported);
     sub_4.set_status_t(Some(min_sub));
+    sub_4.plan_currency = "usd".to_string();
     // Sub 5 - Reported < 36 hours ago, CJ has the wrong id - leave as Reported for now
     let mut sub_5 = make_fake_sub();
     sub_5.update_status(Status::Reported);
     sub_5.set_status_t(Some(now - Duration::hours(35)));
+    sub_5.plan_currency = "usd".to_string();
+    // Sub 6 - EURO - Reported, expect to have been received by CJ - It's a Euro subscrtiption, so the amount comes back different from CJ.
+    let mut sub_6 = make_fake_sub();
+    sub_6.update_status(Status::Reported);
+    sub_6.plan_amount = 5988;
+    sub_6.plan_currency = "eur".to_string();
 
-    for (i, sub) in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5].iter().enumerate() {
+    for (i, sub) in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5, &sub_6].iter().enumerate() {
         println!("Sub {} - {}", i + 1, sub.id);
         sub_model
             .create_from_sub(sub)
@@ -82,6 +94,7 @@ async fn setup_test(
     let mut refund_1_sub = make_fake_sub();
     refund_1_sub.subscription_id = refund_1.subscription_id.clone();
     refund_1_sub.plan_amount = refund_1.refund_amount;
+    refund_1_sub.plan_currency = "usd".to_string();
     // Refund 2 - Reported 48 hours ago, CJ has the wrong amount
     let mut refund_2 = make_fake_refund();
     refund_2.update_status(Status::Reported);
@@ -89,6 +102,7 @@ async fn setup_test(
     let mut refund_2_sub = make_fake_sub();
     refund_2_sub.subscription_id = refund_2.subscription_id.clone();
     refund_2_sub.plan_amount = refund_2.refund_amount;
+    refund_2_sub.plan_currency = "usd".to_string();
     // Refund 3 - Reported 48 hours ago, CJ has the wrong sku
     let mut refund_3 = make_fake_refund();
     refund_3.update_status(Status::Reported);
@@ -96,6 +110,7 @@ async fn setup_test(
     let mut refund_3_sub = make_fake_sub();
     refund_3_sub.subscription_id = refund_3.subscription_id.clone();
     refund_3_sub.plan_amount = refund_3.refund_amount;
+    refund_3_sub.plan_currency = "usd".to_string();
     // Refund 4 - Reported 48 hours ago (> 36 hours ago), CJ has the wrong id - mark CJNotReceived
     let mut refund_4 = make_fake_refund();
     refund_4.update_status(Status::Reported);
@@ -103,6 +118,7 @@ async fn setup_test(
     let mut refund_4_sub = make_fake_sub();
     refund_4_sub.subscription_id = refund_4.subscription_id.clone();
     refund_4_sub.plan_amount = refund_4.refund_amount;
+    refund_4_sub.plan_currency = "usd".to_string();
     // Refund 5 - Reported < 36 hours ago, CJ has the wrong id - leave as Reported for now
     let mut refund_5 = make_fake_refund();
     refund_5.update_status(Status::Reported);
@@ -110,8 +126,17 @@ async fn setup_test(
     let mut refund_5_sub = make_fake_sub();
     refund_5_sub.subscription_id = refund_5.subscription_id.clone();
     refund_5_sub.plan_amount = refund_5.refund_amount;
+    refund_5_sub.plan_currency = "usd".to_string();
+    // Refund 6 - EURO - Reported, expect to have been received by CJ - It's a Euro subscrtiption, so the amount comes back different from CJ.
+    let mut refund_6 = make_fake_refund();
+    refund_6.update_status(Status::Reported);
+    refund_6.refund_amount = 5988;
+    let mut refund_6_sub = make_fake_sub();
+    refund_6_sub.subscription_id = refund_6.subscription_id.clone();
+    refund_6_sub.plan_amount = refund_6.refund_amount;
+    refund_6_sub.plan_currency = "eur".to_string();
 
-    for refund in [&refund_1, &refund_2, &refund_3, &refund_4, &refund_5] {
+    for refund in [&refund_1, &refund_2, &refund_3, &refund_4, &refund_5, &refund_6] {
         refund_model
             .create_from_refund(refund)
             .await
@@ -123,6 +148,7 @@ async fn setup_test(
         &refund_3_sub,
         &refund_4_sub,
         &refund_5_sub,
+        &refund_6_sub,
     ]
     .iter()
     .enumerate()
@@ -161,7 +187,7 @@ async fn setup_test(
         {"data":
             {"advertiserCommissions":
                 {
-                    "count": 6,
+                    "count": 18,
                     "records": [
                         {
                             "original": true,
@@ -227,6 +253,18 @@ async fn setup_test(
                             "items": [
                                 {
                                     "sku": sub_5.plan_id
+                                }
+                            ]
+                        },
+                        {
+                            "original": true,
+                            "orderId": sub_6.id,
+                            "correctionReason": null,
+                            // Adding an arbitrary amount because it was a euro purchase so we get a different amount back from CJ
+                            "saleAmountPubCurrency": (convert_amount_to_decimal(sub_6.plan_amount) + 1.11).to_string(),
+                            "items": [
+                                {
+                                    "sku": sub_6.plan_id
                                 }
                             ]
                         },
@@ -301,6 +339,30 @@ async fn setup_test(
                                 }
                             ]
                         },
+                        {
+                            "original": true,
+                            "orderId": refund_6_sub.id,
+                            "correctionReason": null,
+                            // Adding an arbitrary amount because it was a euro purchase so we get a different amount back from CJ
+                            "saleAmountPubCurrency": (convert_amount_to_decimal(refund_6_sub.plan_amount) + 1.11).to_string(),
+                            "items": [
+                                {
+                                    "sku": refund_6_sub.plan_id
+                                }
+                            ]
+                        },
+                        {
+                            "original": false,
+                            "orderId": refund_6_sub.id,
+                            "correctionReason": "RETURNED_MERCHANDISE",
+                            // Adding an arbitrary amount because it was a euro purchase so we get a different amount back from CJ
+                            "saleAmountPubCurrency": (make_refund_amount(refund_6.refund_amount) + 1.11).to_string(),
+                            "items": [
+                                {
+                                    "sku": refund_6_sub.plan_id
+                                }
+                            ]
+                        },
                     ]
                 }
             }
@@ -312,11 +374,13 @@ async fn setup_test(
         sub_3,
         sub_4,
         sub_5,
+        sub_6,
         refund_1,
         refund_2,
         refund_3,
         refund_4,
         refund_5,
+        refund_6,
         required_query,
         response_body,
     }
@@ -375,6 +439,7 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
     let sub_3 = test_setup.sub_3;
     let sub_4 = test_setup.sub_4;
     let sub_5 = test_setup.sub_5;
+    let sub_6 = test_setup.sub_6;
     let mock_cj = MockServer::start().await;
     let response = ResponseTemplate::new(200).set_body_json(test_setup.response_body);
     Mock::given(path("/"))
@@ -415,20 +480,26 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
         .fetch_one_by_id(&sub_5.id)
         .await
         .expect("Could not get sub");
+    let sub_6_updated = sub_model
+        .fetch_one_by_id(&sub_6.id)
+        .await
+        .expect("Could not get sub");
 
-    println!("Testing sub: {}", sub_1_updated.id);
-    assert_eq!(sub_1_updated.get_status().unwrap(), Status::CJReceived);
-    let updated_history = sub_1_updated.get_status_history().unwrap();
-    assert_eq!(updated_history.entries.len(), 3);
-    assert_eq!(
-        updated_history.entries[2],
-        StatusHistoryEntry {
-            status: Status::CJReceived,
-            t: now
-        }
-    );
+    for found_sub in [&sub_1_updated, &sub_6_updated] {
+        println!("Testing found sub: {}", found_sub.id);
+        assert_eq!(found_sub.get_status().unwrap(), Status::CJReceived);
+        let updated_history = found_sub.get_status_history().unwrap();
+        assert_eq!(updated_history.entries.len(), 3);
+        assert_eq!(
+            updated_history.entries[2],
+            StatusHistoryEntry {
+                status: Status::CJReceived,
+                t: now
+            }
+        );
+    }
     for not_found_sub in [&sub_2_updated, &sub_3_updated, &sub_4_updated] {
-        println!("Testing sub: {}", not_found_sub.id);
+        println!("Testing not found sub: {}", not_found_sub.id);
         assert_eq!(not_found_sub.get_status().unwrap(), Status::CJNotReceived);
         let updated_history = not_found_sub.get_status_history().unwrap();
         assert_eq!(updated_history.entries.len(), 3);
@@ -441,7 +512,7 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
         );
     }
     // Leave unchanged as we'll try again to see if the report comes through
-    println!("Testing sub: {}", sub_5_updated.id);
+    println!("Testing not yet sub: {}", sub_5_updated.id);
     assert_eq!(sub_5_updated.get_status().unwrap(), Status::Reported);
     let updated_history = sub_5_updated.get_status_history().unwrap();
     assert_eq!(updated_history.entries.len(), 2);
@@ -461,6 +532,7 @@ async fn test_correct_and_incorrectly_received_refunds_are_handled_correctly() {
     let refund_3 = test_setup.refund_3;
     let refund_4 = test_setup.refund_4;
     let refund_5 = test_setup.refund_5;
+    let refund_6 = test_setup.refund_6;
     let mock_cj = MockServer::start().await;
     let response = ResponseTemplate::new(200).set_body_json(test_setup.response_body);
     Mock::given(path("/"))
@@ -501,20 +573,26 @@ async fn test_correct_and_incorrectly_received_refunds_are_handled_correctly() {
         .fetch_one_by_refund_id(&refund_5.refund_id)
         .await
         .expect("Could not get refund");
+    let refund_6_updated = refund_model
+        .fetch_one_by_refund_id(&refund_6.refund_id)
+        .await
+        .expect("Could not get refund");
 
-    println!("Testing refund: {}", refund_1_updated.id);
-    assert_eq!(refund_1_updated.get_status().unwrap(), Status::CJReceived);
-    let updated_history = refund_1_updated.get_status_history().unwrap();
-    assert_eq!(updated_history.entries.len(), 3);
-    assert_eq!(
-        updated_history.entries[2],
-        StatusHistoryEntry {
-            status: Status::CJReceived,
-            t: now
-        }
-    );
+    for found_refund in [&refund_1_updated, &refund_6_updated] {
+        println!("Testing found refund: {}", found_refund.id);
+        assert_eq!(found_refund.get_status().unwrap(), Status::CJReceived);
+        let updated_history = found_refund.get_status_history().unwrap();
+        assert_eq!(updated_history.entries.len(), 3);
+        assert_eq!(
+            updated_history.entries[2],
+            StatusHistoryEntry {
+                status: Status::CJReceived,
+                t: now
+            }
+        );
+    }
     for not_found_refund in [&refund_2_updated, &refund_3_updated, &refund_4_updated] {
-        println!("Testing refund: {}", not_found_refund.id);
+        println!("Testing not found refund: {}", not_found_refund.id);
         assert_eq!(
             not_found_refund.get_status().unwrap(),
             Status::CJNotReceived
@@ -530,7 +608,7 @@ async fn test_correct_and_incorrectly_received_refunds_are_handled_correctly() {
         );
     }
     // Leave unchanged as we'll try again to see if the report comes through
-    println!("Testing refund: {}", refund_5_updated.id);
+    println!("Testing not yet refund: {}", refund_5_updated.id);
     assert_eq!(refund_5_updated.get_status().unwrap(), Status::Reported);
     let updated_history = refund_5_updated.get_status_history().unwrap();
     assert_eq!(updated_history.entries.len(), 2);
