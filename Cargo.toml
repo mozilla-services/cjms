@@ -32,6 +32,7 @@ path = "src/bin/verify_reports.rs"
 [lib]
 name = "lib"
 path = "src/lib/mod.rs"
+doctest = false
 
 [dependencies]
 actix-cors = "0.6.0"
