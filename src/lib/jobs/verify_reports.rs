@@ -281,11 +281,21 @@ pub async fn verify_reports_with_cj(
                 );
                 // Verify the details are correct.
                 let record = &refund_record[0];
-                let correct = (record.correction_reason
-                    == Some(String::from("RETURNED_MERCHANDISE")))
-                    && (record.items[0].sku == related_sub.plan_id)
-                    && (record.sale_amount_pub_currency
-                        == convert_amount_to_decimal(-refund.refund_amount));
+                let reason_correct =
+                    record.correction_reason == Some(String::from("RETURNED_MERCHANDISE"));
+                let plan_id_correct = record.items[0].sku == related_sub.plan_id;
+                let amount_correct = match related_sub.plan_currency.to_lowercase().as_str() {
+                    "usd" => {
+                        record.sale_amount_pub_currency
+                            == convert_amount_to_decimal(-refund.refund_amount)
+                    }
+                    _ => {
+                        // We do not check in non-USD cases because CJ sends us back an amount that
+                        // they've converted from our amount to USD at an unknown
+                        true
+                    }
+                };
+                let correct = reason_correct && plan_id_correct && amount_correct;
                 match correct {
                     true => {
                         info_and_incr!(
