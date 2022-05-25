@@ -157,7 +157,7 @@ pub async fn verify_reports_with_cj(
                     }
                     _ => {
                         // We do not check in non-USD cases because CJ sends us back an amount that
-                        // they've converted from our amount to USD at an unknown
+                        // they've converted from our amount to USD at an unknown exchange rate.
                         true
                     }
                 };
@@ -291,7 +291,7 @@ pub async fn verify_reports_with_cj(
                     }
                     _ => {
                         // We do not check in non-USD cases because CJ sends us back an amount that
-                        // they've converted from our amount to USD at an unknown
+                        // they've converted from our amount to USD at an unknown exchange rate.
                         true
                     }
                 };
