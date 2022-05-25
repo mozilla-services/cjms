@@ -74,7 +74,7 @@ async fn setup_test(
     sub_5.update_status(Status::Reported);
     sub_5.set_status_t(Some(now - Duration::hours(35)));
     sub_5.plan_currency = "usd".to_string();
-    // Sub 6 - EURO - Reported, expect to have been received by CJ - It's a Euro subscrtiption, so the amount comes back different from CJ.
+    // Sub 6 - EURO - Reported, expect to have been received by CJ - It's a Euro subscription, so the amount comes back different from CJ.
     let mut sub_6 = make_fake_sub();
     sub_6.update_status(Status::Reported);
     sub_6.plan_amount = 5988;
