@@ -1,2 +1,3 @@
 [profile.default]
 retries = 5
+fail-fast = false

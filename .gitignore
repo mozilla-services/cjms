@@ -1,6 +1,9 @@
 settings.yaml
 version.yaml
 
+# Coverage
+lcov.info
+
 # Useful when building new sqlx macros
 .env
 
