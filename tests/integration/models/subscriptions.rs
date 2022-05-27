@@ -23,6 +23,7 @@ pub fn make_fake_sub() -> Subscription {
         plan_currency: random_currency_or_country(),
         plan_amount: random_price(),
         country: Some(random_currency_or_country()),
+        coupons: Some(random_ascii_string()),
         aic_id: Some(Uuid::new_v4()),
         aic_expires: Some(OffsetDateTime::now_utc()),
         cj_event_value: Some(random_ascii_string()),

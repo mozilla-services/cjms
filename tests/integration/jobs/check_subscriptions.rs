@@ -131,6 +131,7 @@ async fn check_subscriptions() {
             plan_currency: "usd".to_string(),
             plan_amount: 100,
             country: Some("us - THIS IS SUB 1".to_string()),
+            coupons: None,
             aic_id: Some(aic_1.id),
             aic_expires: Some(aic_1.expires),
             cj_event_value: Some(aic_1.cj_event_value.to_string()),
@@ -159,6 +160,7 @@ async fn check_subscriptions() {
                 "THIS IS AN ENTRY WHOSE AIC IS ALREADY IN THE ARCHIVE TABLE. IT SHOULD SUCCEED"
                     .to_string()
             ),
+            coupons: None,
             aic_id: Some(pre_archived.id),
             aic_expires: Some(pre_archived.expires),
             cj_event_value: Some(pre_archived.cj_event_value),
@@ -184,6 +186,7 @@ async fn check_subscriptions() {
             plan_currency: "usd".to_string(),
             plan_amount: 4794,
             country: None,
+            coupons: None,
             aic_id: Some(aic_4.id),
             aic_expires: Some(aic_4.expires),
             cj_event_value: Some(aic_4.cj_event_value),
