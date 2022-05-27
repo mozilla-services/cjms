@@ -62,8 +62,15 @@ async fn report_subscriptions() {
     let mut sub_5 = make_fake_sub();
     sub_5.aic_expires = None;
     sub_5.flow_id = "5".to_string();
+    // Sub 6 - has a coupon
+    let mut sub_6 = make_fake_sub();
+    sub_6.flow_id = "6".to_string();
+    sub_6.plan_amount = 5388;
+    sub_6.subscription_created =
+        OffsetDateTime::parse("2021-12-25 14:22:33 +0000", "%F %T %z").unwrap();
+    sub_6.aic_expires = Some(OffsetDateTime::now_utc() + Duration::days(10));
 
-    for sub in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5] {
+    for sub in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5, &sub_6] {
         sub_model
             .create_from_sub(sub)
             .await
@@ -139,6 +146,30 @@ async fn report_subscriptions() {
         .expect(1)
         .mount(&mock_cj)
         .await;
+    when_sending_to_cj(&settings)
+        .and(query_param("CJEVENT", sub_6.cj_event_value.unwrap()))
+        .and(query_param(
+            "EVENTTIME",
+            format!(
+                "2021-12-25T14:{}:00.000Z",
+                22 + random_minutes.whole_minutes()
+            ),
+        ))
+        .and(query_param("OID", sub_6.id.to_string()))
+        .and(query_param("CURRENCY", sub_6.plan_currency))
+        .and(query_param("ITEM1", sub_6.plan_id))
+        .and(query_param("AMT1", "53.88"))
+        .and(query_param("QTY1", sub_6.quantity.to_string()))
+        .and(query_param(
+            "CUST_COUNTRY",
+            get_iso_code_3_from_iso_code_2(sub_6.country.as_ref().unwrap()),
+        ))
+        .and(query_param("COUPON", sub_6.coupons.unwrap()))
+        .respond_with(ResponseTemplate::new(200))
+        .up_to_n_times(1)
+        .expect(1)
+        .mount(&mock_cj)
+        .await;
     let mock_cj_client = CJClient::new(&settings, Some(&mock_cj.uri()), None, Some(random_minutes));
 
     // GO
@@ -168,8 +199,12 @@ async fn report_subscriptions() {
         .fetch_one_by_id(&sub_5.id)
         .await
         .expect("Could not get sub");
+    let sub_6_updated = sub_model
+        .fetch_one_by_id(&sub_6.id)
+        .await
+        .expect("Could not get sub");
 
-    for report_sub in [&sub_1_updated, &sub_4_updated] {
+    for report_sub in [&sub_1_updated, &sub_4_updated, &sub_6_updated] {
         println!("Testing sub: {}", report_sub.flow_id);
         assert_eq!(report_sub.get_status().unwrap(), Status::Reported);
         let updated_history = report_sub.get_status_history().unwrap();
