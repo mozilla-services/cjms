@@ -51,6 +51,11 @@
                 "name": "flow_id",
                 "type": "STRING",
                 "mode": "NULLABLE"
+            },
+            {
+                "name": "promotion_codes",
+                "type": "STRING",
+                "mode": "NULLABLE"
             }
         ]
     },
@@ -92,6 +97,9 @@
                 },
                 {
                     "v": "531c7ddd31d17cbb608dcf9c8f40be89fe957c951cb5a2acd7052e6765efafcb"
+                },
+                {
+                    "v": null
                 }
             ]
         },
@@ -126,6 +134,9 @@
                 },
                 {
                     "v": "nulls"
+                },
+                {
+                    "v": null
                 }
             ]
         },
@@ -160,6 +171,9 @@
                 },
                 {
                     "v": "empty strings"
+                },
+                {
+                    "v": null
                 }
             ]
         },
@@ -194,6 +208,9 @@
                 },
                 {
                     "v": "531c7ddd31d17cbb608dcf9c8f40be89fe957c951cb5a2acd7052e6765efafcb"
+                },
+                {
+                    "v": null
                 }
             ]
         },
@@ -228,6 +245,9 @@
                 },
                 {
                     "v": "1a33a74efc6b850f51b832ef5b6290e5f4d28a1dbcffef79b485e188a867c362"
+                },
+                {
+                    "v": null
                 }
             ]
         },
@@ -262,6 +282,9 @@
                 },
                 {
                     "v": "not-in-the-aic-tables"
+                },
+                {
+                    "v": null
                 }
             ]
         },
@@ -296,6 +319,46 @@
                 },
                 {
                     "v": "6d8c011f70525c1d04aaa9813f93a3cdfc7316b95cdc172c48b1d6b7a522d338"
+                },
+                {
+                    "v": null
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "1.653674610012668E9"
+                },
+                {
+                    "v": "1.653673445E9"
+                },
+                {
+                    "v": "sub_1L47CjKb9q6OnNsLz4ekpzfv"
+                },
+                {
+                    "v": "f71b0f8ef98e6d1f6a6b7ce533d58298b2e96b7db53bed198a5ff7ba6f4cda9d"
+                },
+                {
+                    "v": "1"
+                },
+                {
+                    "v": "price_1J0Y1iKb9q6OnNsLXwdOFgDr"
+                },
+                {
+                    "v": "usd"
+                },
+                {
+                    "v": "5389"
+                },
+                {
+                    "v": "us"
+                },
+                {
+                    "v": "5a0d6f9f5ce977481a1ca72cadb64e5fbac48efea347f82bbf5788e1b9b920de"
+                },
+                {
+                    "v": "VPN10"
                 }
             ]
         }
