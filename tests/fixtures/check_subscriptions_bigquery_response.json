@@ -51,131 +51,34 @@
                 "name": "flow_id",
                 "type": "STRING",
                 "mode": "NULLABLE"
+            },
+            {
+                "name": "promotion_codes",
+                "type": "STRING",
+                "mode": "NULLABLE"
             }
         ]
     },
     "jobReference": {
         "projectId": "moz-fx-cjms-nonprod-9a36",
-        "jobId": "job_E61zcQ7D1RrcxQs0KjWou1kC_-xm",
+        "jobId": "job_khzs0C_QEnZ9EUwLMlSrpEk_mtfg",
         "location": "US"
     },
-    "totalRows": "5",
+    "totalRows": "2",
     "rows": [
         {
             "f": [
                 {
-                    "v": "1.647464393672304E9"
+                    "v": "1.653674610012668E9"
                 },
                 {
-                    "v": "1.647450897E9"
+                    "v": "1.653673516E9"
                 },
                 {
-                    "v": "sub_1Ke0R3Kb9q6OnNsLD1OIZsxm"
+                    "v": "sub_1L47DsKb9q6OnNsLUNE59CeZ"
                 },
                 {
-                    "v": "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7"
-                },
-                {
-                    "v": "1"
-                },
-                {
-                    "v": "price_1J0owvKb9q6OnNsLExNhEDXm"
-                },
-                {
-                    "v": "usd"
-                },
-                {
-                    "v": "100"
-                },
-                {
-                    "v": "us - THIS IS SUB 1"
-                },
-                {
-                    "v": "531c7ddd31d17cbb608dcf9c8f40be89fe957c951cb5a2acd7052e6765efafcb"
-                }
-            ]
-        },
-        {
-            "f": [
-                {
-                    "v": null
-                },
-                {
-                    "v": null
-                },
-                {
-                    "v": null
-                },
-                {
-                    "v": null
-                },
-                {
-                    "v": null
-                },
-                {
-                    "v": null
-                },
-                {
-                    "v": null
-                },
-                {
-                    "v": null
-                },
-                {
-                    "v": "THIS IS AN INTENTIONAL TEST - WITH MISSING VALUES AS NULL"
-                },
-                {
-                    "v": "nulls"
-                }
-            ]
-        },
-        {
-            "f": [
-                {
-                    "v": ""
-                },
-                {
-                    "v": ""
-                },
-                {
-                    "v": ""
-                },
-                {
-                    "v": ""
-                },
-                {
-                    "v": ""
-                },
-                {
-                    "v": ""
-                },
-                {
-                    "v": ""
-                },
-                {
-                    "v": ""
-                },
-                {
-                    "v": "THIS IS AN INTENTIONAL TEST - WITH MISSING VALUES AS EMPTY STRINGS"
-                },
-                {
-                    "v": "empty strings"
-                }
-            ]
-        },
-        {
-            "f": [
-                {
-                    "v": "1.647464393672304E9"
-                },
-                {
-                    "v": "1.647450897E9"
-                },
-                {
-                    "v": "sub_1Ke0R3Kb9q6OnNsLD1OIZsxm"
-                },
-                {
-                    "v": "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7"
+                    "v": "6cd20ac97920dda572e0ec7ebf525f550d36865bce1f0ade8d19e02ea9b0b70a"
                 },
                 {
                     "v": "1"
@@ -187,120 +90,58 @@
                     "v": "usd"
                 },
                 {
-                    "v": "100"
-                },
-                {
-                    "v": "THIS IS AN INTENTIONAL DUPE OF SUB_1 THAT SHOULD FAIL TO BE ENTERED"
-                },
-                {
-                    "v": "531c7ddd31d17cbb608dcf9c8f40be89fe957c951cb5a2acd7052e6765efafcb"
-                }
-            ]
-        },
-        {
-            "f": [
-                {
-                    "v": "1.647464393672304E9"
-                },
-                {
-                    "v": "1.647450897E9"
-                },
-                {
-                    "v": "sub_1Ke0R3Kb9q6"
-                },
-                {
-                    "v": "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7"
-                },
-                {
-                    "v": "1"
-                },
-                {
-                    "v": "price_1J0owvKb9q6OnNsLExNhEDXm"
-                },
-                {
-                    "v": "usd"
-                },
-                {
-                    "v": "100"
-                },
-                {
-                    "v": "THIS IS AN ENTRY WHOSE AIC IS ALREADY IN THE ARCHIVE TABLE. IT SHOULD SUCCEED"
-                },
-                {
-                    "v": "1a33a74efc6b850f51b832ef5b6290e5f4d28a1dbcffef79b485e188a867c362"
-                }
-            ]
-        },
-        {
-            "f": [
-                {
-                    "v": "1.647464393672304E9"
-                },
-                {
-                    "v": "1.647450897E9"
-                },
-                {
-                    "v": "sub_not_in_aic_tables"
-                },
-                {
-                    "v": "37794607f1f1a8f9ad310d32d84e606cd8884c0d965d1036316d8ab64892b1f7"
-                },
-                {
-                    "v": "1"
-                },
-                {
-                    "v": "price_1J0owvKb9q6OnNsLExNhEDXm"
-                },
-                {
-                    "v": "usd"
-                },
-                {
-                    "v": "100"
-                },
-                {
-                    "v": "THIS IS A VALID ENTRY BUT THE FLOW ID IS NOT IN THE AIC TABLES. IT SHOULD NOT END UP IN SUBS TABLE."
-                },
-                {
-                    "v": "not-in-the-aic-tables"
-                }
-            ]
-        },
-        {
-            "f": [
-                {
-                    "v": "1.647464393672304E9"
-                },
-                {
-                    "v": "1.647449981E9"
-                },
-                {
-                    "v": "sub_1Ke0CHKb9q6OnNsLe2fSFt2W"
-                },
-                {
-                    "v": "bc5bdcb1c00baf74c85d19413c3889d4653c9a79f5715a45389241ef6fc51ecb"
-                },
-                {
-                    "v": "1"
-                },
-                {
-                    "v": "price_1J0Y12Kb9q6OnNsL4SB2hhmp"
-                },
-                {
-                    "v": "usd"
-                },
-                {
-                    "v": "4794"
+                    "v": "0"
                 },
                 {
                     "v": null
                 },
                 {
-                    "v": "6d8c011f70525c1d04aaa9813f93a3cdfc7316b95cdc172c48b1d6b7a522d338"
+                    "v": "889a2d8d1150dccc3dea2493bac6c791b57720c2bb6d2feaf989dc90d4ed4719"
+                },
+                {
+                    "v": "1OFFVPNALL"
+                }
+            ]
+        },
+        {
+            "f": [
+                {
+                    "v": "1.653674610012668E9"
+                },
+                {
+                    "v": "1.653673445E9"
+                },
+                {
+                    "v": "sub_1L47CjKb9q6OnNsLz4ekpzfv"
+                },
+                {
+                    "v": "f71b0f8ef98e6d1f6a6b7ce533d58298b2e96b7db53bed198a5ff7ba6f4cda9d"
+                },
+                {
+                    "v": "1"
+                },
+                {
+                    "v": "price_1J0Y1iKb9q6OnNsLXwdOFgDr"
+                },
+                {
+                    "v": "usd"
+                },
+                {
+                    "v": "5389"
+                },
+                {
+                    "v": "us"
+                },
+                {
+                    "v": "5a0d6f9f5ce977481a1ca72cadb64e5fbac48efea347f82bbf5788e1b9b920de"
+                },
+                {
+                    "v": "VPN10"
                 }
             ]
         }
     ],
-    "totalBytesProcessed": "462",
+    "totalBytesProcessed": "485",
     "jobComplete": true,
     "cacheHit": false
 }
