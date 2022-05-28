@@ -53,11 +53,17 @@ jobs:
       if: github.head_ref == ''
     - name: Copy settings file
       run: cp settings.yaml.example settings.yaml
-    - name: Setup coverage
-      run: cargo install cargo-tarpaulin --force
-      if: env.cache_loaded == 'false'
+    - name: Install llvm-cov
+      run: rustup toolchain install stable --component llvm-tools-preview && cargo install cargo-llvm-cov --force
+    - name: Install nextest
+      run: curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
     - name: Run tests inc. coverage
-      run: cargo tarpaulin --ignore-tests --skip-clean --avoid-cfg-tarpaulin --coveralls ${{ secrets.COVERALLS_TOKEN }}
+      run: cargo llvm-cov nextest --lcov --output-path lcov.info
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        files: lcov.info
+        verbose: true
   lint:
     runs-on: ubuntu-latest
     steps:

@@ -1,6 +1,6 @@
 # cjms
 
-[![Coverage Status](https://coveralls.io/repos/github/mozilla-services/cjms/badge.svg)](https://coveralls.io/github/mozilla-services/cjms)
+[![Coverage Status](https://codecov.io/gh/mozilla-services/cjms/branch/main/graph/badge.svg?token=JW9B9YTOE0)](https://codecov.io/gh/mozilla-services/cjms)
 [![Security audit](https://github.com/mozilla-services/cjms/actions/workflows/scheduled-audit.yml/badge.svg)](https://github.com/mozilla-services/cjms/actions/workflows/scheduled-audit.yml)
 
 Micro-service supporting VPN activities
@@ -100,9 +100,23 @@ Valid values for environment are: local | dev | stage | prod.
 
 ## Run tests
 
+### With nextest
+
+We have a few flaky tests due to the challenges of mocking time in rust.
+
+Nextest makes your tests run faster and does automatic retries.
+
+Install nextest: https://nexte.st/book/pre-built-binaries.html
+
+Run tests with nextest: `cargo nextest run`
+
+### Without nextest
+
 `cargo test`
 
 Integration tests go under tests folder, unit tests go into associated files under src.
+
+### Test databases
 
 Running the integration tests will cause lots of test databases with the prefix `<your_db_name>_test_<random id>` to be created in
 your local database. If you want to remove them, you can use a bash script along the lines of:
