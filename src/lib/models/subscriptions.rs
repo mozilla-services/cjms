@@ -21,6 +21,7 @@ pub struct PartialSubscription {
     pub plan_currency: String,
     pub plan_amount: i32,
     pub country: Option<String>,
+    pub coupons: Option<String>,
     pub aic_id: Option<Uuid>,
     pub aic_expires: Option<OffsetDateTime>,
     pub cj_event_value: Option<String>,
@@ -40,6 +41,7 @@ pub struct Subscription {
     pub plan_currency: String,
     pub plan_amount: i32,
     pub country: Option<String>,
+    pub coupons: Option<String>,
     pub aic_id: Option<Uuid>,
     pub aic_expires: Option<OffsetDateTime>,
     pub cj_event_value: Option<String>,
@@ -62,6 +64,7 @@ impl PartialEq for Subscription {
         self.plan_currency == other.plan_currency &&
         self.plan_amount == other.plan_amount &&
         self.country == other.country &&
+        self.coupons == other.coupons &&
         self.aic_id == other.aic_id &&
         self.cj_event_value == other.cj_event_value &&
         self.status == other.status
@@ -127,6 +130,7 @@ impl Subscription {
             plan_currency: partial_sub.plan_currency,
             plan_amount: partial_sub.plan_amount,
             country: partial_sub.country,
+            coupons: partial_sub.coupons,
             aic_id: partial_sub.aic_id,
             aic_expires: partial_sub.aic_expires,
             cj_event_value: partial_sub.cj_event_value,
@@ -159,6 +163,7 @@ impl SubscriptionModel<'_> {
                 plan_currency,
                 plan_amount,
                 country,
+                coupons,
                 aic_id,
                 aic_expires,
                 cj_event_value,
@@ -166,7 +171,7 @@ impl SubscriptionModel<'_> {
                 status_t,
                 status_history
              )
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 			RETURNING *",
             sub.id,
             sub.flow_id,
@@ -179,6 +184,7 @@ impl SubscriptionModel<'_> {
             sub.plan_currency,
             sub.plan_amount,
             sub.country,
+            sub.coupons,
             sub.aic_id,
             sub.aic_expires,
             sub.cj_event_value,
@@ -304,6 +310,7 @@ pub mod test_subscriptions {
             plan_currency: random_currency_or_country(),
             plan_amount: random_price(),
             country: Some(random_currency_or_country()),
+            coupons: Some(random_ascii_string()),
             aic_id: Some(Uuid::new_v4()),
             aic_expires: Some(OffsetDateTime::now_utc()),
             cj_event_value: Some(random_ascii_string()),
@@ -324,6 +331,7 @@ pub mod test_subscriptions {
             plan_currency: random_simple_ascii_string(),
             plan_amount: 1,
             country: None,
+            coupons: None,
             aic_id: None,
             aic_expires: None,
             cj_event_value: None,

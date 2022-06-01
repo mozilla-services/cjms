@@ -25,6 +25,9 @@ fn make_subscription_from_bq_row(rs: &ResultSet) -> Result<Subscription, BQError
         plan_currency: rs.require_string_by_name("plan_currency")?,
         plan_amount: rs.require_i32_by_name("plan_amount")?,
         country: rs.get_string_by_name("country")?,
+        coupons: rs
+            .get_string_by_name("promotion_codes")?
+            .map(|x| x.trim().to_string()),
         aic_id: None,
         aic_expires: None,
         cj_event_value: None,

@@ -127,7 +127,8 @@ impl CJClient {
             .append_pair(
                 "CUST_COUNTRY",
                 get_iso_code_3_from_iso_code_2(sub.country.as_ref().unwrap_or(&String::from(""))),
-            );
+            )
+            .append_pair("COUPON", sub.coupons.as_ref().unwrap_or(&String::from("")));
         url_for_sub
     }
 
