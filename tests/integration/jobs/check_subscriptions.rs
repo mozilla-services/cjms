@@ -175,7 +175,7 @@ async fn check_subscriptions() {
         })
     );
     assert_eq!(
-        // Sub three is after all the failure cases in the test fixture should have been handled if 2 is also created.
+        // Sub three is the failure cases in the test fixture. So if error handling is working as expected this happy path case should be fine.
         // TODO - LOGGING - when we add logging we could test for those logs to have been created
         sub_3,
         Subscription::new(PartialSubscription {
