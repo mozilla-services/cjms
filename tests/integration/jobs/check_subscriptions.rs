@@ -50,6 +50,8 @@ async fn check_subscriptions() {
     let sub_happy_2_flow_id = "6d8c011f70525c1d04aaa9813f93a3cdfc7316b95cdc172c48b1d6b7a522d338";
     // Happy path with coupons
     let sub_coupons_flow_id = "5a0d6f9f5ce977481a1ca72cadb64e5fbac48efea347f82bbf5788e1b9b920de";
+    // Coupon has extra spaces
+    let sub_coupon_whitespace_flow_id = "coupon-code-extra-whitespace";
 
     let mut aic_1 = make_fake_aic();
     aic_1.flow_id = sub_happy_flow_id.to_string();
@@ -61,8 +63,10 @@ async fn check_subscriptions() {
     aic_4.flow_id = sub_happy_2_flow_id.to_string();
     let mut aic_5 = make_fake_aic();
     aic_5.flow_id = sub_coupons_flow_id.to_string();
+    let mut aic_6 = make_fake_aic();
+    aic_6.flow_id = sub_coupon_whitespace_flow_id.to_string();
 
-    for aic in [&aic_1, &aic_2, &aic_3, &aic_4, &aic_5] {
+    for aic in [&aic_1, &aic_2, &aic_3, &aic_4, &aic_5, &aic_6] {
         aic_model
             .create_from_aic(aic)
             .await
@@ -105,8 +109,12 @@ async fn check_subscriptions() {
         .fetch_one_by_flow_id(sub_coupons_flow_id)
         .await
         .expect("Failed to get sub 4");
+    let sub_5 = sub_model
+        .fetch_one_by_flow_id(sub_coupon_whitespace_flow_id)
+        .await
+        .expect("Failed to get sub 5");
 
-    for sub in [&sub_1, &sub_2, &sub_3, &sub_4] {
+    for sub in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5] {
         // Expect all aics to be in archive now
         match aic_model.fetch_one_by_flow_id(&sub.flow_id).await {
             Err(sqlx::Error::RowNotFound) => {}
@@ -223,6 +231,31 @@ async fn check_subscriptions() {
             aic_id: Some(aic_5.id),
             aic_expires: Some(aic_5.expires),
             cj_event_value: Some(aic_5.cj_event_value),
+        })
+    );
+    assert_eq!(
+        // Sub five whitespace
+        sub_5,
+        Subscription::new(PartialSubscription {
+            id: sub_5.id, // We can't know this ahead of time
+            flow_id: sub_coupon_whitespace_flow_id.to_string(),
+            subscription_id: "sub_5".to_string(),
+            report_timestamp: date!(2022 - 03 - 16)
+                .with_time(time!(20:59:53))
+                .assume_utc(),
+            subscription_created: date!(2022 - 03 - 16)
+                .with_time(time!(16:59:41))
+                .assume_utc(),
+            fxa_uid: "id_5".to_string(),
+            quantity: 1,
+            plan_id: "price_1J0Y1iKb9q6OnNsLXwdOFgDr".to_string(),
+            plan_currency: "usd".to_string(),
+            plan_amount: 999,
+            country: Some("us".to_string()),
+            coupons: Some("VPN1000".to_string()),
+            aic_id: Some(aic_6.id),
+            aic_expires: Some(aic_6.expires),
+            cj_event_value: Some(aic_6.cj_event_value),
         })
     );
     // Expect to NOT have certain entries from the test fixtures
