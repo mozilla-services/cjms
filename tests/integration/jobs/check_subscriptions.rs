@@ -18,6 +18,7 @@ use uuid::Version;
 use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
 use crate::models::aic::make_fake_aic;
+use crate::models::subscriptions::make_fake_sub;
 use crate::utils::get_test_db_pool;
 
 fn fixture_bigquery_response() -> Value {
@@ -274,6 +275,61 @@ async fn check_subscriptions() {
             }
         }
     }
+
+    // CLEAN UP
+    env::remove_var("BQ_ACCESS_TOKEN");
+}
+
+#[tokio::test]
+#[serial]
+async fn check_subscriptions_when_it_already_exists() {
+    // SETUP
+    let settings = get_settings();
+    let mock_statsd = StatsD::new(&settings);
+    let db_pool = get_test_db_pool().await;
+    let sub_model = SubscriptionModel { db_pool: &db_pool };
+    let aic_model = AICModel { db_pool: &db_pool };
+
+    // Happy path (there is another sub with this flow id to test that the dupe doesn't override)
+    let sub_happy_flow_id = "531c7ddd31d17cbb608dcf9c8f40be89fe957c951cb5a2acd7052e6765efafcb";
+    let mut aic = make_fake_aic();
+    aic.flow_id = sub_happy_flow_id.to_string();
+    let mut sub_saved = make_fake_sub();
+    sub_saved.flow_id = sub_happy_flow_id.to_string();
+    sub_saved.subscription_id = "sub_1Ke0R3Kb9q6OnNsLD1OIZsxm".to_string();
+
+    aic_model
+        .create_from_aic(&aic)
+        .await
+        .expect("Could not create AIC");
+    sub_model
+        .create_from_sub(&sub_saved)
+        .await
+        .expect("Could not create sub");
+
+    // Setup fake bigquery with results to return
+    env::set_var("BQ_ACCESS_TOKEN", "a token");
+    let mock_bq = MockServer::start().await;
+    let bq = BQClient::new("a project", AccessTokenFromEnv {}, Some(&mock_bq.uri())).await;
+    let response = ResponseTemplate::new(200).set_body_json(fixture_bigquery_response());
+    Mock::given(any())
+        .respond_with(response)
+        .mount(&mock_bq)
+        .await;
+
+    // GO
+    fetch_and_process_new_subscriptions(&bq, &db_pool, &mock_statsd).await;
+
+    // ASSERT
+    let sub_updated = sub_model
+        .fetch_one_by_flow_id(sub_happy_flow_id)
+        .await
+        .expect("Failed to get sub");
+
+    // The sub has not been updated with the bigquery data but is the one we originally saved.
+    // This test is making sure that the code that reports a duplicate key violation doesn't barf.
+    // TODO - Actually check that the error we want was logged.
+    assert_eq!(sub_updated, sub_saved);
 
     // CLEAN UP
     env::remove_var("BQ_ACCESS_TOKEN");

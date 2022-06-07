@@ -1,3 +1,4 @@
+use serde::Serialize;
 use serde_json::Value as JsonValue;
 use sqlx::{query, query_as, Error, PgPool};
 use time::OffsetDateTime;
@@ -27,7 +28,7 @@ pub struct PartialSubscription {
     pub cj_event_value: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Subscription {
     pub id: Uuid,
     pub flow_id: String,
