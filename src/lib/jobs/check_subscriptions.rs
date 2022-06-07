@@ -144,7 +144,9 @@ pub async fn fetch_and_process_new_subscriptions(
                             statsd,
                             LogKey::CheckSubscriptionsSubscriptionCreateDuplicateKeyViolation,
                             error = e,
-                            sub_from_bigquery_not_saved = serde_json::to_string(&sub).unwrap_or(format!("{}", &sub.id)).as_str(),
+                            sub_from_bigquery_not_saved = serde_json::to_string(&sub)
+                                .unwrap_or(format!("{}", &sub.id))
+                                .as_str(),
                             "Duplicate key violation"
                         );
                     } else {
