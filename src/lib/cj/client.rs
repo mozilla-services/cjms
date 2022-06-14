@@ -30,6 +30,7 @@ pub struct CommissionDetailRecord {
     pub original: bool,
     pub order_id: String,
     pub correction_reason: Option<String>,
+    pub coupon: Option<String>,
     #[serde(deserialize_with = "f32_from_str")]
     pub sale_amount_pub_currency: f32,
     pub items: Vec<CommissionDetailItem>,
@@ -159,6 +160,7 @@ impl CJClient {
                 original
                 orderId
                 correctionReason
+                coupon
                 saleAmountPubCurrency
                 items {{
                     sku

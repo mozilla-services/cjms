@@ -27,12 +27,14 @@ struct VerifyReportsTestSetup {
     sub_4: Subscription,
     sub_5: Subscription,
     sub_6: Subscription,
+    sub_7: Subscription,
     refund_1: Refund,
     refund_2: Refund,
     refund_3: Refund,
     refund_4: Refund,
     refund_5: Refund,
     refund_6: Refund,
+    refund_7: Refund,
     required_query: String,
     response_body: Value,
 }
@@ -79,8 +81,11 @@ async fn setup_test(
     sub_6.update_status(Status::Reported);
     sub_6.plan_amount = 5988;
     sub_6.plan_currency = "eur".to_string();
+    // Sub 7 - Coupon doesn't match.
+    let mut sub_7 = make_fake_sub();
+    sub_7.update_status(Status::Reported);
 
-    for (i, sub) in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5, &sub_6]
+    for (i, sub) in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5, &sub_6, &sub_7]
         .iter()
         .enumerate()
     {
@@ -138,9 +143,15 @@ async fn setup_test(
     refund_6_sub.subscription_id = refund_6.subscription_id.clone();
     refund_6_sub.plan_amount = refund_6.refund_amount;
     refund_6_sub.plan_currency = "eur".to_string();
+    // Refund 7 - Coupon doesn't match
+    let mut refund_7 = make_fake_refund();
+    refund_7.update_status(Status::Reported);
+    let mut refund_7_sub = make_fake_sub();
+    refund_7_sub.subscription_id = refund_7.subscription_id.clone();
+    refund_7_sub.plan_amount = refund_7.refund_amount;
 
     for refund in [
-        &refund_1, &refund_2, &refund_3, &refund_4, &refund_5, &refund_6,
+        &refund_1, &refund_2, &refund_3, &refund_4, &refund_5, &refund_6, &refund_7,
     ] {
         refund_model
             .create_from_refund(refund)
@@ -154,6 +165,7 @@ async fn setup_test(
         &refund_4_sub,
         &refund_5_sub,
         &refund_6_sub,
+        &refund_7_sub,
     ]
     .iter()
     .enumerate()
@@ -177,6 +189,7 @@ async fn setup_test(
                 original
                 orderId
                 correctionReason
+                coupon
                 saleAmountPubCurrency
                 items {{
                     sku
@@ -198,6 +211,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": sub_1.id,
                             "correctionReason": null,
+                            "coupon": sub_1.coupons,
                             "saleAmountPubCurrency": convert_amount_to_decimal(sub_1.plan_amount).to_string(),
                             "items": [
                                 {
@@ -210,6 +224,7 @@ async fn setup_test(
                             "original": false,
                             "orderId": sub_1.id,
                             "correctionReason": "RETURNED_MERCHANDISE",
+                            "coupon": sub_1.coupons,
                             "saleAmountPubCurrency": make_refund_amount(sub_1.plan_amount).to_string(),
                             "items": [
                                 {
@@ -221,6 +236,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": sub_2.id,
                             "correctionReason": null,
+                            "coupon": sub_2.coupons,
                             "saleAmountPubCurrency": "-999.99",
                             "items": [
                                 {
@@ -232,6 +248,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": sub_3.id,
                             "correctionReason": null,
+                            "coupon": sub_3.coupons,
                             "saleAmountPubCurrency": convert_amount_to_decimal(sub_3.plan_amount).to_string(),
                             "items": [
                                 {
@@ -243,6 +260,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": "WRONGID",
                             "correctionReason": null,
+                            "coupon": sub_4.coupons,
                             "saleAmountPubCurrency": convert_amount_to_decimal(sub_4.plan_amount).to_string(),
                             "items": [
                                 {
@@ -254,6 +272,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": "WRONGID",
                             "correctionReason": null,
+                            "coupon": sub_5.coupons,
                             "saleAmountPubCurrency": convert_amount_to_decimal(sub_5.plan_amount).to_string(),
                             "items": [
                                 {
@@ -265,6 +284,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": sub_6.id,
                             "correctionReason": null,
+                            "coupon": sub_6.coupons,
                             // Adding an arbitrary amount because it was a euro purchase so we get a different amount back from CJ
                             "saleAmountPubCurrency": (convert_amount_to_decimal(sub_6.plan_amount) + 1.11).to_string(),
                             "items": [
@@ -273,15 +293,29 @@ async fn setup_test(
                                 }
                             ]
                         },
+                        {
+                            "original": true,
+                            "orderId": sub_7.id,
+                            "correctionReason": null,
+                            "coupon": "WRONG COUPON",
+                            "saleAmountPubCurrency": convert_amount_to_decimal(sub_7.plan_amount).to_string(),
+                            "items": [
+                                {
+                                    "sku": sub_7.plan_id
+                                }
+                            ]
+                        },
                         // ------------
                         // ------------
                         // ------------
                         // ------------ REFUND ENTRIES
-                        // This subscription exists so that we can check that the refund check correctly picks out original: false record
+                        // This subscription enry exists so that we can check that the refund check correctly picks out original: false record
+                        // But we do not need the other original: true records to do our tests
                         {
                             "original": true,
                             "orderId": refund_1_sub.id,
                             "correctionReason": null,
+                            "coupon": refund_1_sub.coupons,
                             "saleAmountPubCurrency": convert_amount_to_decimal(refund_1_sub.plan_amount).to_string(),
                             "items": [
                                 {
@@ -293,6 +327,7 @@ async fn setup_test(
                             "original": false,
                             "orderId": refund_1_sub.id,
                             "correctionReason": "RETURNED_MERCHANDISE",
+                            "coupon": refund_1_sub.coupons,
                             "saleAmountPubCurrency": make_refund_amount(refund_1.refund_amount).to_string(),
                             "items": [
                                 {
@@ -304,6 +339,7 @@ async fn setup_test(
                             "original": false,
                             "orderId": refund_2_sub.id,
                             "correctionReason": "RETURNED_MERCHANDISE",
+                            "coupon": refund_2_sub.coupons,
                             "saleAmountPubCurrency": "999.99",
                             "items": [
                                 {
@@ -315,6 +351,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": refund_3_sub.id,
                             "correctionReason": "RETURNED_MERCHANDISE",
+                            "coupon": refund_3_sub.coupons,
                             "saleAmountPubCurrency": make_refund_amount(refund_3.refund_amount).to_string(),
                             "items": [
                                 {
@@ -326,6 +363,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": "WRONGID",
                             "correctionReason": "RETURNED_MERCHANDISE",
+                            "coupon": refund_4_sub.coupons,
                             "saleAmountPubCurrency": make_refund_amount(refund_4.refund_amount).to_string(),
                             "items": [
                                 {
@@ -337,6 +375,7 @@ async fn setup_test(
                             "original": true,
                             "orderId": "WRONGID",
                             "correctionReason": "RETURNED_MERCHANDISE",
+                            "coupon": refund_5_sub.coupons,
                             "saleAmountPubCurrency": make_refund_amount(refund_5.refund_amount).to_string(),
                             "items": [
                                 {
@@ -345,11 +384,12 @@ async fn setup_test(
                             ]
                         },
                         {
-                            "original": true,
+                            "original": false,
                             "orderId": refund_6_sub.id,
-                            "correctionReason": null,
+                            "correctionReason": "RETURNED_MERCHANDISE",
+                            "coupon": refund_6_sub.coupons,
                             // Adding an arbitrary amount because it was a euro purchase so we get a different amount back from CJ
-                            "saleAmountPubCurrency": (convert_amount_to_decimal(refund_6_sub.plan_amount) + 1.11).to_string(),
+                            "saleAmountPubCurrency": (make_refund_amount(refund_6.refund_amount) + 1.11).to_string(),
                             "items": [
                                 {
                                     "sku": refund_6_sub.plan_id
@@ -358,13 +398,13 @@ async fn setup_test(
                         },
                         {
                             "original": false,
-                            "orderId": refund_6_sub.id,
+                            "orderId": refund_7_sub.id,
                             "correctionReason": "RETURNED_MERCHANDISE",
-                            // Adding an arbitrary amount because it was a euro purchase so we get a different amount back from CJ
-                            "saleAmountPubCurrency": (make_refund_amount(refund_6.refund_amount) + 1.11).to_string(),
+                            "coupon": "WRONG COUPON",
+                            "saleAmountPubCurrency": make_refund_amount(refund_7.refund_amount).to_string(),
                             "items": [
                                 {
-                                    "sku": refund_6_sub.plan_id
+                                    "sku": refund_7_sub.plan_id
                                 }
                             ]
                         },
@@ -380,12 +420,14 @@ async fn setup_test(
         sub_4,
         sub_5,
         sub_6,
+        sub_7,
         refund_1,
         refund_2,
         refund_3,
         refund_4,
         refund_5,
         refund_6,
+        refund_7,
         required_query,
         response_body,
     }
@@ -445,6 +487,7 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
     let sub_4 = test_setup.sub_4;
     let sub_5 = test_setup.sub_5;
     let sub_6 = test_setup.sub_6;
+    let sub_7 = test_setup.sub_7;
     let mock_cj = MockServer::start().await;
     let response = ResponseTemplate::new(200).set_body_json(test_setup.response_body);
     Mock::given(path("/"))
@@ -489,6 +532,10 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
         .fetch_one_by_id(&sub_6.id)
         .await
         .expect("Could not get sub");
+    let sub_7_updated = sub_model
+        .fetch_one_by_id(&sub_7.id)
+        .await
+        .expect("Could not get sub");
 
     for found_sub in [&sub_1_updated, &sub_6_updated] {
         println!("Testing found sub: {}", found_sub.id);
@@ -503,7 +550,12 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
             }
         );
     }
-    for not_found_sub in [&sub_2_updated, &sub_3_updated, &sub_4_updated] {
+    for not_found_sub in [
+        &sub_2_updated,
+        &sub_3_updated,
+        &sub_4_updated,
+        &sub_7_updated,
+    ] {
         println!("Testing not found sub: {}", not_found_sub.id);
         assert_eq!(not_found_sub.get_status().unwrap(), Status::CJNotReceived);
         let updated_history = not_found_sub.get_status_history().unwrap();
@@ -538,6 +590,7 @@ async fn test_correct_and_incorrectly_received_refunds_are_handled_correctly() {
     let refund_4 = test_setup.refund_4;
     let refund_5 = test_setup.refund_5;
     let refund_6 = test_setup.refund_6;
+    let refund_7 = test_setup.refund_7;
     let mock_cj = MockServer::start().await;
     let response = ResponseTemplate::new(200).set_body_json(test_setup.response_body);
     Mock::given(path("/"))
@@ -582,6 +635,10 @@ async fn test_correct_and_incorrectly_received_refunds_are_handled_correctly() {
         .fetch_one_by_refund_id(&refund_6.refund_id)
         .await
         .expect("Could not get refund");
+    let refund_7_updated = refund_model
+        .fetch_one_by_refund_id(&refund_7.refund_id)
+        .await
+        .expect("Could not get refund");
 
     for found_refund in [&refund_1_updated, &refund_6_updated] {
         println!("Testing found refund: {}", found_refund.id);
@@ -596,7 +653,12 @@ async fn test_correct_and_incorrectly_received_refunds_are_handled_correctly() {
             }
         );
     }
-    for not_found_refund in [&refund_2_updated, &refund_3_updated, &refund_4_updated] {
+    for not_found_refund in [
+        &refund_2_updated,
+        &refund_3_updated,
+        &refund_4_updated,
+        &refund_7_updated,
+    ] {
         println!("Testing not found refund: {}", not_found_refund.id);
         assert_eq!(
             not_found_refund.get_status().unwrap(),
@@ -643,6 +705,7 @@ async fn test_correct_when_only_one_sub() {
                             "original": true,
                             "orderId": sub_1.id,
                             "correctionReason": null,
+                            "coupon": sub_1.coupons,
                             "saleAmountPubCurrency": convert_amount_to_decimal(sub_1.plan_amount).to_string(),
                             "items": [
                                 {
@@ -706,6 +769,7 @@ async fn test_correct_when_only_one_refund() {
                             "original": false,
                             "orderId": related_sub.id,
                             "correctionReason": "RETURNED_MERCHANDISE",
+                            "coupon": related_sub.coupons,
                             "saleAmountPubCurrency": make_refund_amount(refund_1.refund_amount).to_string(),
                             "items": [
                                 {
