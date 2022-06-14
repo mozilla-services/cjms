@@ -150,6 +150,7 @@ pub async fn verify_reports_with_cj(
                 // Verify the details are correct.
                 let record = &sub_record[0];
                 let plan_id_correct = record.items[0].sku == sub.plan_id;
+                let coupon_correct = record.coupon == sub.coupons;
                 let amount_correct = match sub.plan_currency.to_lowercase().as_str() {
                     "usd" => {
                         record.sale_amount_pub_currency
@@ -161,7 +162,7 @@ pub async fn verify_reports_with_cj(
                         true
                     }
                 };
-                let correct = plan_id_correct && amount_correct;
+                let correct = plan_id_correct && amount_correct && coupon_correct;
                 match correct {
                     true => {
                         info_and_incr!(
@@ -284,6 +285,8 @@ pub async fn verify_reports_with_cj(
                 let reason_correct =
                     record.correction_reason == Some(String::from("RETURNED_MERCHANDISE"));
                 let plan_id_correct = record.items[0].sku == related_sub.plan_id;
+                let coupon_correct = record.coupon == related_sub.coupons;
+                println!("record: {:?}, related_sub: {:?}", record, related_sub);
                 let amount_correct = match related_sub.plan_currency.to_lowercase().as_str() {
                     "usd" => {
                         record.sale_amount_pub_currency
@@ -295,7 +298,7 @@ pub async fn verify_reports_with_cj(
                         true
                     }
                 };
-                let correct = reason_correct && plan_id_correct && amount_correct;
+                let correct = reason_correct && plan_id_correct && amount_correct && coupon_correct;
                 match correct {
                     true => {
                         info_and_incr!(
