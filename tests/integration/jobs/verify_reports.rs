@@ -143,7 +143,7 @@ async fn setup_test(
     refund_6_sub.subscription_id = refund_6.subscription_id.clone();
     refund_6_sub.plan_amount = refund_6.refund_amount;
     refund_6_sub.plan_currency = "eur".to_string();
-    // Refund 7 - With coupon
+    // Refund 7 - Coupon doesn't match
     let mut refund_7 = make_fake_refund();
     refund_7.update_status(Status::Reported);
     let mut refund_7_sub = make_fake_sub();
