@@ -286,7 +286,6 @@ pub async fn verify_reports_with_cj(
                     record.correction_reason == Some(String::from("RETURNED_MERCHANDISE"));
                 let plan_id_correct = record.items[0].sku == related_sub.plan_id;
                 let coupon_correct = record.coupon == related_sub.coupons;
-                println!("record: {:?}, related_sub: {:?}", record, related_sub);
                 let amount_correct = match related_sub.plan_currency.to_lowercase().as_str() {
                     "usd" => {
                         record.sale_amount_pub_currency
