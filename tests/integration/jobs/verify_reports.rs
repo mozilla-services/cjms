@@ -85,7 +85,6 @@ async fn setup_test(
     let mut sub_7 = make_fake_sub();
     sub_7.update_status(Status::Reported);
 
-
     for (i, sub) in [&sub_1, &sub_2, &sub_3, &sub_4, &sub_5, &sub_6, &sub_7]
         .iter()
         .enumerate()
@@ -551,7 +550,12 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
             }
         );
     }
-    for not_found_sub in [&sub_2_updated, &sub_3_updated, &sub_4_updated, &sub_7_updated] {
+    for not_found_sub in [
+        &sub_2_updated,
+        &sub_3_updated,
+        &sub_4_updated,
+        &sub_7_updated,
+    ] {
         println!("Testing not found sub: {}", not_found_sub.id);
         assert_eq!(not_found_sub.get_status().unwrap(), Status::CJNotReceived);
         let updated_history = not_found_sub.get_status_history().unwrap();
@@ -649,7 +653,12 @@ async fn test_correct_and_incorrectly_received_refunds_are_handled_correctly() {
             }
         );
     }
-    for not_found_refund in [&refund_2_updated, &refund_3_updated, &refund_4_updated, &refund_7_updated] {
+    for not_found_refund in [
+        &refund_2_updated,
+        &refund_3_updated,
+        &refund_4_updated,
+        &refund_7_updated,
+    ] {
         println!("Testing not found refund: {}", not_found_refund.id);
         assert_eq!(
             not_found_refund.get_status().unwrap(),
