@@ -11,6 +11,7 @@ pub mod version;
 #[cfg(test)]
 pub mod test_utils {
     use fake::{Fake, StringFaker};
+    use secrecy::Secret;
 
     use crate::settings::Settings;
 
@@ -41,19 +42,19 @@ pub mod test_utils {
         Settings {
             aic_expiration_days: 2,
             authentication: "_".to_string(),
-            cj_api_access_token: "_".to_string(),
+            cj_api_access_token: Secret::new("_".to_string()),
             cj_cid: "_".to_string(),
             cj_sftp_user: "_".to_string(),
             cj_signature: "_".to_string(),
             cj_subid: "_".to_string(),
             cj_type: "_".to_string(),
-            database_url: "_".to_string(),
+            database_url: Secret::new("_".to_string()),
             environment: "_".to_string(),
             gcp_project: "_".to_string(),
             host: "_".to_string(),
             log_level: "_".to_string(),
             port: 1111,
-            sentry_dsn: "_".to_string(),
+            sentry_dsn: Secret::new("_".to_string()),
             sentry_environment: "_".to_string(),
             statsd_host: "_".to_string(),
             statsd_port: 2222,

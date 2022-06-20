@@ -1,4 +1,5 @@
 use cadence::{MetricClient, StatsdClient, UdpMetricSink};
+use secrecy::ExposeSecret;
 use sentry::ClientInitGuard;
 use sentry_tracing::EventFilter;
 use std::borrow::Cow;
@@ -200,7 +201,7 @@ pub fn init_sentry(settings: &Settings) -> ClientInitGuard {
     let version_data = read_version(VERSION_FILE);
 
     sentry::init((
-        settings.sentry_dsn.clone(),
+        settings.sentry_dsn.expose_secret().clone(),
         sentry::ClientOptions {
             environment: Some(Cow::from(settings.environment.clone())),
             // Suppress breadcrumbs.
