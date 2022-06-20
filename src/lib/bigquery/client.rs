@@ -83,7 +83,6 @@ pub trait GetAccessToken {
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 struct WorkloadIdentityAccessToken {
-    // TODO should this be made a secret?
     pub access_token: Secret<String>,
     #[allow(dead_code)]
     // The following are used for serialization in production only
