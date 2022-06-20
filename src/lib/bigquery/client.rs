@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 use serde_json::json;
 
@@ -28,7 +29,7 @@ fn use_env(settings: &Settings) -> bool {
 pub struct BQClient {
     domain: String,
     pub project: String,
-    access_token: String,
+    access_token: Secret<String>,
     client: reqwest::Client,
 }
 
@@ -38,7 +39,7 @@ impl BQClient {
         BQClient {
             domain: domain.to_string(),
             project: project.to_string(),
-            access_token: token.get().await,
+            access_token: Secret::new(token.get().await),
             client: reqwest::Client::new(),
         }
     }
@@ -52,7 +53,10 @@ impl BQClient {
         let resp = self
             .client
             .post(self.query_api_url().as_str())
-            .header("Authorization", format!("Bearer {}", self.access_token))
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.access_token.expose_secret()),
+            )
             .json(&json!({
                 "kind": "bigquery#queryResponse",
                 "query": query,
@@ -76,6 +80,7 @@ pub trait GetAccessToken {
     async fn get(&self) -> String;
 }
 
+// TODO secret exposure?
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 struct WorkloadIdentityAccessToken {
@@ -227,7 +232,7 @@ mod tests {
             .expect_get()
             .returning(|| access_token.to_string());
         let bq = BQClient::new(&random_simple_ascii_string(), mock_token, None).await;
-        assert_eq!(bq.access_token, access_token);
+        assert_eq!(bq.access_token.expose_secret(), access_token);
     }
 
     #[tokio::test]
@@ -254,7 +259,7 @@ mod tests {
         std::env::set_var("BQ_ACCESS_TOKEN", access_token);
         let token_from_env = AccessTokenFromEnv {};
         let bq = BQClient::new(&random_simple_ascii_string(), token_from_env, None).await;
-        assert_eq!(bq.access_token, access_token);
+        assert_eq!(bq.access_token.expose_secret(), access_token);
         std::env::remove_var("BQ_ACCESS_TOKEN");
     }
 

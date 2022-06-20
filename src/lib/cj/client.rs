@@ -1,6 +1,7 @@
 use crate::{info, models::subscriptions::Subscription, settings::Settings, telemetry::LogKey};
 use rand::{thread_rng, Rng};
 use reqwest::{Client, Error, Response, Url};
+use secrecy::{ExposeSecret, Secret};
 use serde::{de, Deserialize, Deserializer};
 use serde_json::{json, Value};
 use time::{Duration, OffsetDateTime};
@@ -14,7 +15,7 @@ pub struct CJClient {
     cj_type: String,
     cj_signature: String,
     commission_detail_endpoint: Url,
-    commission_detail_api_token: String,
+    commission_detail_api_token: Secret<String>,
     s2s_endpoint: Url,
     random_minutes: Duration,
 }
@@ -178,7 +179,10 @@ impl CJClient {
             .post(self.commission_detail_endpoint.clone())
             .header(
                 "Authorization",
-                format!("Bearer {}", self.commission_detail_api_token),
+                format!(
+                    "Bearer {}",
+                    self.commission_detail_api_token.expose_secret()
+                ),
             )
             .json(&json!({ "query": query }))
             .send()
