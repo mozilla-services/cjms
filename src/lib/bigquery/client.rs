@@ -39,7 +39,7 @@ impl BQClient {
         BQClient {
             domain: domain.to_string(),
             project: project.to_string(),
-            access_token: Secret::new(token.get().await),
+            access_token: token.get().await,
             client: reqwest::Client::new(),
         }
     }
@@ -77,14 +77,14 @@ impl BQClient {
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait GetAccessToken {
-    async fn get(&self) -> String;
+    async fn get(&self) -> Secret<String>;
 }
 
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 struct WorkloadIdentityAccessToken {
     // TODO should this be made a secret?
-    pub access_token: String,
+    pub access_token: Secret<String>,
     #[allow(dead_code)]
     // The following are used for serialization in production only
     expires_in: i32,
@@ -95,7 +95,7 @@ pub struct AccessTokenFromMetadata {}
 #[async_trait]
 impl GetAccessToken for AccessTokenFromMetadata {
     // GCP docs on how this works https://cloud.google.com/run/docs/securing/service-identity#fetching_identity_and_access_tokens_using_the_metadata_server
-    async fn get(&self) -> String {
+    async fn get(&self) -> Secret<String> {
         let client = reqwest::Client::new();
         let resp = client
             .get("http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token")
@@ -128,8 +128,8 @@ impl GetAccessToken for AccessTokenFromMetadata {
 pub struct AccessTokenFromEnv {}
 #[async_trait]
 impl GetAccessToken for AccessTokenFromEnv {
-    async fn get(&self) -> String {
-        std::env::var("BQ_ACCESS_TOKEN").expect("BQ_ACCESS_TOKEN not found in env.")
+    async fn get(&self) -> Secret<String> {
+        Secret::new(std::env::var("BQ_ACCESS_TOKEN").expect("BQ_ACCESS_TOKEN not found in env."))
     }
 }
 
@@ -199,7 +199,7 @@ mod tests {
         let mut mock_token = MockGetAccessToken::new();
         mock_token
             .expect_get()
-            .returning(random_simple_ascii_string);
+            .returning(|| Secret::new(random_simple_ascii_string()));
         let project = random_simple_ascii_string();
         let bq = BQClient::new(&project, mock_token, None).await;
         assert_eq!(
@@ -216,7 +216,7 @@ mod tests {
         let mut mock_token = MockGetAccessToken::new();
         mock_token
             .expect_get()
-            .returning(random_simple_ascii_string);
+            .returning(|| Secret::new(random_simple_ascii_string()));
         let bq = BQClient::new("its_a_project", mock_token, Some("http://localhost")).await;
         assert_eq!(
             bq.query_api_url(),
@@ -230,7 +230,7 @@ mod tests {
         let mut mock_token = MockGetAccessToken::new();
         mock_token
             .expect_get()
-            .returning(|| access_token.to_string());
+            .returning(|| Secret::new(access_token.to_string()));
         let bq = BQClient::new(&random_simple_ascii_string(), mock_token, None).await;
         assert_eq!(bq.access_token.expose_secret(), access_token);
     }
@@ -269,7 +269,7 @@ mod tests {
         let mut mock_token = MockGetAccessToken::new();
         mock_token
             .expect_get()
-            .returning(|| access_token.to_string());
+            .returning(|| Secret::new(access_token.to_string()));
         let mock_google = MockServer::start().await;
         let bq = BQClient::new(
             &random_simple_ascii_string(),
@@ -309,7 +309,7 @@ mod tests {
         let mut mock_token = MockGetAccessToken::new();
         mock_token
             .expect_get()
-            .returning(random_simple_ascii_string);
+            .returning(|| Secret::new(random_simple_ascii_string()));
         let mock_google = MockServer::start().await;
         let bq = BQClient::new(
             &random_simple_ascii_string(),
@@ -333,7 +333,7 @@ mod tests {
         let mut mock_token = MockGetAccessToken::new();
         mock_token
             .expect_get()
-            .returning(random_simple_ascii_string);
+            .returning(|| Secret::new(random_simple_ascii_string()));
         let mock_google = MockServer::start().await;
         let bq = BQClient::new(
             &random_simple_ascii_string(),
@@ -353,7 +353,7 @@ mod tests {
         let mut mock_token = MockGetAccessToken::new();
         mock_token
             .expect_get()
-            .returning(random_simple_ascii_string);
+            .returning(|| Secret::new(random_simple_ascii_string()));
         let mock_google = MockServer::start().await;
         let bq = BQClient::new(
             &random_simple_ascii_string(),
