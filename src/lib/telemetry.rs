@@ -398,6 +398,7 @@ impl StatsD {
 #[cfg(test)]
 pub mod test_telemetry {
     use super::*;
+    use crate::test_utils::empty_settings;
     use tracing_test::traced_test;
 
     #[test]
@@ -414,16 +415,38 @@ pub mod test_telemetry {
         assert_eq!(expected, actual);
     }
 
-    // TODO proper name, same test for all macros
-    // TODO why does "logs_contain" not assert against JSON?
-    // TODO change log key to a test key
+    // Note that the log output in the macro tests is not in the standard Mozlog
+    // JSON format. This is because we do not call the `init_tracing` method
+    // that configures log output, so here we just assert against the log format
+    // that tracing gives us by default.
     #[traced_test]
     #[test]
-    fn test_that_the_logs_go_brrr() {
-        info!(LogKey::CleanupAicArchive, key = "value", "Some log message");
+    fn info_macro_log_success() {
+        info!(LogKey::Test, key = "value", "Some log message");
 
-        assert!(logs_contain("type=\"cleanup-aic-archive\""));
-        assert!(logs_contain("key=\"value\""));
-        assert!(logs_contain("Some log message"));
+        assert!(logs_contain("Some log message type=\"test\" key=\"value\""));
+    }
+
+    #[traced_test]
+    #[test]
+    fn error_macro_log_success() {
+        let err = "NaN".parse::<usize>().unwrap_err();
+        error!(LogKey::Test, error = err, "Some error message");
+
+        assert!(logs_contain(
+            "Some error message type=\"test\" error=\"ParseIntError { kind: InvalidDigit }\""
+        ));
+    }
+
+    #[traced_test]
+    #[test]
+    fn info_and_incr_macro_log_success() {
+        let settings = empty_settings();
+        // TODO this should probably be replaced with an automock so we can test
+        // that the statsd call was made correctly
+        let statsd = StatsD::new(&settings);
+        info_and_incr!(statsd, LogKey::Test, key = "value", "Some log message");
+
+        assert!(logs_contain("Some log message type=\"test\" key=\"value\""));
     }
 }
