@@ -398,6 +398,7 @@ impl StatsD {
 #[cfg(test)]
 pub mod test_telemetry {
     use super::*;
+    use tracing_test::traced_test;
 
     #[test]
     fn get_log_key_with_valid_suffix() {
@@ -411,5 +412,18 @@ pub mod test_telemetry {
         let expected = LogKey::Test;
         let actual = LogKey::Test.add_suffix("this-wont-work");
         assert_eq!(expected, actual);
+    }
+
+    // TODO proper name, same test for all macros
+    // TODO why does "logs_contain" not assert against JSON?
+    // TODO change log key to a test key
+    #[traced_test]
+    #[test]
+    fn test_that_the_logs_go_brrr() {
+        info!(LogKey::CleanupAicArchive, key = "value", "Some log message");
+
+        assert!(logs_contain("type=\"cleanup-aic-archive\""));
+        assert!(logs_contain("key=\"value\""));
+        assert!(logs_contain("Some log message"));
     }
 }

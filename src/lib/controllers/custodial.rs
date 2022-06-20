@@ -15,7 +15,6 @@ use std::thread;
  * Any small helpers that are for general maintenance purposes
  */
 
-#[tracing::instrument(name = "request-index")]
 pub async fn index() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("Hello world!"))
 }
@@ -31,6 +30,7 @@ pub async fn version() -> Result<HttpResponse, Error> {
 
 // Debug endpoints
 
+#[tracing::instrument(name = "request-log")]
 pub async fn log() -> Result<HttpResponse, Error> {
     info!(LogKey::Test, "Trace test with message");
     info!(
