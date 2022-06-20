@@ -80,10 +80,10 @@ pub trait GetAccessToken {
     async fn get(&self) -> String;
 }
 
-// TODO secret exposure?
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 struct WorkloadIdentityAccessToken {
+    // TODO should this be made a secret?
     pub access_token: String,
     #[allow(dead_code)]
     // The following are used for serialization in production only
