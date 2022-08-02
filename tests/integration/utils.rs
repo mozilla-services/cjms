@@ -3,6 +3,7 @@ use lib::appconfig::{connect_to_database_and_migrate, run_server};
 use lib::settings::{get_settings, Settings};
 
 use lib::telemetry::StatsD;
+use secrecy::{ExposeSecret, Secret};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Connection, Executor, PgConnection, PgPool, Pool, Postgres};
 use std::net::TcpListener;
@@ -19,7 +20,7 @@ impl TestApp {
     pub fn db_connection(&self) -> PgPool {
         PgPoolOptions::new()
             .connect_timeout(std::time::Duration::from_secs(2))
-            .connect_lazy(&self.settings.database_url)
+            .connect_lazy(self.settings.database_url.expose_secret())
             .expect("Could not get DB connection for test")
     }
 }
@@ -41,7 +42,7 @@ async fn create_test_database(database_url: &str) -> String {
 
 pub async fn get_test_db_pool() -> Pool<Postgres> {
     let settings = get_settings();
-    let test_database_url = create_test_database(&settings.database_url).await;
+    let test_database_url = create_test_database(settings.database_url.expose_secret()).await;
     connect_to_database_and_migrate(&test_database_url).await
 }
 
@@ -51,7 +52,7 @@ pub async fn spawn_app() -> TestApp {
     let test_aic_expiration_days = random_integer();
     let test_auth_password = random_ascii_string();
     let test_cj_signature = random_simple_ascii_string();
-    let test_database_url = create_test_database(&settings.database_url).await;
+    let test_database_url = create_test_database(settings.database_url.expose_secret()).await;
     let listener =
         TcpListener::bind(format!("{}:0", settings.host)).expect("Failed to bind random port");
     let port = listener.local_addr().unwrap().port();
@@ -59,10 +60,10 @@ pub async fn spawn_app() -> TestApp {
     settings.authentication = test_auth_password;
     settings.cj_signature = test_cj_signature;
     settings.cj_subid = test_subid;
-    settings.database_url = test_database_url;
+    settings.database_url = Secret::new(test_database_url);
     settings.port = port;
     let statsd = StatsD::new(&settings);
-    let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
+    let db_pool = connect_to_database_and_migrate(settings.database_url.expose_secret()).await;
     let server =
         run_server(settings.clone(), listener, db_pool, statsd).expect("Failed to start server");
     let _ = tokio::spawn(server);

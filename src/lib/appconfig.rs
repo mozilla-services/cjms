@@ -8,6 +8,7 @@ use actix_web::{
 };
 use actix_web_httpauth::extractors::basic::BasicAuth;
 use actix_web_httpauth::middleware::HttpAuthentication;
+use secrecy::ExposeSecret;
 use sentry::ClientInitGuard;
 use sqlx::{migrate, PgPool};
 use std::net::TcpListener;
@@ -41,7 +42,7 @@ impl CJ {
         if name != LogKey::Test {
             init_tracing(&name.to_string(), &settings.log_level, std::io::stdout);
         }
-        let db_pool = connect_to_database_and_migrate(&settings.database_url).await;
+        let db_pool = connect_to_database_and_migrate(settings.database_url.expose_secret()).await;
         let bq_client = get_bqclient(&settings).await;
         let cj_client = CJClient::new(&settings, None, None, None);
         let statsd = StatsD::new(&settings);

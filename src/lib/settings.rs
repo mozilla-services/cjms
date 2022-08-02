@@ -1,23 +1,24 @@
 use config::{Config, Environment, File, FileFormat};
+use secrecy::{ExposeSecret, Secret};
 use std::fs;
 
-#[derive(serde::Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(serde::Deserialize, Debug, Clone)]
 pub struct Settings {
     pub aic_expiration_days: u64,
     pub authentication: String,
-    pub cj_api_access_token: String,
+    pub cj_api_access_token: Secret<String>,
     pub cj_cid: String,
     pub cj_sftp_user: String,
     pub cj_signature: String,
     pub cj_subid: String,
     pub cj_type: String,
-    pub database_url: String,
+    pub database_url: Secret<String>,
     pub environment: String,
     pub gcp_project: String,
     pub host: String,
     pub log_level: String,
     pub port: u16,
-    pub sentry_dsn: String,
+    pub sentry_dsn: Secret<String>,
     pub sentry_environment: String,
     pub statsd_host: String,
     pub statsd_port: u16,
@@ -28,6 +29,29 @@ impl Settings {
         format!("{}:{}", self.host, self.port)
     }
 }
+
+impl PartialEq for Settings {
+    fn eq(&self, other: &Self) -> bool {
+        self.aic_expiration_days == other.aic_expiration_days
+            && self.authentication == other.authentication
+            && self.cj_api_access_token.expose_secret() == other.cj_api_access_token.expose_secret()
+            && self.cj_cid == other.cj_cid
+            && self.cj_sftp_user == other.cj_sftp_user
+            && self.cj_signature == other.cj_signature
+            && self.cj_subid == other.cj_subid
+            && self.cj_type == other.cj_type
+            && self.database_url.expose_secret() == other.database_url.expose_secret()
+            && self.environment == other.environment
+            && self.gcp_project == other.gcp_project
+            && self.host == other.host
+            && self.log_level == other.log_level
+            && self.port == other.port
+            && self.sentry_dsn.expose_secret() == other.sentry_dsn.expose_secret()
+            && self.statsd_host == other.statsd_host
+            && self.statsd_port == other.statsd_port
+    }
+}
+impl Eq for Settings {}
 
 #[cfg_attr(test, mockall::automock)]
 pub trait HasFile {
@@ -163,19 +187,19 @@ pub mod test_settings {
         let expected = Settings {
             aic_expiration_days: 121212,
             authentication: "auth pass".to_string(),
-            cj_api_access_token: "test cj api access token".to_string(),
+            cj_api_access_token: Secret::new("test cj api access token".to_string()),
             cj_cid: "test cj cid".to_string(),
             cj_sftp_user: "test cj sftp user".to_string(),
             cj_signature: "test cj signature".to_string(),
             cj_subid: "test cj subid".to_string(),
             cj_type: "test cj type".to_string(),
-            database_url: "postgres://user:password@127.0.0.1:5432/test".to_string(),
+            database_url: Secret::new("postgres://user:password@127.0.0.1:5432/test".to_string()),
             environment: "test".to_string(),
             gcp_project: "a--te-st-pr0j".to_string(),
             host: "111.2.3.6".to_string(),
             log_level: "info".to_string(),
             port: 2222,
-            sentry_dsn: "somevalue".to_string(),
+            sentry_dsn: Secret::new("somevalue".to_string()),
             sentry_environment: "somevalue".to_string(),
             statsd_host: "0.0.0.0".to_string(),
             statsd_port: 10101,
@@ -207,19 +231,19 @@ pub mod test_settings {
         let expected = Settings {
             aic_expiration_days: 22222,
             authentication: "auth a pass".to_string(),
-            cj_api_access_token: "api_access_token".to_string(),
+            cj_api_access_token: Secret::new("api_access_token".to_string()),
             cj_cid: "cid".to_string(),
             cj_sftp_user: "sftp_user".to_string(),
             cj_signature: "signature".to_string(),
             cj_subid: "subid".to_string(),
             cj_type: "type".to_string(),
-            database_url: "postgres....".to_string(),
+            database_url: Secret::new("postgres....".to_string()),
             environment: "prod".to_string(),
             gcp_project: "a-gcp-Pr0j3ct".to_string(),
             host: "127.1.2.3".to_string(),
             log_level: "info".to_string(),
             port: 2222,
-            sentry_dsn: "somevalue".to_string(),
+            sentry_dsn: Secret::new("somevalue".to_string()),
             sentry_environment: "somevalue".to_string(),
             statsd_host: "0.0.0.0".to_string(),
             statsd_port: 10101,

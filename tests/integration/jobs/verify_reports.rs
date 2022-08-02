@@ -13,6 +13,7 @@ use lib::{
     settings::{get_settings, Settings},
     telemetry::StatsD,
 };
+use secrecy::ExposeSecret;
 use serde_json::{json, Value};
 use time::{Duration, OffsetDateTime};
 use wiremock::{
@@ -494,7 +495,7 @@ async fn test_correct_and_incorrectly_received_subscriptions_are_handled_correct
         .and(method("POST"))
         .and(header(
             "Authorization",
-            format!("Bearer {}", settings.cj_api_access_token).as_str(),
+            format!("Bearer {}", settings.cj_api_access_token.expose_secret()).as_str(),
         ))
         .and(body_json(&json!({ "query": test_setup.required_query })))
         .respond_with(response)
@@ -597,7 +598,7 @@ async fn test_correct_and_incorrectly_received_refunds_are_handled_correctly() {
         .and(method("POST"))
         .and(header(
             "Authorization",
-            format!("Bearer {}", settings.cj_api_access_token).as_str(),
+            format!("Bearer {}", settings.cj_api_access_token.expose_secret()).as_str(),
         ))
         .and(body_json(&json!({ "query": test_setup.required_query })))
         .respond_with(response)
