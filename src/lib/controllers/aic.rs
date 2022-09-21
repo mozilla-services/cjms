@@ -33,12 +33,21 @@ pub async fn create(
     data: web::Json<AICRequest>,
     pool: web::Data<PgPool>,
     settings: web::Data<Settings>,
+    statsd: web::Data<StatsD>,
 ) -> HttpResponse {
     let aic = AICModel {
         db_pool: pool.as_ref(),
     };
     match aic.create(&data.cj_id, &data.flow_id, &settings).await {
         Ok(created) => {
+            info_and_incr!(
+                statsd,
+                LogKey::AicRecordCreate,
+                aic_id = created.id,
+                flow_id = created.flow_id,
+                expired = created.expires,
+                "AIC created."
+            );
             let response = AICResponse {
                 aic_id: created.id,
                 expires: created.expires,
@@ -100,7 +109,9 @@ pub async fn update(
             info_and_incr!(
                 statsd,
                 LogKey::AicRecordUpdate,
-                aic_id = &aic_id.to_string().as_str(),
+                aic_id = updated.id,
+                flow_id = updated.flow_id,
+                expires = updated.expires,
                 "AIC updated."
             );
             let response = AICResponse {
