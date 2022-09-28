@@ -43,9 +43,9 @@ pub async fn create(
             info_and_incr!(
                 statsd,
                 LogKey::AicRecordCreate,
-                aic_id = created.id,
-                flow_id = created.flow_id,
-                expired = created.expires,
+                aic_id = created.id.to_string().as_str(),
+                flow_id = created.flow_id.to_string().as_str(),
+                expired = created.expires.to_string().as_str(),
                 "AIC created."
             );
             let response = AICResponse {
@@ -106,14 +106,27 @@ pub async fn update(
 
     match updated {
         Ok(updated) => {
-            info_and_incr!(
-                statsd,
-                LogKey::AicRecordUpdate,
-                aic_id = updated.id,
-                flow_id = updated.flow_id,
-                expires = updated.expires,
-                "AIC updated."
-            );
+            if updated.cj_event_value == data.cj_id || data.cj_id == empty_cj_id() {
+                info_and_incr!(
+                    statsd,
+                    LogKey::AicRecordUpdate,
+                    aic_id = updated.id.to_string().as_str(),
+                    flow_id = updated.flow_id.to_string().as_str(),
+                    expires = updated.expires.to_string().as_str(),
+                    "AIC updated."
+                );
+            } else {
+                info_and_incr!(
+                    statsd,
+                    LogKey::AicRecordUpdate,
+                    aic_id = updated.id.to_string().as_str(),
+                    flow_id = updated.flow_id.to_string().as_str(),
+                    expires = updated.expires.to_string().as_str(),
+                    cj_event_value = updated.cj_event_value.to_string().as_str(),
+                    "AIC updated."
+                );
+            }
+
             let response = AICResponse {
                 aic_id: updated.id,
                 expires: updated.expires,
