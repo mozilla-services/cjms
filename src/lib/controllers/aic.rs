@@ -44,7 +44,7 @@ pub async fn create(
                 statsd,
                 LogKey::AicRecordCreate,
                 aic_id = created.id.to_string().as_str(),
-                flow_id = created.flow_id.to_string().as_str(),
+                flow_id = created.flow_id.as_str(),
                 expired = created.expires.to_string().as_str(),
                 "AIC created."
             );
@@ -111,7 +111,7 @@ pub async fn update(
                     statsd,
                     LogKey::AicRecordUpdate,
                     aic_id = updated.id.to_string().as_str(),
-                    flow_id = updated.flow_id.to_string().as_str(),
+                    flow_id = updated.flow_id.as_str(),
                     expires = updated.expires.to_string().as_str(),
                     "AIC updated."
                 );
@@ -120,9 +120,9 @@ pub async fn update(
                     statsd,
                     LogKey::AicRecordUpdate,
                     aic_id = updated.id.to_string().as_str(),
-                    flow_id = updated.flow_id.to_string().as_str(),
+                    flow_id = updated.flow_id.as_str(),
                     expires = updated.expires.to_string().as_str(),
-                    cj_event_value = updated.cj_event_value.to_string().as_str(),
+                    cj_event_value = updated.cj_event_value.as_str(),
                     "AIC updated."
                 );
             }
