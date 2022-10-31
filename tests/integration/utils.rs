@@ -28,7 +28,7 @@ impl TestApp {
 async fn create_test_database(database_url: &str) -> String {
     let randomized_test_database_url = format!("{}_test_{}", database_url, Uuid::new_v4());
     let url_parts: Vec<&str> = randomized_test_database_url.rsplit('/').collect();
-    let database_name = url_parts.get(0).unwrap().to_string();
+    let database_name = url_parts.first().unwrap().to_string();
     let mut connection = PgConnection::connect(database_url)
         .await
         .expect("Failed to connect to postgres.");
