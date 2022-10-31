@@ -294,7 +294,7 @@ macro_rules! error {
 #[macro_export]
 macro_rules! info_and_incr {
     ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
-        $crate::info!($trace_type.to_string().as_str(), $($arg)*);
+        crate::info!($trace_type.to_string().as_str(), $($arg)*);
         $statsd_client.incr(&$trace_type);
     }
 }
@@ -331,7 +331,7 @@ macro_rules! info_and_incr {
 #[macro_export]
 macro_rules! error_and_incr {
     ( $statsd_client:expr, $trace_type:expr, $($arg:tt)+ ) => {
-        $crate::error!($trace_type.to_string().as_str(), $($arg)*);
+        crate::error!($trace_type.to_string().as_str(), $($arg)*);
         $statsd_client.incr(&$trace_type);
     }
 }
