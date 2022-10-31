@@ -80,13 +80,13 @@ async fn test_corrections_by_day_auth() {
 
 async fn get_authed_path(path: &str, password: &str) -> Response {
     let client = reqwest::Client::new();
-    let r = client
+
+    client
         .get(path)
         .basic_auth("user", Some(password))
         .send()
         .await
-        .expect("Failed to GET");
-    r
+        .expect("Failed to GET")
 }
 
 #[tokio::test]
