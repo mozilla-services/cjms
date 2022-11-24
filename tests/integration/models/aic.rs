@@ -173,10 +173,10 @@ async fn test_aic_archive_does_not_delete_if_cannot_insert() {
     let db_pool = get_test_db_pool().await;
     let model = AICModel { db_pool: &db_pool };
     let aic = make_fake_aic();
-    // Set a blocking archive entry to have the same flow id as the one
+    // Set a blocking archive entry to have the same primary key as the one
     // we'll attempt to archive so the transaction should fail.
     let mut blocking_archive_entry = make_fake_aic();
-    blocking_archive_entry.flow_id = aic.flow_id.clone();
+    blocking_archive_entry.id = aic.id;
     model
         .create_from_aic(&aic)
         .await
@@ -191,11 +191,14 @@ async fn test_aic_archive_does_not_delete_if_cannot_insert() {
         Err(_) => {
             // aic should still be in aic table
             model
-                .fetch_one_by_id(&aic.id)
+                .fetch_one_by_flow_id(&aic.flow_id)
                 .await
                 .expect("Could not retrieve from archive table");
             // aic should not be in archive table
-            assert!(model.fetch_one_by_id_from_archive(&aic.id).await.is_err());
+            assert!(model
+                .fetch_one_by_flow_id_from_archive(&aic.flow_id)
+                .await
+                .is_err());
         }
     }
 }
