@@ -77,6 +77,8 @@ jobs:
           ~/.cargo/git/db/
           target/
         key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
+    - name: Print rust version
+      run: cargo --version
     - name: Lint check
       run: cargo clippy --all-targets --all-features -- -D warnings
     - name: Check if offline migrations haven't been submitted. If this step fails run `cargo sqlx prepare -- --lib` and submit `sqlx-data.json`.
