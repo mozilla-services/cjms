@@ -41,7 +41,7 @@ struct VerifyReportsTestSetup {
 }
 
 fn make_refund_amount(amount: i32) -> f32 {
-    (-1.00 * convert_amount_to_decimal(amount)) as f32
+    -1.00 * convert_amount_to_decimal(amount)
 }
 
 async fn setup_test(
