@@ -1,4 +1,4 @@
-FROM rust:1.57 as build
+FROM rust:1.67.1 as build
 WORKDIR /app
 COPY . /app
 ARG CI
