@@ -66,7 +66,7 @@ pub async fn spawn_app() -> TestApp {
     let db_pool = connect_to_database_and_migrate(settings.database_url.expose_secret()).await;
     let server =
         run_server(settings.clone(), listener, db_pool, statsd).expect("Failed to start server");
-    let _ = tokio::spawn(server);
+    tokio::spawn(server);
     TestApp { settings }
 }
 

@@ -77,6 +77,8 @@ https://www.postgresql.org/docs/14/index.html
 
 When adding migrations, create reversible migrations using `sqlx migrate add -r <name>`.
 
+To run migrations, `sqlx migrate run`.
+
 ## Run server
 
 You can configure cjms and tests either with environment variables or a settings file.

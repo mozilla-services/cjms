@@ -65,7 +65,7 @@ pub trait UpdateStatus {
     fn set_raw_status_history(&mut self, v: Option<JsonValue>);
 
     fn get_status(&self) -> Option<Status> {
-        let status_value = self.get_raw_status().unwrap_or_else(|| "".to_string());
+        let status_value = self.get_raw_status().unwrap_or_default();
         match Status::from_str(&status_value) {
             Ok(status) => Some(status),
             Err(_) => None,
