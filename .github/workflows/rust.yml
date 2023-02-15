@@ -55,11 +55,11 @@ jobs:
     - name: Copy settings file
       run: cp settings.yaml.example settings.yaml
     - name: Install rust
-      run: rustup toolchain install $RUST_VERSION
+      run: rustup toolchain install $RUST_VERSION && rustup default $RUST_VERSION
     - name: Print rust version
       run: cargo --version
     - name: Install llvm-cov
-      run: rustup toolchain install $RUST_VERSION --component llvm-tools-preview && cargo install cargo-llvm-cov --force
+      run: rustup toolchain install --component llvm-tools-preview && cargo install cargo-llvm-cov --force
     - name: Install nextest
       run: curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
     - name: Run tests inc. coverage
@@ -83,7 +83,7 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
     - name: Install rust
-      run: rustup toolchain install $RUST_VERSION
+      run: rustup toolchain install $RUST_VERSION && rustup default $RUST_VERSION
     - name: Print rust version
       run: cargo --version
     - name: Lint check
@@ -96,7 +96,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install rust
-      run: rustup toolchain install $RUST_VERSION
+      run: rustup toolchain install $RUST_VERSION && rustup default $RUST_VERSION
     - name: Print rust version
       run: cargo --version
     - name: Format check
@@ -122,7 +122,7 @@ jobs:
           echo "cache_loaded=false" >> $GITHUB_ENV
         fi
     - name: Install rust
-      run: rustup toolchain install $RUST_VERSION
+      run: rustup toolchain install $RUST_VERSION && rustup default $RUST_VERSION
     - name: Print rust version
       run: cargo --version
     - name: Setup audit
