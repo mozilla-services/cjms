@@ -57,6 +57,8 @@ jobs:
       run: rustup toolchain install stable --component llvm-tools-preview && cargo install cargo-llvm-cov --force
     - name: Install nextest
       run: curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
+    - name: Print rust version
+      run: cargo --version
     - name: Run tests inc. coverage
       run: cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: Upload coverage to Codecov
@@ -77,8 +79,8 @@ jobs:
           ~/.cargo/git/db/
           target/
         key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
-    - name: Update rust
-      run: rustup update 1.67.1
+    - name: Print rust version
+      run: cargo --version
     - name: Lint check
       run: cargo clippy --all-targets --all-features -- -D warnings
     - name: Check if offline migrations haven't been submitted. If this step fails run `cargo sqlx prepare -- --lib` and submit `sqlx-data.json`.
@@ -88,6 +90,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Print rust version
+      run: cargo --version
     - name: Format check
       run: cargo fmt -- --check
   audit:
@@ -110,6 +114,8 @@ jobs:
         else
           echo "cache_loaded=false" >> $GITHUB_ENV
         fi
+    - name: Print rust version
+      run: cargo --version
     - name: Setup audit
       run: cargo install cargo-audit
       if: env.cache_loaded == 'false'
