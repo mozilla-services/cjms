@@ -5,7 +5,7 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::{
-    error_and_incr, info_and_incr,
+    error_and_incr, info, info_and_incr,
     models::aic::AICModel,
     settings::Settings,
     telemetry::{LogKey, StatsD},
@@ -35,6 +35,7 @@ pub async fn create(
     settings: web::Data<Settings>,
     statsd: web::Data<StatsD>,
 ) -> HttpResponse {
+    info!(LogKey::RequestAicCreate, flow_id = &data.flow_id.as_str(),);
     let aic = AICModel {
         db_pool: pool.as_ref(),
     };
@@ -69,6 +70,11 @@ pub async fn update(
         db_pool: pool.as_ref(),
     };
     let aic_id = path.into_inner();
+    info!(
+        LogKey::RequestAicUpdate,
+        aic_id = &aic_id.to_string().as_str(),
+        flow_id = &data.flow_id.as_str(),
+    );
     let existing = aic.fetch_one_by_id(&aic_id).await;
     let updated = match existing {
         Ok(existing) => {

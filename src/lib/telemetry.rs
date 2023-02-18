@@ -83,6 +83,8 @@ pub enum LogKey {
     CorrectionsReportTodayAccessed,
     CorrectionsSubscriptionFetch,
     CorrectionsSubscriptionFetchFailed,
+    RequestAicCreate,
+    RequestAicUpdate,
     ReportSubscriptionMarkNotReported,
     ReportSubscriptionMarkNotReportedFailed,
     ReportSubscriptionMarkWillNotReport,

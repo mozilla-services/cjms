@@ -55,3 +55,15 @@ async fn test_archive_expired_aics() {
     assert!(aic_model.fetch_one_by_id(&aic_2.id).await.is_ok());
     assert!(aic_model.fetch_one_by_id(&aic_3.id).await.is_err());
 }
+
+#[tokio::test]
+async fn archive_aics_with_duplicate_flow_id_is_allowed() {
+    // SETUP
+    let db_pool = get_test_db_pool().await;
+    let aic_model = AICModel { db_pool: &db_pool };
+    let aic_1 = make_fake_aic();
+    let mut aic_dupe = make_fake_aic();
+    aic_dupe.flow_id = aic_1.flow_id.clone();
+    assert!(aic_model.archive_aic(&aic_1).await.is_ok());
+    assert!(aic_model.archive_aic(&aic_dupe).await.is_ok());
+}
